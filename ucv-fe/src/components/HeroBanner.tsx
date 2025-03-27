@@ -1,80 +1,129 @@
 import { Button } from "@/components/ui/button"
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Calendar, Flag } from "lucide-react"
+import { Calendar, ArrowRight } from "lucide-react"
+import { useState, useEffect } from "react"
 
 export function HeroBanner() {
-  const carouselImages = [
-    "/hero-banner-1.png",
-    "/hero-banner-2.png",
-    "/hero-banner-3.png",
-  ]
+    const carouselImages = [
+        "/hero-banner-1.png",
+        "/hero-banner-2.png",
+        "/hero-banner-3.png",
+    ]
 
-  return (
-    <section className="container mx-auto px-4 sm:px-6 lg:px-10 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        {/* Left Content */}
-        <div className="space-y-6">
-          <h1 className="text-4xl lg:text-5xl text-content">
-            Explore <br />
-            Vietnam's <span className="inline-flex items-center gap-2"><img src="/vn-flag.svg" alt="Vietnam Flag" width={32} height={24} className="inline" /></span> <br />
-            Top State <br />
-            Schools with Us
-          </h1>
-          
-          <p className="text-sm text-content">
-            Welcome to UCV - we aim to bridge top schools in Vietnam and international universities. We're a unique connector - we have years of experience on both the university and the school side.
-          </p>
-          
-          <p className="text-sm text-content">
-            Specializing in crafting quality school tours across Central and Northern Vietnam, we focus primarily on state schools (mostly Schools for gifted students).
-          </p>
+    const [api, setApi] = useState<any>()
+    const [current, setCurrent] = useState(0)
+    const [count, setCount] = useState(0)
 
-          {/* Tour Info Card */}
-          <div className="bg-white rounded-lg border p-6 space-y-4">
-            <div className="flex items-center gap-2 text-primary">
-              <Calendar className="h-5 w-5" />
-              <span className="font-semibold">INCOMING • JULY 4</span>
+    useEffect(() => {
+        if (!api) {
+            return
+        }
+
+        setCount(api.scrollSnapList().length)
+        setCurrent(api.selectedScrollSnap() + 1)
+
+        api.on("select", () => {
+            setCurrent(api.selectedScrollSnap() + 1)
+        })
+    }, [api])
+
+    return (
+        <section className="container relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+            {/* Decorative Image - Upper Left */}
+            <img
+                src="/vector.svg"
+                alt="Decorative element"
+                className="absolute top-0 left-0 w-220 h-70 pointer-events-none -z-1"
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 items-center">
+                {/* Left Content - 2 columns */}
+                <div className="space-y-6 lg:col-span-2 me-5">
+                    <h1 className="text-4xl/10 lg:text-5xl/14 text-content font-medium">
+                        Explore <br />
+                        Vietnam's <span className="inline-flex items-center gap-2"><img src="/vn-flag.svg" alt="Vietnam Flag" width={40} className="inline" /></span> <br />
+                        Top State <br />
+                        Schools with Us
+                    </h1>
+
+                    <p className="text-sm text-content font-medium">
+                        Welcome to UCV - we aim to bridge top schools in Vietnam and international universities. We're a unique connector - we have years of experience on both the university and the school side.
+                    </p>
+
+                    <p className="text-sm text-content font-medium">
+                        Specializing in crafting quality school tours across Central and Northern Vietnam, we focus primarily on state schools (mostly Schools for gifted students).
+                    </p>
+                </div>
+
+                {/* Right Carousel - 4 columns with Tour Card Overlay */}
+                <div className="relative aspect-auto lg:col-span-4">
+                    <Carousel className="w-full" setApi={setApi}>
+                        <CarouselContent>
+                            {carouselImages.map((image, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "700px" }}>
+                                        <img
+                                            src={image}
+                                            alt={`Tour image ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="absolute left-4 top-1/2" />
+                        <CarouselNext className="absolute right-4 top-1/2" />
+
+                        {/* Tour Info Card Overlay */}
+                        <div className="absolute bottom-3 left-3 max-w-md bg-white rounded-2xl shadow-lg px-6 pb-6">
+                            <div className="relative inline-block bg-content text-white rounded-lg px-5 py-1 -top-4">
+                                <span className="font-medium text-xs">INCOMING • JULY 4</span>
+                            </div>
+
+                            <h2 className="text-4xl font-medium text-content pb-3 border-b-2 border-accent-blue">Tour Spring 2025</h2>
+
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
+                                <p className="text-content text-xs">
+                                    Short Descripton At IUC, we're passionate about bridging the gap between ...
+                                </p>
+
+                                <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">
+                                    <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                        <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                    </div>
+                                    <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300">Find out more</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Pagination Indicator */}
+                        <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 font-medium text-lg flex items-center gap-2">
+                            <div className="flex space-x-1">
+                                {Array.from({ length: count }).map((_, i) => (
+                                    <span
+                                        key={i}
+                                        className={`block h-2 w-2 rounded-full ${current === i + 1 ? 'bg-primary' : 'bg-gray-300'}`}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-primary font-bold">{current}</span>
+                        </div>
+                    </Carousel>
+                </div>
             </div>
-            
-            <h2 className="text-2xl font-bold text-content">Tour Spring 2025</h2>
-            
-            <p className="text-muted-foreground">
-              At IUC, we're passionate about bringing the gap between ...
-            </p>
-            
-            <Button className="w-full sm:w-auto">
-              Find out more
-            </Button>
-          </div>
-        </div>
 
-        {/* Right Carousel */}
-        <div className="relative aspect-[4/3] w-full">
-          <Carousel className="w-full">
-            <CarouselContent>
-              {carouselImages.map((image, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
-                    <img
-                      src={image}
-                      alt={`Tour image ${index + 1}`}
-                      className="object-cover"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="absolute left-4 top-1/2" />
-            <CarouselNext className="absolute right-4 top-1/2" />
-          </Carousel>
-        </div>
-      </div>
-    </section>
-  )
+            {/* Decorative Image - Lower Right */}
+            <img
+                src="/vector-1.svg"
+                alt="Decorative element"
+                className="absolute bottom-0 right-0 w-140 h-25 pointer-events-none -z-1"
+            />
+        </section>
+    )
 }

@@ -3,8 +3,8 @@ import { LanguageSelector } from "./LanguageSelector"
 
 export function Navbar() {
   return (
-    <nav className="w-full">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between py-2">
+    <nav className="w-full fixed top-0 z-50 bg-white/90 backdrop-blur-sm">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
         {/* Logo Section */}
         <div className="w-[200px]">
           <a href="/" className="flex items-center gap-2">
@@ -15,10 +15,10 @@ export function Navbar() {
               height={40}
               className="h-14 w-auto"
             />
-            <div className="flex flex-col">
+            <div className="flex flex-col ps-2">
               <span className="text-xs font-bold text-content">UNIVERSAL</span>
-              <span className="text-xs text-content">CONNECT</span>
-              <span className="text-xs text-content">VN</span>
+              <span className="text-xs font-bold text-content">CONNECT</span>
+              <span className="text-xs font-bold text-content">VN</span>
             </div>
           </a>
         </div>
@@ -27,17 +27,17 @@ export function Navbar() {
         <NavigationMenu className="absolute left-1/2 transform -translate-x-1/2">
           <NavigationMenuList className="hidden md:flex gap-12">
             <NavigationMenuItem>
-              <a href="/our-tours" className="text-md font-medium text-content hover:text-primary transition-colors">
+              <a href="/our-tours" className="text-base font-medium text-content hover:text-primary transition-colors">
                 Our Tours
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a href="/about-us" className="text-md font-medium text-content hover:text-primary transition-colors">
+              <a href="/about-us" className="text-base font-medium text-content hover:text-primary transition-colors">
                 About us
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a href="/contact" className="text-md font-medium text-content hover:text-primary transition-colors">
+              <a href="/contact" className="text-base font-medium text-content hover:text-primary transition-colors">
                 Contact
               </a>
             </NavigationMenuItem>

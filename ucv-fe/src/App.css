@@ -1,9 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 .text-header{
   color: #438EFF;
 }
 
 .text-content {
   color: #002664;
+}
+
+.bg-content {
+  background-color: #002664;
+}
+
+.border-accent-blue {
+  border-color: rgb(67, 142, 255, 0.3);
+}
+
+body {
+  font-family: 'Inter', sans-serif !important;
 }
