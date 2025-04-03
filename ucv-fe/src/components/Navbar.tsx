@@ -6,7 +6,7 @@ import { LanguageSelector } from "./LanguageSelector"
 export function Navbar() {
   return (
     <nav className="w-full fixed top-0 z-50 bg-white/90 backdrop-blur-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
+      <div className="px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
         {/* Logo Section */}
         <div className="w-[200px]">
           <a href="/" className="flex items-center gap-2">

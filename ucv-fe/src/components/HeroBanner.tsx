@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+// import { Button } from "@/components/ui/button"
 import {
     Carousel,
     CarouselContent,
@@ -6,7 +6,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Calendar, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export function HeroBanner() {
@@ -34,7 +34,7 @@ export function HeroBanner() {
     }, [api])
 
     return (
-        <section className="container relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+        <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
             {/* Decorative Image - Upper Left */}
             <img
                 src="/vector.svg"
@@ -95,7 +95,7 @@ export function HeroBanner() {
                                                     <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                                                         <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                                                     </div>
-                                                    <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300">Find out more</span>
+                                                    <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300 font-medium">Find out more</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -138,7 +138,7 @@ export function HeroBanner() {
             <img
                 src="/vector-1.svg"
                 alt="Decorative element"
-                className="absolute bottom-0 right-0 w-140 h-25 pointer-events-none -z-1"
+                className="absolute bottom-0 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
             />
         </section>
     )
