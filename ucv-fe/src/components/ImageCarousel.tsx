@@ -39,7 +39,7 @@ const ImageCarousel: React.FC = () => {
             }}
           >
             {images.map((image, index) => (
-              <div key={index} className="px-3 w-1/5" style={{ flexShrink: 0 }}>
+              <div key={index} className="px-3 w-1/6" style={{ flexShrink: 0 }}>
                 <div className="bg-white rounded-lg overflow-hidden shadow-md">
                   <img 
                     src={image.src} 
@@ -57,12 +57,12 @@ const ImageCarousel: React.FC = () => {
           <div 
             className="flex transition-transform duration-700 ease-in-out"
             style={{ 
-              transform: `translateX(-${currentIndex * 100}%)`, 
+              transform: `translateX(-${currentIndex * 20}%)`, 
               width: `${images.length * 100}%`
             }}
           >
             {images.map((image, index) => (
-              <div key={index} className="px-3 md:basis-1/2 lg:basis-1/2" style={{ flexShrink: 0 }}>
+              <div key={index} className="px-3 md:basis-1/3 lg:basis-1/3" style={{ flexShrink: 0 }}>
                 <div className="bg-white rounded-lg overflow-hidden shadow-md">
                   <img 
                     src={image.src} 
