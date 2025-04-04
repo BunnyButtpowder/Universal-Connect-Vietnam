@@ -4,6 +4,15 @@ import { Menu, X, Phone, Mail } from "lucide-react"
 import { LanguageSelector } from "./LanguageSelector"
 
 export function Navbar() {
+  // Add scroll function
+  const scrollToContact = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const contactSection = document.getElementById('contact-section');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <nav className="w-full fixed top-0 z-50 bg-white/90 backdrop-blur-sm">
       <div className="px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
@@ -39,7 +48,11 @@ export function Navbar() {
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a href="/contact" className="text-base font-medium text-content hover:text-primary transition-colors">
+              <a 
+                href="#contact-section" 
+                onClick={scrollToContact} 
+                className="text-base font-medium text-content hover:text-primary transition-colors"
+              >
                 Contact
               </a>
             </NavigationMenuItem>
@@ -88,7 +101,15 @@ export function Navbar() {
                     About us
                   </a>
                   <div className="h-[1px] bg-white/20 my-3" />
-                  <a href="/contact" className="text-3xl font-normal text-white hover:text-primary transition-colors py-4">
+                  <a 
+                    href="#contact-section" 
+                    onClick={(e) => {
+                      scrollToContact(e);
+                      const closeButton = document.querySelector('.close-sheet-button') as HTMLElement;
+                      if (closeButton) closeButton.click();
+                    }} 
+                    className="text-3xl font-normal text-white hover:text-primary transition-colors py-4"
+                  >
                     Contact
                   </a>
                 </div>
@@ -98,7 +119,7 @@ export function Navbar() {
                   <div className="flex flex-col">
                     <div className="ms-5 py-4 flex gap-6">
                       <div className="flex items-center mb-2">
-                        <Phone className="h-7 w-7 fill-[#438EFF]" />
+                        <Phone className="h-7 w-7 fill-[#438EFF] text-content" />
                       </div>
                       <div className="flex flex-col">
                         <h3 className="text-white font-medium">HOTLINE</h3>
@@ -110,7 +131,7 @@ export function Navbar() {
                     <div className="h-[1px] bg-white/20" />
                     <div className="ms-5 py-4 flex gap-6">
                       <div className="flex items-center mb-2">
-                        <Mail className="h-7 w-7 fill-[#438EFF]" />
+                        <Mail className="h-7 w-7 fill-[#438EFF] text-content" />
                       </div>
                       <div className="flex flex-col">
                         <h3 className="text-white font-medium">EMAIL</h3>

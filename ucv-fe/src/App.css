@@ -5,9 +5,16 @@
 .text-content {
   color: #002664;
 }
+.bg-header {
+  background-color: #438EFF;
+}
 
 .bg-content {
   background-color: #002664;
+}
+
+.footer-bg-color {
+  background-color: #000C25;
 }
 
 .border-accent-blue {
