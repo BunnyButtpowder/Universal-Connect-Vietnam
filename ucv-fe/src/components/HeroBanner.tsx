@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+// import { Button } from "@/components/ui/button"
 import {
     Carousel,
     CarouselContent,
@@ -6,7 +6,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Calendar, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export function HeroBanner() {
@@ -34,12 +34,12 @@ export function HeroBanner() {
     }, [api])
 
     return (
-        <section className="container relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+        <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
             {/* Decorative Image - Upper Left */}
             <img
                 src="/vector.svg"
                 alt="Decorative element"
-                className="absolute top-0 left-0 w-220 h-70 pointer-events-none -z-1"
+                className="absolute -top-3 lg:top-0 left-0 lg:-left-15 max-w-none w-[200%] lg:w-240 h-[180px] lg:h-70 pointer-events-none -z-1"
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 items-center">
@@ -62,57 +62,73 @@ export function HeroBanner() {
                 </div>
 
                 {/* Right Carousel - 4 columns with Tour Card Overlay */}
-                <div className="relative aspect-auto lg:col-span-4">
+                <div className="relative lg:col-span-4">
                     <Carousel className="w-full" setApi={setApi}>
                         <CarouselContent>
                             {carouselImages.map((image, index) => (
                                 <CarouselItem key={index}>
-                                    <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "700px" }}>
+                                    <div className="relative w-full overflow-hidden rounded-2xl"
+                                        style={{
+                                            height: typeof window !== 'undefined' && window.innerWidth < 1024
+                                                ? "500px"
+                                                : "700px"
+                                        }}>
                                         <img
                                             src={image}
                                             alt={`Tour image ${index + 1}`}
                                             className="w-full h-full object-cover"
                                         />
+                                        {/* Tour Info Card Overlay */}
+                                        <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3 max-w-xs lg:max-w-md bg-white rounded-2xl shadow-lg px-4 lg:px-6 pb-4 lg:pb-6">
+                                            <div className="relative inline-block bg-content text-white rounded-lg px-5 py-1 -top-4">
+                                                <span className="font-medium text-xs">INCOMING • JULY 4</span>
+                                            </div>
+
+                                            <h2 className="text-2xl lg:text-4xl font-medium text-content pb-3 border-b-2 border-accent-blue">Tour Spring 2025</h2>
+
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
+                                                <p className="text-content text-xs">
+                                                    Short Descripton At IUC, we're passionate about bridging the gap between ...
+                                                </p>
+
+                                                <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">
+                                                    <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                                        <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                                    </div>
+                                                    <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300 font-medium">Find out more</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
-                        <CarouselPrevious className="absolute left-4 top-1/2" />
-                        <CarouselNext className="absolute right-4 top-1/2" />
 
-                        {/* Tour Info Card Overlay */}
-                        <div className="absolute bottom-3 left-3 max-w-md bg-white rounded-2xl shadow-lg px-6 pb-6">
-                            <div className="relative inline-block bg-content text-white rounded-lg px-5 py-1 -top-4">
-                                <span className="font-medium text-xs">INCOMING • JULY 4</span>
-                            </div>
-
-                            <h2 className="text-4xl font-medium text-content pb-3 border-b-2 border-accent-blue">Tour Spring 2025</h2>
-
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
-                                <p className="text-content text-xs">
-                                    Short Descripton At IUC, we're passionate about bridging the gap between ...
-                                </p>
-
-                                <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">
-                                    <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                                        <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
-                                    </div>
-                                    <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300">Find out more</span>
-                                </button>
-                            </div>
+                        {/* Navigation Arrows - Hidden on Mobile */}
+                        <div className="hidden lg:block">
+                            <CarouselPrevious className="absolute left-4 top-1/2 cursor-pointer" />
+                            <CarouselNext className="absolute right-4 top-1/2 cursor-pointer" />
                         </div>
 
-                        {/* Pagination Indicator */}
-                        <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 font-medium text-lg flex items-center gap-2">
-                            <div className="flex space-x-1">
+                        {/* Pagination Indicator - Hidden on Mobile */}
+                        <div className="absolute bottom-3 right-4 px-4 py-2 font-medium text-lg items-center gap-2 hidden lg:flex">
+                            <div className="flex space-x-1 items-center">
                                 {Array.from({ length: count }).map((_, i) => (
                                     <span
                                         key={i}
-                                        className={`block h-2 w-2 rounded-full ${current === i + 1 ? 'bg-primary' : 'bg-gray-300'}`}
+                                        className={`block rounded-full ${current === i + 1
+                                                ? 'bg-neutral-50 h-2 w-2 mt-1 mx-1'
+                                                : 'bg-gray-400 h-1 w-1 mx-1'
+                                            } transition-all duration-300`}
+                                        style={{
+                                            transform: current === i + 1 ? 'translateY(-2px)' : 'translateY(0)'
+                                        }}
                                     />
                                 ))}
                             </div>
-                            <span className="text-primary font-bold">{current}</span>
+                            <span className="ms-5 text-white text-6xl font-medium">
+                                {current < 10 ? `0${current}` : current}
+                            </span>
                         </div>
                     </Carousel>
                 </div>
@@ -122,7 +138,7 @@ export function HeroBanner() {
             <img
                 src="/vector-1.svg"
                 alt="Decorative element"
-                className="absolute bottom-0 right-0 w-140 h-25 pointer-events-none -z-1"
+                className="absolute bottom-0 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
             />
         </section>
     )

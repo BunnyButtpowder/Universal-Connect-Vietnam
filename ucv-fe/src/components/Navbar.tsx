@@ -1,17 +1,28 @@
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu"
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
+import { Menu, X, Phone, Mail } from "lucide-react"
 import { LanguageSelector } from "./LanguageSelector"
 
 export function Navbar() {
+  // Add scroll function
+  const scrollToContact = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const contactSection = document.getElementById('contact-section');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <nav className="w-full fixed top-0 z-50 bg-white/90 backdrop-blur-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
+      <div className="px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
         {/* Logo Section */}
         <div className="w-[200px]">
           <a href="/" className="flex items-center gap-2">
             <img
-              src="/ucv-logo.svg" 
-              alt="UCV Logo" 
-              width={40} 
+              src="/ucv-logo.svg"
+              alt="UCV Logo"
+              width={40}
               height={40}
               className="h-14 w-auto"
             />
@@ -23,9 +34,9 @@ export function Navbar() {
           </a>
         </div>
 
-        {/* Navigation Links */}
+        {/* Desktop Navigation Links */}
         <NavigationMenu className="absolute left-1/2 transform -translate-x-1/2">
-          <NavigationMenuList className="hidden md:flex gap-12">
+          <NavigationMenuList className="hidden lg:flex gap-12">
             <NavigationMenuItem>
               <a href="/our-tours" className="text-base font-medium text-content hover:text-primary transition-colors">
                 Our Tours
@@ -37,16 +48,106 @@ export function Navbar() {
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a href="/contact" className="text-base font-medium text-content hover:text-primary transition-colors">
+              <a 
+                href="#contact-section" 
+                onClick={scrollToContact} 
+                className="text-base font-medium text-content hover:text-primary transition-colors"
+              >
                 Contact
               </a>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
 
-        {/* Language Selector */}
-        <div className="w-[200px] flex justify-end">
-          <LanguageSelector />
+        {/* Mobile Menu and Language Selector */}
+        <div className="flex justify-end items-center gap-4">
+          <div className="hidden lg:block">
+            <LanguageSelector />
+          </div>
+          <Sheet>
+            <SheetTrigger className="lg:hidden">
+              <Menu className="h-6 w-6" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full bg-[#002B5B] border-none p-0 [&>button]:hidden">
+              <div className="flex flex-col h-full p-6">
+                {/* Logo and Close Button */}
+                <div className="mb-16 flex justify-between items-center">
+                  <a href="/" className="flex items-center gap-2">
+                    <img
+                      src="/ucv-logo-white.svg"
+                      alt="UCV Logo"
+                      width={40}
+                      height={40}
+                      className="h-14 w-auto"
+                    />
+                    <div className="flex flex-col ps-2">
+                      <span className="text-xs font-bold text-white">UNIVERSAL</span>
+                      <span className="text-xs font-bold text-white">CONNECT</span>
+                      <span className="text-xs font-bold text-white">VN</span>
+                    </div>
+                  </a>
+                  <SheetClose className="text-white hover:text-white/80 transition-colors">
+                    <X className="h-5 w-5" />
+                  </SheetClose>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="flex flex-col">
+                  <a href="/our-tours" className="text-3xl font-normal text-white hover:text-primary transition-colors py-4">
+                    Our Tours
+                  </a>
+                  <div className="h-[1px] bg-white/20 my-3" />
+                  <a href="/about-us" className="text-3xl font-normal text-white hover:text-primary transition-colors py-4">
+                    About us
+                  </a>
+                  <div className="h-[1px] bg-white/20 my-3" />
+                  <a 
+                    href="#contact-section" 
+                    onClick={(e) => {
+                      scrollToContact(e);
+                      const closeButton = document.querySelector('.close-sheet-button') as HTMLElement;
+                      if (closeButton) closeButton.click();
+                    }} 
+                    className="text-3xl font-normal text-white hover:text-primary transition-colors py-4"
+                  >
+                    Contact
+                  </a>
+                </div>
+
+                {/* Contact Information */}
+                <div className="mt-auto">
+                  <div className="flex flex-col">
+                    <div className="ms-5 py-4 flex gap-6">
+                      <div className="flex items-center mb-2">
+                        <Phone className="h-7 w-7 fill-[#438EFF] text-content" />
+                      </div>
+                      <div className="flex flex-col">
+                        <h3 className="text-white font-medium">HOTLINE</h3>
+                        <a href="tel:+84034444868" className="text-white hover:text-white text-sm">
+                          +84 (0)34444 8680
+                        </a>
+                      </div>
+                    </div>
+                    <div className="h-[1px] bg-white/20" />
+                    <div className="ms-5 py-4 flex gap-6">
+                      <div className="flex items-center mb-2">
+                        <Mail className="h-7 w-7 fill-[#438EFF] text-content" />
+                      </div>
+                      <div className="flex flex-col">
+                        <h3 className="text-white font-medium">EMAIL</h3>
+                        <a href="mailto:bernd@iucconsulting.com" className="text-white hover:text-white text-sm">
+                          bernd@iucconsulting.com
+                        </a>
+                        <a href="mailto:bfwidemann@gmail.com" className="text-white hover:text-white text-sm">
+                          bfwidemann@gmail.com
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>
