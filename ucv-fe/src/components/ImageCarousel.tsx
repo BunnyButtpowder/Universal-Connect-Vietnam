@@ -27,7 +27,7 @@ const ImageCarousel: React.FC = () => {
   }, [images.length]);
 
   return (
-    <section className="image-carousel-section bg-white px-2 sm:px-6 lg:px-17">
+    <section className="image-carousel-section bg-white px-2 sm:px-6 lg:px-17 mb-20">
       <div className="container mx-auto">
         {/* Desktop Carousel - showing multiple images */}
         <div className="hidden md:block overflow-hidden">
