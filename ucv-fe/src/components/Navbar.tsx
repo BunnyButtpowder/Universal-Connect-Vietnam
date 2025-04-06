@@ -2,11 +2,28 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/compon
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import { Menu, X, Phone, Mail } from "lucide-react"
 import { LanguageSelector } from "./LanguageSelector"
+import { useState, useEffect } from "react"
 
 export function Navbar() {
+  // State to track active navigation item
+  const [activeItem, setActiveItem] = useState<string>('')
+
+  // Check the current pathname on initial load and when it changes
+  useEffect(() => {
+    const pathname = window.location.pathname
+    if (pathname === '/our-tours') {
+      setActiveItem('our-tours')
+    } else if (pathname === '/about-us') {
+      setActiveItem('about-us')
+    } else if (pathname === '/') {
+      setActiveItem('home')
+    }
+  }, [])
+
   // Add scroll function
   const scrollToContact = (e: React.MouseEvent) => {
     e.preventDefault();
+    setActiveItem('contact');
     const contactSection = document.getElementById('contact-section');
     if (contactSection) {
       contactSection.scrollIntoView({ behavior: 'smooth' });
@@ -18,7 +35,11 @@ export function Navbar() {
       <div className="px-4 sm:px-6 lg:px-20 flex items-center justify-between py-2">
         {/* Logo Section */}
         <div className="w-[200px]">
-          <a href="/" className="flex items-center gap-2">
+          <a 
+            href="/" 
+            className="flex items-center gap-2"
+            onClick={() => setActiveItem('home')}
+          >
             <img
               src="/ucv-logo.svg"
               alt="UCV Logo"
@@ -36,22 +57,30 @@ export function Navbar() {
 
         {/* Desktop Navigation Links */}
         <NavigationMenu className="absolute left-1/2 transform -translate-x-1/2">
-          <NavigationMenuList className="hidden lg:flex gap-12">
+          <NavigationMenuList className="hidden lg:flex gap-4">
             <NavigationMenuItem>
-              <a href="/our-tours" className="text-base font-medium text-content hover:text-primary transition-colors">
+              <a 
+                href="/our-tours" 
+                className={`text-base font-medium ${activeItem === 'our-tours' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
+                onClick={() => setActiveItem('our-tours')}
+              >
                 Our Tours
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a href="/about-us" className="text-base font-medium text-content hover:text-primary transition-colors">
+              <a 
+                href="/about-us" 
+                className={`text-base font-medium ${activeItem === 'about-us' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
+                onClick={() => setActiveItem('about-us')}
+              >
                 About us
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <a 
                 href="#contact-section" 
-                onClick={scrollToContact} 
-                className="text-base font-medium text-content hover:text-primary transition-colors"
+                onClick={scrollToContact}
+                className={`text-base font-medium ${activeItem === 'contact' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
               >
                 Contact
               </a>
@@ -72,7 +101,11 @@ export function Navbar() {
               <div className="flex flex-col h-full p-6">
                 {/* Logo and Close Button */}
                 <div className="mb-16 flex justify-between items-center">
-                  <a href="/" className="flex items-center gap-2">
+                  <a 
+                    href="/" 
+                    className="flex items-center gap-2"
+                    onClick={() => setActiveItem('home')}
+                  >
                     <img
                       src="/ucv-logo-white.svg"
                       alt="UCV Logo"
@@ -93,11 +126,19 @@ export function Navbar() {
 
                 {/* Navigation Links */}
                 <div className="flex flex-col">
-                  <a href="/our-tours" className="text-3xl font-normal text-white hover:text-primary transition-colors py-4">
+                  <a 
+                    href="/our-tours" 
+                    className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'our-tours' ? 'text-primary' : ''}`}
+                    onClick={() => setActiveItem('our-tours')}
+                  >
                     Our Tours
                   </a>
                   <div className="h-[1px] bg-white/20 my-3" />
-                  <a href="/about-us" className="text-3xl font-normal text-white hover:text-primary transition-colors py-4">
+                  <a 
+                    href="/about-us" 
+                    className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'about-us' ? 'text-primary' : ''}`}
+                    onClick={() => setActiveItem('about-us')}
+                  >
                     About us
                   </a>
                   <div className="h-[1px] bg-white/20 my-3" />
@@ -105,10 +146,11 @@ export function Navbar() {
                     href="#contact-section" 
                     onClick={(e) => {
                       scrollToContact(e);
+                      setActiveItem('contact');
                       const closeButton = document.querySelector('.close-sheet-button') as HTMLElement;
                       if (closeButton) closeButton.click();
                     }} 
-                    className="text-3xl font-normal text-white hover:text-primary transition-colors py-4"
+                    className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'contact' ? 'text-primary' : ''}`}
                   >
                     Contact
                   </a>
