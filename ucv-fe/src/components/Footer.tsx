@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 export function Footer() {
     return (
-        <footer className="bg-content text-white pb-12 lg:py-12 px-4 md:px-6 lg:px-20 mt-20 rounded-t-3xl">
+        <footer className="bg-content text-white pb-12 lg:py-12 px-4 md:px-6 lg:px-20 rounded-t-3xl">
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     {/* Left Side - Logo and Description */}
