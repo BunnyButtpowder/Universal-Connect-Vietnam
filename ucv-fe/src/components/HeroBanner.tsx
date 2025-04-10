@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/carousel"
 import { ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
+import Autoplay from "embla-carousel-autoplay";
 
 export function HeroBanner() {
     const carouselImages = [
@@ -63,7 +64,7 @@ export function HeroBanner() {
 
                 {/* Right Carousel - 4 columns with Tour Card Overlay */}
                 <div className="relative lg:col-span-4">
-                    <Carousel className="w-full" setApi={setApi}>
+                    <Carousel className="w-full" setApi={setApi} plugins={[Autoplay({ delay: 4000 })]}>
                         <CarouselContent>
                             {carouselImages.map((image, index) => (
                                 <CarouselItem key={index}>

@@ -1,10 +1,10 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Testimonials } from "@/components/Testimonials";
-import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { ArrowUpRight, School } from "lucide-react"
 import { useState, useEffect } from "react";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function AboutUs() {
     const [api, setApi] = useState<CarouselApi>();
@@ -48,12 +48,40 @@ export default function AboutUs() {
         <div>
             <Navbar />
             <div className="mt-20">
-                <div className="mx-4 md:mx-6 lg:mx-20 rounded-3xl overflow-hidden">
-                    <img src="/about-us.png" alt="University Event" className="w-full h-auto" />
+                <div className="mx-4 lg:mx-0 md:mx-6 lg:px-20 overflow-hidden relative"
+                    style={{
+                        height: typeof window !== 'undefined' && window.innerWidth < 1024
+                            ? "650px"
+                            : "700px"
+                    }}>
+                    {/* Decorative Image - Upper Left */}
+                    <img
+                        src="/vector.svg"
+                        alt="Decorative element"
+                        className="absolute -top-3 lg:top-10 left-0 lg:-left-20 max-w-none w-[200%] lg:w-300 h-[180px] lg:h-70 pointer-events-none -z-1"
+                    />
+                    <div className="relative w-full h-auto mt-16 lg:mt-0">
+                        <img 
+                            src="/about-us.png" 
+                            alt="University Event" 
+                            className="w-full rounded-3xl object-cover" 
+                            style={{
+                                height: typeof window !== 'undefined' && window.innerWidth < 1024
+                                    ? "480px"
+                                    : "700px"
+                            }}
+                        />
+                    </div>
+                    {/* Decorative Image - Lower Right */}
+                    <img
+                        src="/vector-1.svg"
+                        alt="Decorative element"
+                        className="absolute -bottom-3 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
+                    />
                 </div>
 
                 {/* About Section */}
-                <div className="mx-4 md:mx-6 lg:mx-20 mt-16 px-4 md:px-6 lg:px-26">
+                <div className="md:mx-6 lg:mx-20 mt-2 lg:mt-16 px-4 md:px-6 lg:px-26">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-20">
                         {/* Left Column */}
                         <div className="flex flex-col lg:col-span-3 gap-6">
@@ -65,8 +93,8 @@ export default function AboutUs() {
                             </div>
 
                             {/* Carousel */}
-                            <div className="about-carousel-container relative rounded-3xl overflow-hidden">
-                                <Carousel className="w-full" setApi={setApi}>
+                            <div className="relative rounded-3xl overflow-hidden">
+                                <Carousel className="w-full" setApi={setApi} plugins={[Autoplay({ delay: 4000 })]}>
                                     <CarouselContent>
                                         <CarouselItem>
                                             <div className="carousel-image-container h-[500px] relative">
@@ -98,7 +126,7 @@ export default function AboutUs() {
                                     </CarouselContent>
 
                                     {/* Pagination Indicator - Visible on all screens */}
-                                    <div className="absolute bottom-4 right-4 px-4 py-2 font-medium text-lg items-center gap-2 flex">
+                                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:right-4 px-4 py-2 font-medium text-lg items-center gap-2 flex">
                                         <div className="flex space-x-1 items-center">
                                             {Array.from({ length: count }).map((_, i) => (
                                                 <span
@@ -116,7 +144,7 @@ export default function AboutUs() {
                                     </div>
 
                                     {/* Portfolio Button */}
-                                    <div className="absolute bottom-8 left-8">
+                                    <div className="absolute bottom-14 left-9 lg:bottom-8 lg:left-8">
                                         <button
                                             className="bg-blue-500 hover:bg-blue-950 text-white text-base font-medium min-w-[130px] px-5 py-4 rounded-full group flex items-center justify-between transition-all duration-300 hover:min-w-[140px] cursor-pointer space-x-2"
                                         >
@@ -163,7 +191,7 @@ export default function AboutUs() {
                     </div>
                 </div>
 
-                <div className="mx-4 md:mx-6 lg:mx-20">
+                <div className="md:mx-6 lg:mx-20">
                     <Testimonials />
                 </div>
             </div>
