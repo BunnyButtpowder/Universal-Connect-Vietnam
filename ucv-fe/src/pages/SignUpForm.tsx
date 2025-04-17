@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft, MapPin, Clock } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import React from "react";

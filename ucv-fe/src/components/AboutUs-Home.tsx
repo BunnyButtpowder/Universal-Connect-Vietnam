@@ -1,4 +1,4 @@
-import { ArrowUpRight, School, ArrowRight } from "lucide-react"
+import { ArrowUpRight, School } from "lucide-react"
 
 export function AboutUsHome() {
     const stats = [
