@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import './App.css'
 import Home from './pages/Home'
 import AboutUs from './pages/AboutUs'
-
+import OurTours from './pages/OurTours'
+import TourDetails from './pages/TourDetails'
 function App() {
 
   return (
@@ -10,6 +11,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/our-tours" element={<OurTours />} />
+        <Route path="/tour-details" element={<TourDetails />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
