@@ -2,7 +2,7 @@ import { ArrowUpRight, ArrowRight } from "lucide-react"
 
 export function DiscoverSchoolTourHome() {
     return (
-        <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+        <section className="relative px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
             {/* Decorative Image - Upper Left */}
             <img
                 src="/vector.svg"
@@ -29,10 +29,12 @@ export function DiscoverSchoolTourHome() {
                             As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.
                         </p>
 
-                        <button className="flex items-center space-x-2 bg-content hover:bg-blue-500 text-white text-xs font-medium px-5 py-3 rounded-full group hover:translate-x-2 hover:min-w-[140px] transition-all duration-300 cursor-pointer">
-                            <span>Explore All Our Tours</span>
-                            <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                        </button>
+                        <a href="/our-tours">
+                            <button className="flex items-center space-x-2 bg-content hover:bg-blue-500 text-white text-xs font-medium px-5 py-3 rounded-full group hover:translate-x-2 hover:min-w-[140px] transition-all duration-300 cursor-pointer">
+                                <span>Explore All Our Tours</span>
+                                <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                            </button>
+                        </a>
                     </div>
                 </div>
 
@@ -40,7 +42,7 @@ export function DiscoverSchoolTourHome() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Tour Card 1 */}
                     <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
-                        <div className="relative h-72 overflow-hidden rounded-xl">
+                        <div className="relative h-90 overflow-hidden rounded-xl">
                             <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                                 <span className="font-bold text-xs text-content">INCOMING • JULY 4</span>
                             </div>
@@ -54,7 +56,7 @@ export function DiscoverSchoolTourHome() {
                                 </div>
                             </div>
                         </div>
-                        <div className="px-6 mb-6 space-y-3">
+                        <div className="px-6 mb-10 mt-2 space-y-3">
                             <h3 className="font-bold text-base text-content">Tour Spring 2025</h3>
                             <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
                                 Short Description At IUC, we're passionate about bridging the gap between international universities ...
@@ -77,7 +79,7 @@ export function DiscoverSchoolTourHome() {
 
                     {/* Tour Card 2 */}
                     <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
-                        <div className="relative h-72 overflow-hidden rounded-xl">
+                        <div className="relative h-90 overflow-hidden rounded-xl">
                             <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                                 <span className="font-bold text-xs text-content">INCOMING • JULY 4</span>
                             </div>
@@ -91,7 +93,7 @@ export function DiscoverSchoolTourHome() {
                                 </div>
                             </div>
                         </div>
-                        <div className="px-6 mb-6 space-y-3">
+                        <div className="px-6 mb-10 mt-2 space-y-3">
                             <h3 className="font-bold text-base text-content">Tour Spring 2025</h3>
                             <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
                                 Short Description At IUC, we're passionate about bridging the gap between international universities ...
@@ -114,7 +116,7 @@ export function DiscoverSchoolTourHome() {
 
                     {/* Tour Card 3 */}
                     <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
-                        <div className="relative h-72 overflow-hidden rounded-xl">
+                        <div className="relative h-90 overflow-hidden rounded-xl">
                             <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                                 <span className="font-bold text-xs text-content">INCOMING • JULY 4</span>
                             </div>
@@ -128,7 +130,7 @@ export function DiscoverSchoolTourHome() {
                                 </div>
                             </div>
                         </div>
-                        <div className="px-6 mb-6 space-y-3">
+                        <div className="px-6 mb-10 mt-2 space-y-3">
                             <h3 className="font-bold text-base text-content">Tour Spring 2025</h3>
                             <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
                                 Short Description At IUC, we're passionate about bridging the gap between international universities ...
