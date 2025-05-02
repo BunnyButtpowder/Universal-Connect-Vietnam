@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useContentStore } from "@/lib/contentStore";
 
 import {
     Pagination,
@@ -168,6 +169,17 @@ export default function OurTours() {
     const [currentPage, setCurrentPage] = useState(1);
     const [toursPerPage, setToursPerPage] = useState(9); // 9 cards per page in desktop view
     const totalPages = Math.ceil(TOURS_DATA.length / toursPerPage);
+    const getPageContent = useContentStore(state => state.getPageContent);
+    const ourToursContent = getPageContent('our-tours');
+    
+    // Header section content
+    const headerTitle = ourToursContent?.sections.headerSection?.items.find(
+        item => item.id === 'headerSection-title'
+    )?.content || "Exclusive access to prestigious state schools, hand-picked for their academic excellence.";
+    
+    const headerDescription = ourToursContent?.sections.headerSection?.items.find(
+        item => item.id === 'headerSection-description'
+    )?.content || "As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.";
 
     // Update toursPerPage based on window width
     useEffect(() => {
@@ -292,11 +304,11 @@ export default function OurTours() {
                         <div className="grid grid-cols-1 lg:grid-cols-8">
                             <div className="space-y-6 lg:col-span-6">
                                 <h2 className="text-3xl lg:text-5xl font-medium text-content">
-                                    Exclusive access to prestigious state schools, hand-picked for their academic excellence.
+                                    {headerTitle}
                                 </h2>
 
                                 <p className="text-sm text-content font-medium">
-                                    As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.
+                                    {headerDescription}
                                 </p>
                             </div>
                         </div>

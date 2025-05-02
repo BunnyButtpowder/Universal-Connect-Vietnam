@@ -9,6 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useContentStore } from "../lib/contentStore";
 
 // Define the testimonial type
 interface Testimonial {
@@ -20,25 +21,42 @@ interface Testimonial {
 }
 
 export function Testimonials() {
+    const getItemById = useContentStore(state => state.getItemById);
+
+    // Get section headings from the store
+    const headingContent = getItemById('home', 'testimonials', 'testimonials-heading')?.content || 
+        "TESTIMONIALS";
+    const titleContent = getItemById('home', 'testimonials', 'testimonials-title')?.content || 
+        "What Universities Say About Us";
+
     // Sample testimonials data - replace with your actual data
     const testimonials: Testimonial[] = [
         {
             id: 1,
-            content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
-            university: "Alberta University",
-            subtitle: "Title something",
+            content: getItemById('home', 'testimonials', 'testimonial-1-content')?.content || 
+                "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+            university: getItemById('home', 'testimonials', 'testimonial-1-university')?.content || 
+                "Alberta University",
+            subtitle: getItemById('home', 'testimonials', 'testimonial-1-subtitle')?.content || 
+                "Title something",
         },
         {
             id: 2,
-            content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
-            university: "Alberta University",
-            subtitle: "Title something",
+            content: getItemById('home', 'testimonials', 'testimonial-2-content')?.content || 
+                "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+            university: getItemById('home', 'testimonials', 'testimonial-2-university')?.content || 
+                "Alberta University",
+            subtitle: getItemById('home', 'testimonials', 'testimonial-2-subtitle')?.content || 
+                "Title something",
         },
         {
             id: 3,
-            content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
-            university: "Alberta University",
-            subtitle: "Title something",
+            content: getItemById('home', 'testimonials', 'testimonial-3-content')?.content || 
+                "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+            university: getItemById('home', 'testimonials', 'testimonial-3-university')?.content || 
+                "Alberta University",
+            subtitle: getItemById('home', 'testimonials', 'testimonial-3-subtitle')?.content || 
+                "Title something",
             image: "/university-event.jpg", // Replace with actual image path
         },
     ];
@@ -62,8 +80,8 @@ export function Testimonials() {
                     {/* Left column - Title and navigation arrows */}
                     <div className="lg:col-span-3 space-y-6">
                         <div className="space-y-2">
-                            <h4 className="text-header text-base font-bold">TESTIMONIALS</h4>
-                            <h2 className="text-4xl font-medium text-content">What Universities Say About Us</h2>
+                            <h4 className="text-header text-base font-bold">{headingContent}</h4>
+                            <h2 className="text-4xl font-medium text-content">{titleContent}</h2>
                         </div>
                         
                         {/* Navigation buttons */}

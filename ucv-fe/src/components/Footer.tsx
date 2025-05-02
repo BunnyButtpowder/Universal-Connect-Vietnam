@@ -1,7 +1,109 @@
 import { Phone, Mail } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useState, FormEvent } from "react"
+import { useContentStore } from "../lib/contentStore"
 
 export function Footer() {
+    const getItemById = useContentStore(state => state.getItemById);
+
+    // Get footer content from store
+    const descriptionContent = getItemById('home', 'footer', 'footer-description')?.content || 
+        "Help university representatives like you unlock access to these schools through expertly curated tours.";
+    const phoneContent = getItemById('home', 'footer', 'footer-phone')?.content || 
+        "+84 (0)34444 8680";
+    const email1Content = getItemById('home', 'footer', 'footer-email1')?.content || 
+        "bernd@iucconsulting.com";
+    const email2Content = getItemById('home', 'footer', 'footer-email2')?.content || 
+        "bfwidemann@gmail.com";
+    const copyrightContent = getItemById('home', 'footer', 'footer-copyright')?.content || 
+        "2025©UCV. All rights reserved.";
+    const contactHeadingContent = getItemById('home', 'footer', 'footer-contact-heading')?.content || 
+        "GET IN TOUCH";
+    const contactTitleContent = getItemById('home', 'footer', 'footer-contact-title')?.content || 
+        "Build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape firsthand.";
+
+    const [formData, setFormData] = useState({
+        fullName: "",
+        organization: "",
+        email: "",
+        tourRegions: {
+            central: false,
+            northern: false
+        },
+        message: ""
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [id]: value
+        }));
+    };
+
+    const handleCheckboxChange = (id: string) => {
+        setFormData(prev => ({
+            ...prev,
+            tourRegions: {
+                ...prev.tourRegions,
+                [id]: !prev.tourRegions[id as keyof typeof prev.tourRegions]
+            }
+        }));
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            // Prepare tour regions array for API
+            const tourRegions = [];
+            if (formData.tourRegions.central) tourRegions.push("Central Vietnam");
+            if (formData.tourRegions.northern) tourRegions.push("Northern Vietnam");
+
+            // Prepare request body
+            const requestBody = {
+                fullname: formData.fullName,
+                organization: formData.organization,
+                email: formData.email,
+                tourRegions: tourRegions,
+                message: formData.message
+            };
+
+            // Send API request
+            const response = await fetch("http://localhost:3000/api/contact/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (response.ok) {
+                // Reset form on success
+                setFormData({
+                    fullName: "",
+                    organization: "",
+                    email: "",
+                    tourRegions: {
+                        central: false,
+                        northern: false
+                    },
+                    message: ""
+                });
+                alert("Message sent successfully!");
+            } else {
+                alert("Failed to send message. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            alert("An error occurred. Please try again later.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <footer className="bg-content text-white pb-12 lg:py-12 px-4 md:px-6 lg:px-20 rounded-t-3xl">
             <div className="container mx-auto">
@@ -26,8 +128,7 @@ export function Footer() {
                         </div>
 
                         <p className="text-xs max-w-md text-white/50 text-center lg:text-left">
-                            Help university representatives like you unlock access to
-                            these schools through expertly curated tours.
+                            {descriptionContent}
                         </p>
                         
                         {/* Contact Info - Mobile & Desktop */}
@@ -38,8 +139,8 @@ export function Footer() {
                                 </div>
                                 <div className="flex flex-col">
                                     <h5 className="text-white font-medium text-xs">HOTLINE</h5>
-                                    <a href="tel:+84034444868" className="text-white hover:text-white text-xs">
-                                        +84 (0)34444 8680
+                                    <a href={`tel:${phoneContent}`} className="text-white hover:text-white text-xs">
+                                        {phoneContent}
                                     </a>
                                 </div>
                             </div>
@@ -50,11 +151,11 @@ export function Footer() {
                                 </div>
                                 <div className="flex flex-col">
                                     <h5 className="text-white font-medium text-xs">EMAIL</h5>
-                                    <a href="mailto:bernd@iucconsulting.com" className="text-white hover:text-white text-xs">
-                                        bernd@iucconsulting.com
+                                    <a href={`mailto:${email1Content}`} className="text-white hover:text-white text-xs">
+                                        {email1Content}
                                     </a>
-                                    <a href="mailto:bfwidemann@gmail.com" className="text-white hover:text-white text-xs">
-                                        bfwidemann@gmail.com
+                                    <a href={`mailto:${email2Content}`} className="text-white hover:text-white text-xs">
+                                        {email2Content}
                                     </a>
                                 </div>
                             </div>
@@ -63,7 +164,7 @@ export function Footer() {
 
                         {/* Copyright */}
                         <div className="mt-10 lg:mt-40 text-xs text-white/20">
-                            2025©UCV. All rights reserved.
+                            {copyrightContent}
                         </div>
                     </div>
 
@@ -73,14 +174,14 @@ export function Footer() {
                     <div id="contact-section" className="space-y-6 lg:col-span-8 order-2 lg:order-2 mt-6 lg:mt-0">
                         {/* Get in Touch Section */}
                         <div className="">
-                            <h4 className="font-semibold mb-2 text-header text-sm">GET IN TOUCH</h4>
+                            <h4 className="font-semibold mb-2 text-header text-sm">{contactHeadingContent}</h4>
                             <h2 className="text-2xl lg:text-4xl text-white">
-                                Build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape firsthand.
+                                {contactTitleContent}
                             </h2>
 
                             {/* Contact Form */}
                             <div className="mt-8 footer-bg-color p-4 lg:p-6 rounded-lg">
-                                <form className="space-y-6">
+                                <form className="space-y-6" onSubmit={handleSubmit}>
                                     {/* Input Fields - Mobile stacked, Desktop in row */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 md:gap-4">
                                         {/* Full Name */}
@@ -93,6 +194,9 @@ export function Footer() {
                                                 id="fullName"
                                                 placeholder="What's your name?"
                                                 className="text-xs w-full bg-transparent border-b border-gray-200 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400"
+                                                value={formData.fullName}
+                                                onChange={handleInputChange}
+                                                required
                                             />
                                         </div>
 
@@ -106,6 +210,9 @@ export function Footer() {
                                                 id="organization"
                                                 placeholder="Your university, school, or organization name"
                                                 className="text-xs w-full bg-transparent border-b border-gray-200 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400"
+                                                value={formData.organization}
+                                                onChange={handleInputChange}
+                                                required
                                             />
                                         </div>
 
@@ -119,6 +226,9 @@ export function Footer() {
                                                 id="email"
                                                 placeholder="example@gmail.com"
                                                 className="text-xs w-full bg-transparent border-b border-gray-200 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -134,7 +244,9 @@ export function Footer() {
                                                 <div className="flex items-center me-10 lg:me-4">
                                                     <Checkbox 
                                                         id="central" 
-                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content" 
+                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content"
+                                                        checked={formData.tourRegions.central}
+                                                        onCheckedChange={() => handleCheckboxChange("central")}
                                                     />
                                                     <label htmlFor="central" className="ml-2 text-white text-sm cursor-pointer">
                                                         Central
@@ -142,10 +254,12 @@ export function Footer() {
                                                 </div>
                                                 <div className="flex items-center">
                                                     <Checkbox 
-                                                        id="northernVietnam" 
-                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content" 
+                                                        id="northern" 
+                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content"
+                                                        checked={formData.tourRegions.northern}
+                                                        onCheckedChange={() => handleCheckboxChange("northern")}
                                                     />
-                                                    <label htmlFor="northernVietnam" className="ml-2 text-white text-sm cursor-pointer">
+                                                    <label htmlFor="northern" className="ml-2 text-white text-sm cursor-pointer">
                                                         Northern Vietnam
                                                     </label>
                                                 </div>
@@ -162,6 +276,8 @@ export function Footer() {
                                                 rows={2}
                                                 placeholder="Anything else you'd like us to know?"
                                                 className="text-xs w-full bg-transparent border-b border-gray-200 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400"
+                                                value={formData.message}
+                                                onChange={handleInputChange}
                                             ></textarea>
                                         </div>
                                     </div>
@@ -171,8 +287,9 @@ export function Footer() {
                                         <button
                                             type="submit"
                                             className="w-full md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
+                                            disabled={isSubmitting}
                                         >
-                                            Send Message
+                                            {isSubmitting ? "Sending..." : "Send Message"}
                                             <img src="/send-icon.svg" alt="Send Icon" className="h-3 w-3 ms-2 group-hover:translate-x-1 transition-transform duration-300" />
                                         </button>
                                     </div>

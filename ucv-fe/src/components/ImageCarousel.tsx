@@ -34,8 +34,8 @@ const ImageCarousel: React.FC = () => {
           <div 
             className="flex transition-transform duration-700 ease-in-out"
             style={{ 
-              transform: `translateX(-${currentIndex * 20}%)`,
-              width: `${images.length * 33.33}%` // Each card takes ~33% of container width
+              transform: `translateX(-${currentIndex * 16.5}%)`,
+              width: `${images.length * 33.33}%` // Each card takes ~33.33% of container width
             }}
           >
             {images.map((image, index) => (
