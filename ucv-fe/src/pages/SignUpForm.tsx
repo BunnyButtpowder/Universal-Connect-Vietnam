@@ -2,8 +2,10 @@ import { Navbar } from "@/components/Navbar";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
+import { useContentStore } from "@/lib/contentStore";
+import { ContentItem } from "@/lib/types";
 
 // Define types for form data
 interface FormData {
@@ -46,7 +48,25 @@ interface ValidationErrors {
     bank?: string;
 }
 
+// Helper function to get content item by ID
+const getContentById = (items: ContentItem[] | undefined, id: string): string => {
+    if (!items) return "";
+    const item = items.find(item => item.id === id);
+    return item ? item.content : "";
+};
+
 export default function SignUpForm() {
+    const getPageContent = useContentStore(state => state.getPageContent);
+    const [signUpFormContent, setSignUpFormContent] = useState(getPageContent('signup-form'));
+    
+    // Refresh content when component mounts
+    useEffect(() => {
+        const content = getPageContent('signup-form');
+        if (content) {
+            setSignUpFormContent(content);
+        }
+    }, [getPageContent]);
+    
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [formData, setFormData] = useState<FormData>({
@@ -264,20 +284,19 @@ export default function SignUpForm() {
                                     className="w-58 h-58 lg:w-68 lg:h-68 mx-auto mb-6"
                                 />
 
-                                <h1 className="text-4xl lg:text-5xl font-semibold text-content mb-6">You're all set!</h1>
+                                <h1 className="text-4xl lg:text-5xl font-semibold text-content mb-6">
+                                    {getContentById(signUpFormContent?.sections.successSection?.items, 'success-heading')}
+                                </h1>
 
                                 <p className="text-content font-medium mb-8 text-sm">
-                                    Thank you for completing the form. Our team will review your details and get in
-                                    touch with you shortly. If you have any questions, feel free to reach out!
-                                    <br /><br />
-                                    Your contract will be emailed to you soon.
+                                    {getContentById(signUpFormContent?.sections.successSection?.items, 'success-message')}
                                 </p>
 
                                 <Link
                                     to="/our-tours"
                                     className="inline-flex w-full md:w-auto items-center justify-center bg-blue-500 hover:bg-blue-950 text-white px-8 py-3 rounded-full font-semibold group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                 >
-                                    Back to Tours
+                                    {getContentById(signUpFormContent?.sections.successSection?.items, 'success-button')}
                                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                                 </Link>
                             </div>
@@ -315,11 +334,12 @@ export default function SignUpForm() {
                             </Link>
                         </div>
 
-                        <h1 className="text-4xl font-semibold text-center text-content mb-4">Join Our Next Tour</h1>
+                        <h1 className="text-4xl font-semibold text-center text-content mb-4">
+                            {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-title')}
+                        </h1>
 
                         <p className="text-center text-content font-medium text-sm mb-5 max-w-3xl mx-auto lg:px-4">
-                            Ready to connect with Vietnam's top state schools? Sign up now to secure your spot on one of our exclusive tours.
-                            Simply fill out the form below, and we'll reach out with the next steps.
+                            {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-description')}
                         </p>
 
                         {/* Steps Tracker */}
@@ -350,12 +370,14 @@ export default function SignUpForm() {
 
                         {currentStep === 1 && (
                             <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-xl font-bold text-content mb-2">Share Your Details & Let's Connect!</h2>
+                                <h2 className="text-xl font-bold text-content mb-2">
+                                    {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-heading')}
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div>
                                         <label htmlFor="fullName" className="block text-blue-600 mb-2">
-                                            Full name <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-fullname-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -372,7 +394,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="organization" className="block text-blue-600 mb-2">
-                                            University/Organization <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-organization-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -389,7 +411,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="phone" className="block text-blue-600 mb-2">
-                                            Phone number <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-phone-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -406,7 +428,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="email" className="block text-blue-600 mb-2">
-                                            Email <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-email-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="email"
@@ -430,7 +452,7 @@ export default function SignUpForm() {
                                         onCheckedChange={(checked) => handleCheckboxChange('wantCallback', checked)}
                                     />
                                     <label htmlFor="wantCallback" className="text-content font-medium text-xs pt-1 cursor-pointer">
-                                        Check this box if you'd like to discuss any details - we're happy to schedule a call and answer your questions!
+                                        {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-callback-label')}
                                     </label>
                                 </div>
 
@@ -440,7 +462,7 @@ export default function SignUpForm() {
                                         className="w-full md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                         onClick={nextStep}
                                     >
-                                        Next Step
+                                        {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-next-button')}
                                         <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
                                     </button>
                                 </div>
@@ -449,7 +471,9 @@ export default function SignUpForm() {
 
                         {currentStep === 2 && (
                             <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-xl font-bold text-content mb-6">Tailor Your Tour</h2>
+                                <h2 className="text-xl font-bold text-content mb-6">
+                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-heading')}
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {/* Tour Image */}
@@ -461,29 +485,40 @@ export default function SignUpForm() {
                                                 className="w-full h-auto"
                                             />
                                             <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded-sm flex items-center text-xs">
-                                                <span className="font-semibold mr-1 text-content">INCOMING</span>
-                                                <span className="font-semibold text-content">• JULY 4</span>
+                                                <span className="font-semibold mr-1 text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-date')}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Tour Details */}
                                     <div className="md:col-span-2 space-y-4">
-                                        <h3 className="text-xl font-bold text-content border-b-2 border-blue-200/70 pb-3">Tour Spring 2025</h3>
+                                        <h3 className="text-xl font-bold text-content border-b-2 border-blue-200/70 pb-3">
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-title')}
+                                        </h3>
 
                                         <div className="flex items-center">
                                             <img src="/map-pin-blue-950.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
                                             <div>
-                                                <p className="text-sm font-bold uppercase text-content">LOCATION</p>
-                                                <p className="text-xs text-content">Central Vietnam (Hue, Da Nang)</p>
+                                                <p className="text-sm font-bold uppercase text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-title')}
+                                                </p>
+                                                <p className="text-xs text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-content')}
+                                                </p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center">
                                             <img src="/duration.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
                                             <div>
-                                                <p className="text-sm font-bold uppercase text-content">DURATION</p>
-                                                <p className="text-xs text-content">We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.</p>
+                                                <p className="text-sm font-bold uppercase text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-title')}
+                                                </p>
+                                                <p className="text-xs text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-content')}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -493,36 +528,42 @@ export default function SignUpForm() {
                                 <div className="mt-6 rounded-xl bg-white overflow-hidden">
                                     <div className="lg:grid grid-cols-4">
                                         <div className="p-3 bg-content text-white text-start font-semibold lg:border-r-3 border-white lg:col-span-3 text-sm">
-                                            Registration
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-registration-title')}
                                         </div>
                                         <div className="p-3 bg-content text-white text-start font-semibold lg:col-span-1 text-sm hidden lg:block">
-                                            Returning University
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-title')}
                                         </div>
                                     </div>
 
                                     <div className="lg:grid grid-cols-4">
                                         <div className="p-3 lg:col-span-3">
-                                            <div className="font-bold border-b-2 border-blue-200/70 text-content pb-3 text-md">Early Bird - 24 December 2024</div>
+                                            <div className="font-bold border-b-2 border-blue-200/70 text-content pb-3 text-md">
+                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-earlybird-title')}
+                                            </div>
                                             <div className="my-3">
-                                                <h4 className="font-bold text-content">Price include</h4>
+                                                <h4 className="font-bold text-content">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-include-title')}
+                                                </h4>
                                                 <ul className="m-3 text-sm list-disc list-inside text-content font-medium">
-                                                    <li>9 - 11 school visits in 3 cities.</li>
-                                                    <li>Support throughout the tour and school visits.</li>
-                                                    <li>One stall at each school fair.</li>
-                                                    <li>Reception dinner.</li>
-                                                    <li>Refreshments and snacks between sessions.</li>
-                                                    <li>Lunch, coffee and dinner on all 4 days (no dinner on final day).</li>
-                                                    <li>Intra and inter city transport (in Hue, Danang and Tam Ky).</li>
-                                                    <li>Hotel suggestions & discount.</li>
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-include-list')
+                                                        .split('\n')
+                                                        .map((item, index) => (
+                                                            <li key={index}>{item}</li>
+                                                        ))
+                                                    }
                                                 </ul>
                                             </div>
                                             {/* Preferences */}
                                             <div className="my-1">
-                                                <h4 className="font-bold text-content mb-4">Adjust everything to fit your preferences!</h4>
+                                                <h4 className="font-bold text-content mb-4">
+                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-preferences-title')}
+                                                </h4>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div>
-                                                        <p className="font-bold text-content text-sm mb-2">School Visits in Selected Cities</p>
+                                                        <p className="font-bold text-content text-sm mb-2">
+                                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-cities-title')}
+                                                        </p>
                                                         <div className="space-y-2">
                                                             <div className="flex items-center">
                                                                 <Checkbox
@@ -531,7 +572,9 @@ export default function SignUpForm() {
                                                                     checked={formData.cities.hue}
                                                                     onCheckedChange={(checked) => handleCityChange('hue', checked)}
                                                                 />
-                                                                <label htmlFor="hue" className="text-sm text-content font-medium cursor-pointer">Hue</label>
+                                                                <label htmlFor="hue" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hue-label')}
+                                                                </label>
                                                             </div>
                                                             <div className="flex items-center">
                                                                 <Checkbox
@@ -540,7 +583,9 @@ export default function SignUpForm() {
                                                                     checked={formData.cities.danang}
                                                                     onCheckedChange={(checked) => handleCityChange('danang', checked)}
                                                                 />
-                                                                <label htmlFor="danang" className="text-sm text-content font-medium cursor-pointer">Danang</label>
+                                                                <label htmlFor="danang" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-danang-label')}
+                                                                </label>
                                                             </div>
                                                             <div className="flex items-center">
                                                                 <Checkbox
@@ -549,13 +594,17 @@ export default function SignUpForm() {
                                                                     checked={formData.cities.tamKy}
                                                                     onCheckedChange={(checked) => handleCityChange('tamKy', checked)}
                                                                 />
-                                                                <label htmlFor="tamKy" className="text-sm text-content font-medium cursor-pointer">Tam Ky/Hoi An</label>
+                                                                <label htmlFor="tamKy" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tamky-label')}
+                                                                </label>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div>
-                                                        <p className="font-bold text-content text-sm mb-2">Seamless Stay & City Transfers</p>
+                                                        <p className="font-bold text-content text-sm mb-2">
+                                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-transfers-title')}
+                                                        </p>
                                                         <div className="space-y-2">
                                                             <div className="flex items-center">
                                                                 <Checkbox
@@ -564,7 +613,9 @@ export default function SignUpForm() {
                                                                     checked={formData.transfers.hotel}
                                                                     onCheckedChange={(checked) => handleTransferChange('hotel', checked)}
                                                                 />
-                                                                <label htmlFor="hotel" className="text-sm text-content font-medium cursor-pointer">Hotel for 4 days</label>
+                                                                <label htmlFor="hotel" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hotel-label')}
+                                                                </label>
                                                             </div>
                                                             <div className="flex items-center">
                                                                 <Checkbox
@@ -573,7 +624,9 @@ export default function SignUpForm() {
                                                                     checked={formData.transfers.travel}
                                                                     onCheckedChange={(checked) => handleTransferChange('travel', checked)}
                                                                 />
-                                                                <label htmlFor="travel" className="text-sm text-content font-medium cursor-pointer">Travel Between 3 Cities</label>
+                                                                <label htmlFor="travel" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-travel-label')}
+                                                                </label>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -581,7 +634,9 @@ export default function SignUpForm() {
                                             </div>
                                         </div>
                                         <div className="p-4 lg:col-span-1 signup-form-bg flex items-center justify-center hidden lg:block">
-                                            <div className="text-lg font-bold p-4 text-content">USD $1700</div>
+                                            <div className="text-lg font-bold p-4 text-content">
+                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-price')}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -589,10 +644,12 @@ export default function SignUpForm() {
                                 {/* Mobile display only */}
                                 <div className="mt-5 rounded-xl signup-form-bg overflow-hidden lg:hidden">
                                     <div className="p-3 bg-content text-white text-start font-semibold text-sm">
-                                        Returning University
+                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-title')}
                                     </div>
                                     <div className="px-3 py-4 lg:col-span-1 signup-form-bg flex items-center">
-                                        <div className="text-lg font-bold text-content">USD $1700</div>
+                                        <div className="text-lg font-bold text-content">
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-price')}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -602,7 +659,7 @@ export default function SignUpForm() {
                                         className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
                                         onClick={prevStep}
                                     >
-                                        Back
+                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-back-button')}
                                     </button>
 
                                     <button
@@ -610,7 +667,7 @@ export default function SignUpForm() {
                                         className="bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                         onClick={nextStep}
                                     >
-                                        Next Step
+                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-next-button')}
                                         <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
                                     </button>
                                 </div>
@@ -619,11 +676,15 @@ export default function SignUpForm() {
 
                         {currentStep === 3 && (
                             <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-lg font-bold text-content mb-2">Final Details for Your Tour</h2>
+                                <h2 className="text-lg font-bold text-content mb-2">
+                                    {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-heading')}
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div>
-                                        <label htmlFor="organization" className="block text-blue-600 mb-2">Organization</label>
+                                        <label htmlFor="organization" className="block text-blue-600 mb-2">
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-organization-label')}
+                                        </label>
                                         <input
                                             type="text"
                                             id="organization"
@@ -636,7 +697,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="headOffice" className="block text-blue-600 mb-2">
-                                            Head office address <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-headoffice-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -655,7 +716,7 @@ export default function SignUpForm() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div>
                                         <label htmlFor="businessRegistration" className="block text-blue-600 mb-2">
-                                            Business registration number <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-registration-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -672,7 +733,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="legalRepresentative" className="block text-blue-600 mb-2">
-                                            Legal representative <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-representative-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -691,7 +752,7 @@ export default function SignUpForm() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                     <div>
                                         <label htmlFor="position" className="block text-blue-600 mb-2">
-                                            Position <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-position-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -707,7 +768,9 @@ export default function SignUpForm() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="phone" className="block text-blue-600 mb-2">Phone</label>
+                                        <label htmlFor="phone" className="block text-blue-600 mb-2">
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-phone-label')}
+                                        </label>
                                         <input
                                             type="text"
                                             id="phone"
@@ -719,7 +782,9 @@ export default function SignUpForm() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="email" className="block text-blue-600 mb-2">Email</label>
+                                        <label htmlFor="email" className="block text-blue-600 mb-2">
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-email-label')}
+                                        </label>
                                         <input
                                             type="email"
                                             id="email"
@@ -734,7 +799,7 @@ export default function SignUpForm() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                                     <div>
                                         <label htmlFor="accountNumber" className="block text-blue-600 mb-2">
-                                            Company account number <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-account-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -751,7 +816,7 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="bank" className="block text-blue-600 mb-2">
-                                            at bank <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-bank-label')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -767,7 +832,9 @@ export default function SignUpForm() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="swift" className="block text-blue-600 mb-2">SWIFT (Optional)</label>
+                                        <label htmlFor="swift" className="block text-blue-600 mb-2">
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-swift-label')}
+                                        </label>
                                         <input
                                             type="text"
                                             id="swift"
@@ -785,7 +852,7 @@ export default function SignUpForm() {
                                         className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
                                         onClick={prevStep}
                                     >
-                                        Back
+                                        {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-back-button')}
                                     </button>
 
                                     <button
@@ -793,7 +860,7 @@ export default function SignUpForm() {
                                         className="bg-blue-500 hover:bg-blue-950 text-white text-xs lg:text-sm font-semibold min-w-[130px] px-5 py-4 lg:py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                         onClick={handleSubmit}
                                     >
-                                        Done! Let's Get Started
+                                        {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-submit-button')}
                                         <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
                                     </button>
                                 </div>

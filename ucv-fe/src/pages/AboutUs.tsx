@@ -5,11 +5,48 @@ import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/com
 import { ArrowUpRight, School } from "lucide-react"
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
+import { useContentStore } from "@/lib/contentStore";
 
 export default function AboutUs() {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(1);
     const count = 3;
+
+    // Get content from store
+    const getItemById = useContentStore(state => state.getItemById);
+    
+    // Main banner content
+    const mainBannerHeading = getItemById('about-us', 'mainBanner', 'mainBanner-heading')?.content || 
+        "We're passionate about bridging the gap between international universities and Vietnam's top state schools.";
+    const mainBannerImage = getItemById('about-us', 'mainBanner', 'mainBanner-image')?.content || 
+        "/about-us.png";
+    
+    // Carousel content
+    const carouselImage1 = getItemById('about-us', 'carouselSection', 'carousel-image1')?.content || 
+        "/classroom.png";
+    const carouselImage2 = getItemById('about-us', 'carouselSection', 'carousel-image2')?.content || 
+        "/display1.png";
+    const carouselImage3 = getItemById('about-us', 'carouselSection', 'carousel-image3')?.content || 
+        "/display2.png";
+    const carouselButton = getItemById('about-us', 'carouselSection', 'carousel-button')?.content || 
+        "CHECK OUT OUR PORTFOLIO";
+    
+    // Who We Are content
+    const whoWeAreTitle = getItemById('about-us', 'whoWeAre', 'whoWeAre-title')?.content || 
+        "WHO WE ARE";
+    const whoWeAreContent = getItemById('about-us', 'whoWeAre', 'whoWeAre-content')?.content || 
+        "At UCV, we're passionate about bridging the gap between international universities and Vietnam's top state schools. Based in the heart of Vietnam, we've spent years cultivating relationships with leading educational institutions in Central and Northern regions.";
+    
+    // Our Mission content
+    const ourMissionTitle = getItemById('about-us', 'ourMission', 'ourMission-title')?.content || 
+        "OUR MISSION";
+    const ourMissionContent = getItemById('about-us', 'ourMission', 'ourMission-content')?.content || 
+        "To help university representatives like you unlock access to these schools. With our local expertise and tailored approach, we make your outreach seamless, impactful, and rewarding.";
+    
+    // Statistics content
+    const stat1 = getItemById('about-us', 'statistics', 'statistics-stat1');
+    const stat2 = getItemById('about-us', 'statistics', 'statistics-stat2');
+    const stat3 = getItemById('about-us', 'statistics', 'statistics-stat3');
 
     useEffect(() => {
         if (!api) {
@@ -25,22 +62,24 @@ export default function AboutUs() {
 
     const stats = [
         {
-            number: "03",
-            icon: <img src="/edu-icon.svg" />,
-            title: "Successful",
-            subtitle: "Tours Organized"
+            number: stat1?.content || "03",
+            icon: <img src={stat1?.metadata?.icon || "/edu-icon.svg"} />,
+            title: stat1?.metadata?.title || "Successful",
+            subtitle: stat1?.metadata?.subtitle || "Tours Organized"
         },
         {
-            number: "41",
-            icon: <School className="text-[#438EFF] w-7 h-7" />,
-            title: "Collaborations",
-            subtitle: "with Schools"
+            number: stat2?.content || "41",
+            icon: stat2?.metadata?.icon === "School" ? 
+                <School className="text-[#438EFF] w-7 h-7" /> : 
+                <img src={stat2?.metadata?.icon || "/person-icon.svg"} />,
+            title: stat2?.metadata?.title || "Collaborations",
+            subtitle: stat2?.metadata?.subtitle || "with Schools"
         },
         {
-            number: "06",
-            icon: <img src="/person-icon.svg" />,
-            title: "Returning",
-            subtitle: "UNIS"
+            number: stat3?.content || "06",
+            icon: <img src={stat3?.metadata?.icon || "/person-icon.svg"} />,
+            title: stat3?.metadata?.title || "Returning",
+            subtitle: stat3?.metadata?.subtitle || "UNIS"
         }
     ]
 
@@ -62,7 +101,7 @@ export default function AboutUs() {
                     />
                     <div className="relative w-full h-auto mt-16 lg:mt-0">
                         <img 
-                            src="/about-us.png" 
+                            src={mainBannerImage} 
                             alt="University Event" 
                             className="w-full rounded-3xl object-cover" 
                             style={{
@@ -88,7 +127,7 @@ export default function AboutUs() {
                             {/* Header */}
                             <div className="about-header">
                                 <h1 className="text-3xl md:text-5xl/14 font-medium text-content">
-                                    We're passionate about bridging the gap between international universities and Vietnam's top state schools.
+                                    {mainBannerHeading}
                                 </h1>
                             </div>
 
@@ -99,7 +138,7 @@ export default function AboutUs() {
                                         <CarouselItem>
                                             <div className="carousel-image-container h-[500px] relative">
                                                 <img
-                                                    src="/classroom.png"
+                                                    src={carouselImage1}
                                                     alt="University presentation"
                                                     className="w-full h-full object-cover"
                                                 />
@@ -108,7 +147,7 @@ export default function AboutUs() {
                                         <CarouselItem>
                                             <div className="carousel-image-container h-[500px] relative">
                                                 <img
-                                                    src="/display1.png"
+                                                    src={carouselImage2}
                                                     alt="Classroom session"
                                                     className="w-full h-full object-cover"
                                                 />
@@ -117,7 +156,7 @@ export default function AboutUs() {
                                         <CarouselItem>
                                             <div className="carousel-image-container h-[500px] relative">
                                                 <img
-                                                    src="/display2.png"
+                                                    src={carouselImage3}
                                                     alt="School collaboration"
                                                     className="w-full h-full object-cover"
                                                 />
@@ -148,7 +187,7 @@ export default function AboutUs() {
                                         <button
                                             className="bg-blue-500 hover:bg-blue-950 text-white text-base font-medium min-w-[130px] px-5 py-4 rounded-full group flex items-center justify-between transition-all duration-300 hover:min-w-[140px] cursor-pointer space-x-2"
                                         >
-                                            <span>CHECK OUT OUR PORTFOLIO</span>
+                                            <span>{carouselButton}</span>
                                             <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-all duration-300 group-hover:w-7 " />
                                         </button>
                                     </div>
@@ -160,17 +199,17 @@ export default function AboutUs() {
                         <div className="about-right-column flex flex-col lg:col-span-2 gap-8">
                             {/* Who We Are */}
                             <div className="pb-9 border-b-1">
-                                <h2 className="text-lg font-semibold text-blue-500 mb-3">WHO WE ARE</h2>
+                                <h2 className="text-lg font-semibold text-blue-500 mb-3">{whoWeAreTitle}</h2>
                                 <p className="text-content font-medium text-sm">
-                                    At UCV, we're passionate about bridging the gap between international universities and Vietnam's top state schools. Based in the heart of Vietnam, we've spent years cultivating relationships with leading educational institutions in Central and Northern regions.
+                                    {whoWeAreContent}
                                 </p>
                             </div>
 
                             {/* Our Mission */}
                             <div className="">
-                                <h2 className="text-lg font-semibold text-blue-500 mb-3">OUR MISSION</h2>
+                                <h2 className="text-lg font-semibold text-blue-500 mb-3">{ourMissionTitle}</h2>
                                 <p className="text-content font-medium text-sm">
-                                    To help university representatives like you unlock access to these schools. With our local expertise and tailored approach, we make your outreach seamless, impactful, and rewarding.
+                                    {ourMissionContent}
                                 </p>
                             </div>
 
