@@ -68,9 +68,19 @@ export function TourBannerEditor({ pageContent }: TourBannerEditorProps) {
                   multiline={true}
                 />
               </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customize</label>
+                <InlineEditableField
+                  pageName="tour-details"
+                  sectionId="bannerSection"
+                  item={pageContent.sections.bannerSection.items.find(item => item.id === 'tourBanner-customize')}
+                  className="text-sm"
+                />
+              </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tour Dates</label>
                 <InlineEditableField
                   pageName="tour-details"
                   sectionId="bannerSection"

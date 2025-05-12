@@ -11,29 +11,53 @@ import { useState, useEffect } from "react"
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
 
+// Define Tour type
+interface Tour {
+    id: number;
+    title: string;
+    description: string;
+    imageUrl: string;
+    price: number;
+    date: string;
+    detailsUrl: string;
+}
+
+// Tours data matching the OurTours page
+const TOURS_DATA: Tour[] = [
+    {
+        id: 1,
+        title: "Fall Tour 2025",
+        description: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.",
+        imageUrl: "/hero-banner-1.png",
+        price: 2065,
+        date: "1 - 8 OCTOBER 2025",
+        detailsUrl: "/tour-details"
+    },
+    {
+        id: 2,
+        title: "Spring Tour 2026",
+        description: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.",
+        imageUrl: "/hero-banner-2.png",
+        price: 2065,
+        date: "31 MARCH - 10 APRIL 2026",
+        detailsUrl: "/spring-tour-details"
+    }
+];
+
 export function HeroBanner() {
     const getItemById = useContentStore(state => state.getItemById);
-    
+
     // Get content from store
-    const headingContent = getItemById('home', 'heroBanner', 'heroBanner-heading')?.content || 
+    const headingContent = getItemById('home', 'heroBanner', 'heroBanner-heading')?.content ||
         "Explore Vietnam's Top State Schools with Us";
-    const paragraph1Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph1')?.content || 
+    const paragraph1Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph1')?.content ||
         "Welcome to UCV - we aim to bridge top schools in Vietnam and international universities. We're a unique connector - we have years of experience on both the university and the school side.";
-    const paragraph2Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph2')?.content || 
+    const paragraph2Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph2')?.content ||
         "Specializing in crafting quality school tours across Central and Northern Vietnam, we focus primarily on state schools (mostly Schools for gifted students).";
-    const tourTitleContent = getItemById('home', 'heroBanner', 'heroBanner-tour-title')?.content || 
-        "Tour Spring 2025";
-    const tourDescContent = getItemById('home', 'heroBanner', 'heroBanner-tour-desc')?.content || 
-        "Short Descripton At IUC, we're passionate about bridging the gap between ...";
-    const buttonContent = getItemById('home', 'heroBanner', 'heroBanner-button')?.content || 
+    const paragraph3Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph3')?.content ||
+        "Join us to build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape.";
+    const buttonContent = getItemById('home', 'heroBanner', 'heroBanner-button')?.content ||
         "Find out more";
-    
-    const carouselItem = getItemById('home', 'heroBanner', 'heroBanner-carousel-images');
-    const carouselImages = carouselItem?.metadata?.images || [
-        "/hero-banner-1.png",
-        "/hero-banner-2.png",
-        "/hero-banner-3.png",
-    ];
 
     const [api, setApi] = useState<any>()
     const [current, setCurrent] = useState(0)
@@ -75,13 +99,16 @@ export function HeroBanner() {
                     <p className="text-sm text-content font-medium">
                         {paragraph2Content}
                     </p>
+                    <p className="text-sm text-content font-medium">
+                        {paragraph3Content}
+                    </p>
                 </div>
 
                 {/* Right Carousel - 4 columns with Tour Card Overlay */}
                 <div className="relative lg:col-span-4">
                     <Carousel className="w-full" setApi={setApi} plugins={[Autoplay({ delay: 4000 })]}>
                         <CarouselContent>
-                            {carouselImages.map((image: string, index: number) => (
+                            {TOURS_DATA.map((tour, index) => (
                                 <CarouselItem key={index}>
                                     <div className="relative w-full overflow-hidden rounded-2xl"
                                         style={{
@@ -90,25 +117,25 @@ export function HeroBanner() {
                                                 : "700px"
                                         }}>
                                         <img
-                                            src={image}
-                                            alt={`Tour image ${index + 1}`}
+                                            src={tour.imageUrl}
+                                            alt={`${tour.title} image`}
                                             className="w-full h-full object-cover"
                                         />
                                         {/* Tour Info Card Overlay */}
                                         <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3 max-w-xs lg:max-w-md bg-white rounded-2xl shadow-lg px-4 lg:px-6 pb-4 lg:pb-6">
                                             <div className="relative inline-block bg-content text-white rounded-lg px-5 py-1 -top-4">
-                                                <span className="font-medium text-xs">INCOMING • JULY 4</span>
+                                                <span className="font-medium text-xs">INCOMING • {tour.date}</span>
                                             </div>
 
                                             <h2 className="text-2xl lg:text-4xl font-medium text-content pb-3 border-b-2 border-accent-blue">
-                                                {tourTitleContent}
+                                                {tour.title}
                                             </h2>
 
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
-                                                <p className="text-content text-xs">
-                                                    {tourDescContent}
+                                                <p className="text-content text-xs line-clamp-2">
+                                                    {tour.description}
                                                 </p>
-                                                <a href="/tour-details">
+                                                <a href={tour.detailsUrl}>
                                                     <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">
                                                         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                                                             <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />

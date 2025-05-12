@@ -291,7 +291,7 @@ const initialHomeContent: PageContent = {
                 {
                     id: 'testimonial-1-content',
                     type: 'paragraph',
-                    content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+                    content: "Thank you so much for this perfectly organized tour! We had a wonderful opportunity to introduce our school to the students in the middle of Vietnam. We've also learned a lot from your team's hospitality! Thanks to you and your team!",
                 },
                 {
                     id: 'testimonial-1-university',
@@ -307,7 +307,7 @@ const initialHomeContent: PageContent = {
                 {
                     id: 'testimonial-2-content',
                     type: 'paragraph',
-                    content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+                    content: "Once again, I would like to thank you, Berni and all of your team members! The tour was incredibly well-organized, everyone was thoughtful, and we had a meaningful time visiting many high schools.",
                 },
                 {
                     id: 'testimonial-2-university',
@@ -323,7 +323,7 @@ const initialHomeContent: PageContent = {
                 {
                     id: 'testimonial-3-content',
                     type: 'paragraph',
-                    content: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took.",
+                    content: "Thank you for this lovely experience. I really appreciate all the time and organization a tour like this would have taken. You (and your team) were exceptional! I hope to have the opportunity to work with you in the future.",
                 },
                 {
                     id: 'testimonial-3-university',
@@ -701,6 +701,208 @@ const initialTourDetailsContent: PageContent = {
     }
 };
 
+// Initial content for the Spring Tour Details page
+const initialSpringTourDetailsContent: PageContent = {
+    pageName: 'spring-tour-details',
+    sections: {
+        bannerSection: {
+            title: 'Banner Section',
+            items: [
+                {
+                    id: 'tourBanner-date',
+                    type: 'heading',
+                    content: "INCOMING • 31 MARCH - 10 APRIL 2026",
+                },
+                {
+                    id: 'tourBanner-title',
+                    type: 'heading',
+                    content: "Spring Tour 2026",
+                },
+                {
+                    id: 'tourBanner-description',
+                    type: 'paragraph',
+                    content: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.",
+                },
+                {
+                    id: 'tourBanner-location',
+                    type: 'heading',
+                    content: "Northern Vietnam (Hanoi, Hai Duong)",
+                },
+                {
+                    id: 'tourBanner-duration',
+                    type: 'paragraph',
+                    content: "10 schools across 3 northern cities over 5 days.",
+                },
+                {
+                    id: 'tourBanner-customize',
+                    type: 'paragraph',
+                    content: "Select from the full experience or customize to specific regions.",
+                },
+                {
+                    id: 'tourBanner-startDate',
+                    type: 'heading',
+                    content: "April, 2026",
+                },
+            ]
+        },
+        eventsSection: {
+            title: 'Events Section',
+            items: [
+                {
+                    id: 'events-heading',
+                    type: 'heading',
+                    content: "EVENTS IN THE SCHOOLS",
+                },
+                {
+                    id: 'events-title',
+                    type: 'heading',
+                    content: "Engage directly with qualified students through diverse and interactive events.",
+                },
+                {
+                    id: 'events-item1',
+                    type: 'paragraph',
+                    content: "In-school preparation workshops (by IUC)",
+                },
+                {
+                    id: 'events-item2',
+                    type: 'paragraph',
+                    content: "University spotlight presentations",
+                },
+                {
+                    id: 'events-item3',
+                    type: 'paragraph',
+                    content: "Interactive Q&A sessions",
+                },
+                {
+                    id: 'events-item4',
+                    type: 'paragraph',
+                    content: "Student recruitment workshops",
+                },
+                {
+                    id: 'events-item5',
+                    type: 'paragraph',
+                    content: "Education fairs with local students",
+                },
+            ]
+        },
+        locationsSection: {
+            title: 'Locations Section',
+            items: [
+                {
+                    id: 'locations-heading',
+                    type: 'heading',
+                    content: "SPRING TOUR",
+                },
+                {
+                    id: 'locations-title',
+                    type: 'heading',
+                    content: "Visiting 10 leading schools across Northern Vietnam's educational hubs.",
+                },
+                {
+                    id: 'locations-hanoi',
+                    type: 'heading',
+                    content: "Ha Noi",
+                },
+                {
+                    id: 'locations-haiduong',
+                    type: 'heading',
+                    content: "Hai Duong",
+                },
+                {
+                    id: 'locations-hue',
+                    type: 'heading',
+                    content: "Hue",
+                },
+                {
+                    id: 'locations-danang',
+                    type: 'heading',
+                    content: "Da Nang",
+                },
+                {
+                    id: 'locations-hcmc',
+                    type: 'heading',
+                    content: "HCMC",
+                },
+            ]
+        },
+        pricingSection: {
+            title: 'Pricing Section',
+            items: [
+                {
+                    id: 'pricing-heading',
+                    type: 'heading',
+                    content: "PRICING",
+                },
+                {
+                    id: 'pricing-title',
+                    type: 'heading',
+                    content: "Special early bird discount available for the Spring 2026 tour",
+                },
+                {
+                    id: 'pricing-earlybird-deadline',
+                    type: 'heading',
+                    content: "Early Bird - 15 Aug 2025",
+                },
+                {
+                    id: 'pricing-earlybird-price',
+                    type: 'heading',
+                    content: "USD $2250",
+                },
+                {
+                    id: 'pricing-earlybird-returning',
+                    type: 'heading',
+                    content: "USD $1900",
+                },
+                {
+                    id: 'pricing-standard-deadline',
+                    type: 'heading',
+                    content: "Standard - 30 Oct 2025",
+                },
+                {
+                    id: 'pricing-standard-price',
+                    type: 'heading',
+                    content: "USD $2600",
+                },
+                {
+                    id: 'pricing-standard-returning',
+                    type: 'heading',
+                    content: "USD $2200",
+                },
+                {
+                    id: 'pricing-custom-title',
+                    type: 'heading',
+                    content: "Customize your Spring 2026 experience",
+                },
+                {
+                    id: 'pricing-custom-description',
+                    type: 'paragraph',
+                    content: "Work with our team to design a Northern Vietnam tour specifically suited to your university's recruitment goals.",
+                },
+            ]
+        },
+        packageSection: {
+            title: 'Package Section',
+            items: [
+                {
+                    id: 'package-heading',
+                    type: 'heading',
+                    content: "THE PACKAGE INCLUDES",
+                },
+                {
+                    id: 'package-items1',
+                    type: 'paragraph',
+                    content: "10 school visits across 3 northern cities.\nFull in-country support team.\nDedicated exhibition space at each venue.\nWelcome reception with school officials.",
+                },
+                {
+                    id: 'package-items2',
+                    type: 'paragraph',
+                    content: "Daily refreshments and snacks.\nAll meals during the tour (5 days).\nTransportation between venues and cities.\nPremium hotel arrangements available.",
+                },
+            ]
+        },
+    }
+};
+
 // Initial content for the Sign Up Form page
 const initialSignUpFormContent: PageContent = {
     pageName: 'signup-form',
@@ -834,34 +1036,34 @@ const initialSignUpFormContent: PageContent = {
                     content: "School Visits in Selected Cities",
                 },
                 {
-                    id: 'step2-hue-label',
+                    id: 'step2-hanoiHaiDuong-label',
                     type: 'heading',
-                    content: "Hue",
+                    content: "Ha Noi & Hai Duong",
                 },
                 {
-                    id: 'step2-danang-label',
+                    id: 'step2-hueDaNang-label',
                     type: 'heading',
-                    content: "Danang",
-                },
-                {
-                    id: 'step2-tamky-label',
-                    type: 'heading',
-                    content: "Tam Ky/Hoi An",
+                    content: "Hue & Da Nang",
                 },
                 {
                     id: 'step2-transfers-title',
                     type: 'heading',
-                    content: "Seamless Stay & City Transfers",
+                    content: "Travel",
                 },
                 {
                     id: 'step2-hotel-label',
                     type: 'heading',
-                    content: "Hotel for 4 days",
+                    content: "Accommodation for Northern Vietnam tour",
                 },
                 {
                     id: 'step2-travel-label',
                     type: 'heading',
-                    content: "Travel Between 3 Cities",
+                    content: "Accommodation for Central Vietnam tour",
+                },
+                {
+                    id: 'step2-flight-label',
+                    type: 'heading',
+                    content: "One way flight from Hanoi (Northern Vietnam) to Hue (Central Vietnam)",
                 },
                 {
                     id: 'step2-price',
@@ -906,7 +1108,7 @@ const initialSignUpFormContent: PageContent = {
                 {
                     id: 'step3-representative-label',
                     type: 'heading',
-                    content: "Legal representative",
+                    content: "Name of University Representative",
                 },
                 {
                     id: 'step3-position-label',
@@ -984,7 +1186,7 @@ interface ContentStore {
 export const useContentStore = create<ContentStore>()(
     persist(
         (set, get) => ({
-            pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSignUpFormContent],
+            pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSpringTourDetailsContent, initialSignUpFormContent],
             
             getPageContent: (pageName: string) => {
                 return get().pages.find(page => page.pageName === pageName);
@@ -1043,7 +1245,7 @@ export const useContentStore = create<ContentStore>()(
             
             // Add a function to reset the content to default values
             resetToDefault: () => {
-                set({ pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSignUpFormContent] });
+                set({ pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSpringTourDetailsContent, initialSignUpFormContent] });
             }
         }),
         {
@@ -1168,6 +1370,38 @@ export const useContentStore = create<ContentStore>()(
                             if (needsUpdate) {
                                 const updatedPages = [...state.pages];
                                 const pageIndex = updatedPages.findIndex(page => page.pageName === 'tour-details');
+                                updatedPages[pageIndex] = {
+                                    ...updatedPages[pageIndex],
+                                    sections: updatedSections
+                                };
+                                
+                                state.pages = updatedPages;
+                            }
+                        }
+                    }
+                    
+                    // Check if Spring Tour Details page exists, if not add it
+                    if (!state.pages.find(page => page.pageName === 'spring-tour-details')) {
+                        state.pages.push(initialSpringTourDetailsContent);
+                    } else {
+                        // Similar to other pages, check for new sections in the Spring Tour Details page
+                        const springTourDetailsContent = state.pages.find(page => page.pageName === 'spring-tour-details');
+                        if (springTourDetailsContent) {
+                            let needsUpdate = false;
+                            const updatedSections = { ...springTourDetailsContent.sections };
+                            
+                            // Check for new sections in initialSpringTourDetailsContent
+                            Object.entries(initialSpringTourDetailsContent.sections).forEach(([sectionId, section]) => {
+                                if (!springTourDetailsContent.sections[sectionId]) {
+                                    updatedSections[sectionId] = section;
+                                    needsUpdate = true;
+                                }
+                            });
+                            
+                            // If we found new sections, update the store
+                            if (needsUpdate) {
+                                const updatedPages = [...state.pages];
+                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'spring-tour-details');
                                 updatedPages[pageIndex] = {
                                     ...updatedPages[pageIndex],
                                     sections: updatedSections

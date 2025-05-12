@@ -28,106 +28,33 @@ interface Tour {
 const TOURS_DATA: Tour[] = [
     {
         id: 1,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
+        title: "Fall Tour 2025",
+        description: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.",
         imageUrl: "/hero-banner-1.png",
         price: 2065,
-        date: "JULY 4",
+        date: "1 - 8 OCTOBER 2025",
     },
     {
         id: 2,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
+        title: "Spring Tour 2026",
+        description: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.",
         imageUrl: "/hero-banner-2.png",
         price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 3,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-3.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 4,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 5,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 6,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-3.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 7,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 8,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 9,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-3.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 10,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 11,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 12,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-3.png",
-        price: 2065,
-        date: "JULY 4",
-    },
+        date: "31 MARCH - 10 APRIL 2026",
+    }
 ];
 
 // TourCard component
 function TourCard({ tour }: { tour: Tour }) {
+    // Determine the link based on tour ID
+    const getLink = () => {
+        if (tour.id === 1) return "/tour-details";
+        if (tour.id === 2) return "/spring-tour-details";
+        return "/tour-details"; // Default fallback
+    };
+
     return (
-        <a href="/tour-details" className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={getLink()} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative h-90 overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>

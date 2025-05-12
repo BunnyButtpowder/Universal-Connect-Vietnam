@@ -5,37 +5,37 @@ export function AboutUsHome() {
     const getItemById = useContentStore(state => state.getItemById);
 
     // Get content from store
-    const headingContent = getItemById('home', 'aboutUs', 'aboutUs-heading')?.content || 
+    const headingContent = getItemById('home', 'aboutUs', 'aboutUs-heading')?.content ||
         "ABOUT US";
-    const subheadingContent = getItemById('home', 'aboutUs', 'aboutUs-subheading')?.content || 
+    const subheadingContent = getItemById('home', 'aboutUs', 'aboutUs-subheading')?.content ||
         "We're passionate about bridging the gap between international universities and Vietnam's top state schools.";
-    const paragraph1Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph1')?.content || 
+    const paragraph1Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph1')?.content ||
         "At UCV, we're passionate about bridging the gap between international universities and Vietnam's top state schools. Based in the heart of Vietnam, we've spent years cultivating relationships with leading educational institutions in Central and Northern regions.";
-    const paragraph2Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph2')?.content || 
+    const paragraph2Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph2')?.content ||
         "Our mission? To help university representatives like you unlock access to these schools. With our local expertise and tailored approach, we make your outreach seamless, impactful, and rewarding.";
-    const buttonContent = getItemById('home', 'aboutUs', 'aboutUs-button')?.content || 
+    const buttonContent = getItemById('home', 'aboutUs', 'aboutUs-button')?.content ||
         "Get to Know Us Better";
-    const imageContent = getItemById('home', 'aboutUs', 'aboutUs-image')?.content || 
+    const imageContent = getItemById('home', 'aboutUs', 'aboutUs-image')?.content ||
         "/about-us.png";
-    const tourHeadingContent = getItemById('home', 'aboutUs', 'aboutUs-tourHeading')?.content || 
+    const tourHeadingContent = getItemById('home', 'aboutUs', 'aboutUs-tourHeading')?.content ||
         "Our tours are your key to Vietnam's top state schools.";
 
     // Location card content
     const locationTitleContent = getItemById('home', 'aboutUs', 'aboutUs-location-title')?.content || "LOCATIONS";
     const locationIconContent = getItemById('home', 'aboutUs', 'aboutUs-location-icon')?.content || "/map-pin.svg";
-    const locationTextContent = getItemById('home', 'aboutUs', 'aboutUs-location-content')?.content || 
-        "Currently we focus on Central and Northern Vietnam.";
-    
+    const locationTextContent = getItemById('home', 'aboutUs', 'aboutUs-location-content')?.content ||
+        "Currently we focus on Central (Da Nang & Hue) and Northern (Ha Noi & Hai Duong) Vietnam.\nWe will be expanding to Southern Vietnam in 2026, including HCMC.";
+
     // What We Offer card content
     const offerTitleContent = getItemById('home', 'aboutUs', 'aboutUs-offer-title')?.content || "WHAT WE OFFER";
     const offerIconContent = getItemById('home', 'aboutUs', 'aboutUs-offer-icon')?.content || "/edu.svg";
-    const offerTextContent = getItemById('home', 'aboutUs', 'aboutUs-offer-content')?.content || 
+    const offerTextContent = getItemById('home', 'aboutUs', 'aboutUs-offer-content')?.content ||
         "Guided visits with school administrators and faculty.\nIn-school preparation before the tour through workshops.\nOpportunities to present your university and network with students through a mix of the following:\n- Panel talks\n- Elevator pitches\n- Workshops\n- Mini fairs\nCultural insights to enhance your experience.";
-    
+
     // Our Support card content
     const supportTitleContent = getItemById('home', 'aboutUs', 'aboutUs-support-title')?.content || "OUR SUPPORT";
     const supportIconContent = getItemById('home', 'aboutUs', 'aboutUs-support-icon')?.content || "/support.svg";
-    const supportTextContent = getItemById('home', 'aboutUs', 'aboutUs-support-content')?.content || 
+    const supportTextContent = getItemById('home', 'aboutUs', 'aboutUs-support-content')?.content ||
         "2 - 3 school visits per day\nFull logistics (Support throughout the tour and school visits)\nOne stall at each school fair\nIntra and inter city transport (on the ground travel - not including flights)\nReception dinner\nDaily lunches\nCoffee breaks\nGroup dinners (75% of the time)\nHotel suggestions & discounts\n1 - 2 pages in university booklet for schools";
 
     const stat1 = getItemById('home', 'aboutUs', 'aboutUs-stat1');
@@ -51,8 +51,8 @@ export function AboutUsHome() {
         },
         {
             number: stat2?.content || "41",
-            icon: stat2?.metadata?.icon === "School" 
-                ? <School className="text-[#438EFF] w-7 h-7" /> 
+            icon: stat2?.metadata?.icon === "School"
+                ? <School className="text-[#438EFF] w-7 h-7" />
                 : <img src={stat2?.metadata?.icon || "/edu-icon.svg"} />,
             title: stat2?.metadata?.title || "Collaborations",
             subtitle: stat2?.metadata?.subtitle || "with Schools"
@@ -164,6 +164,9 @@ export function AboutUsHome() {
                                 <div className="border-t border-accent-blue pt-4">
                                     <p className="text-xs text-content space-y-1 font-medium">
                                         {locationTextContent}
+                                    </p>
+                                    <p className="text-xs text-content space-y-1 font-medium mt-2">
+                                        We will be expanding to Southern Vietnam in 2026, including HCMC.
                                     </p>
                                 </div>
                             </div>

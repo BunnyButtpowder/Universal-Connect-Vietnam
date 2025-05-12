@@ -1,12 +1,15 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const { testConnection } = require('./config/database');
 const { initializeDatabase } = require('./config/db-init');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const tourRoutes = require('./routes/tourRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const corsOptions = require('./config/cors');
 
 dotenv.config();
@@ -17,11 +20,23 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`Created uploads directory at: ${uploadsDir}`);
+}
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(uploadsDir));
+console.log(`Serving static files from: ${uploadsDir}`);
+
 // API routes
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/contact', contactRoutes);
-app.use('/api/tours', tourRoutes);
+app.use('/users', userRoutes);
+app.use('/auth', authRoutes);
+app.use('/contact', contactRoutes);
+app.use('/tours', tourRoutes);
+app.use('/upload', uploadRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -42,6 +57,7 @@ const startServer = async () => {
             app.listen(process.env.PORT, () => {
                 console.log(`Server is running on port ${process.env.PORT}`);
                 console.log(`CORS enabled for: http://localhost:5173, https://ucv.com.vn`);
+                console.log(`Static files are served from: ${uploadsDir}`);
             });
         } else {
             console.error('Failed to connect to the database. Server not started.');

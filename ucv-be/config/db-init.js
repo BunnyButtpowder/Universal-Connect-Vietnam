@@ -87,6 +87,20 @@ async function initializeDatabase() {
             )
         `);
         
+        // Create images table
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS images (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                filename VARCHAR(255) NOT NULL,
+                original_name VARCHAR(255) NOT NULL,
+                mime_type VARCHAR(100) NOT NULL,
+                path VARCHAR(255) NOT NULL,
+                url VARCHAR(255) NOT NULL,
+                size INT NOT NULL,
+                created_at DATETIME NOT NULL
+            )
+        `);
+        
         console.log('Database tables initialized successfully!');
         return true;
     } catch (err) {

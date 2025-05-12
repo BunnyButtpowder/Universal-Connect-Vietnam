@@ -1,11 +1,12 @@
 import { Navbar } from "@/components/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import React from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { ContentItem } from "@/lib/types";
+import { processAllTemplates } from "@/utils/documentProcessor";
 
 // Define types for form data
 interface FormData {
@@ -16,13 +17,13 @@ interface FormData {
     wantCallback: boolean;
     selectedPackage: string;
     cities: {
-        hue: boolean;
-        danang: boolean;
-        tamKy: boolean;
+        hanoiHaiDuong: boolean;
+        hueDaNang: boolean;
     };
     transfers: {
         hotel: boolean;
         travel: boolean;
+        flight: boolean;
     };
     // Step 3 fields
     headOffice: string;
@@ -32,6 +33,7 @@ interface FormData {
     accountNumber: string;
     bank: string;
     swift: string;
+    tourId: string;
 }
 
 // Define validation errors interface
@@ -48,6 +50,39 @@ interface ValidationErrors {
     bank?: string;
 }
 
+// Define tour-specific data
+interface TourData {
+    id: string;
+    title: string;
+    date: string;
+    image: string;
+    location: string;
+    duration: string;
+    returnLink: string;
+}
+
+// Tour data mapping
+const TOURS_DATA: Record<string, TourData> = {
+    fallTour2025: {
+        id: "fallTour2025",
+        title: "Fall Tour 2025",
+        date: "1 - 8 OCTOBER 2025",
+        image: "/hero-banner-1.png",
+        location: "Central Vietnam (Hue, Da Nang)",
+        duration: "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.",
+        returnLink: "/tour-details"
+    },
+    springTour2026: {
+        id: "springTour2026",
+        title: "Spring Tour 2026",
+        date: "31 MARCH - 10 APRIL 2026",
+        image: "/hero-banner-2.png",
+        location: "Northern Vietnam (Hanoi, Hai Duong)",
+        duration: "10 schools across 3 northern cities over 5 days.",
+        returnLink: "/spring-tour-details"
+    }
+};
+
 // Helper function to get content item by ID
 const getContentById = (items: ContentItem[] | undefined, id: string): string => {
     if (!items) return "";
@@ -56,19 +91,43 @@ const getContentById = (items: ContentItem[] | undefined, id: string): string =>
 };
 
 export default function SignUpForm() {
+    const { tourId = "fallTour2025" } = useParams<{ tourId: string }>();
     const getPageContent = useContentStore(state => state.getPageContent);
     const [signUpFormContent, setSignUpFormContent] = useState(getPageContent('signup-form'));
-    
-    // Refresh content when component mounts
+    const [currentTour, setCurrentTour] = useState<TourData | null>(null);
+
     useEffect(() => {
         const content = getPageContent('signup-form');
         if (content) {
             setSignUpFormContent(content);
         }
-    }, [getPageContent]);
-    
+
+        // Set the current tour data
+        if (tourId && TOURS_DATA[tourId]) {
+            setCurrentTour(TOURS_DATA[tourId]);
+
+            // Update form data based on selected tour
+            setFormData(prev => ({
+                ...prev,
+                tourId: tourId,
+                // For Fall Tour (Central Vietnam), activate Hue & Da Nang
+                // For Spring Tour (Northern Vietnam), activate Hanoi & Hai Duong
+                cities: {
+                    hanoiHaiDuong: tourId === 'springTour2026', // True for Spring Tour
+                    hueDaNang: tourId === 'fallTour2025' // True for Fall Tour
+                }
+            }));
+        } else {
+            // Default to fall tour if not found
+            setCurrentTour(TOURS_DATA.fallTour2025);
+        }
+    }, [getPageContent, tourId]);
+
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isProcessingDocuments, setIsProcessingDocuments] = useState(false);
+    const [, setDocumentProcessingComplete] = useState(false);
+    const [processingError, setProcessingError] = useState<string | null>(null);
     const [formData, setFormData] = useState<FormData>({
         fullName: "",
         organization: "",
@@ -77,13 +136,13 @@ export default function SignUpForm() {
         wantCallback: false,
         selectedPackage: "earlyBird",
         cities: {
-            hue: true,
-            danang: true,
-            tamKy: true
+            hanoiHaiDuong: true,
+            hueDaNang: true
         },
         transfers: {
             hotel: true,
-            travel: true
+            travel: true,
+            flight: true
         },
         // Step 3 fields initialized with empty values
         headOffice: "",
@@ -92,7 +151,8 @@ export default function SignUpForm() {
         position: "",
         accountNumber: "",
         bank: "",
-        swift: ""
+        swift: "",
+        tourId: tourId || "fallTour2025"
     });
     const [errors, setErrors] = useState<ValidationErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -103,13 +163,13 @@ export default function SignUpForm() {
             ...prev,
             [id]: value
         }));
-        
+
         // Mark field as touched
         setTouched(prev => ({
             ...prev,
             [id]: true
         }));
-        
+
         // Clear error when user types
         if (errors[id as keyof ValidationErrors]) {
             setErrors(prev => ({
@@ -184,37 +244,28 @@ export default function SignUpForm() {
         const newErrors: ValidationErrors = {};
         let isValid = true;
 
+        console.log('Validating step 3 fields:', formData);
+
         if (!formData.headOffice.trim()) {
             newErrors.headOffice = "Head office address is required";
             isValid = false;
-        }
-
-        if (!formData.businessRegistration.trim()) {
-            newErrors.businessRegistration = "Business registration number is required";
-            isValid = false;
+            console.log('Head office validation failed');
         }
 
         if (!formData.legalRepresentative.trim()) {
             newErrors.legalRepresentative = "Legal representative is required";
             isValid = false;
+            console.log('Legal representative validation failed');
         }
 
         if (!formData.position.trim()) {
             newErrors.position = "Position is required";
             isValid = false;
-        }
-
-        if (!formData.accountNumber.trim()) {
-            newErrors.accountNumber = "Account number is required";
-            isValid = false;
-        }
-
-        if (!formData.bank.trim()) {
-            newErrors.bank = "Bank name is required";
-            isValid = false;
+            console.log('Position validation failed');
         }
 
         setErrors(newErrors);
+        console.log('Step 3 validation result:', isValid ? 'Valid' : 'Invalid', newErrors);
         return isValid;
     };
 
@@ -230,9 +281,9 @@ export default function SignUpForm() {
             });
             return;
         }
-        
+
         // Step 2 doesn't need validation
-        
+
         setCurrentStep(prev => prev + 1);
     };
 
@@ -240,27 +291,60 @@ export default function SignUpForm() {
         setCurrentStep(prev => prev - 1);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // Validate step 3 before submitting
         if (!validateStep3()) {
             // Mark all step 3 fields as touched to show errors
             setTouched({
                 ...touched,
                 headOffice: true,
-                businessRegistration: true,
                 legalRepresentative: true,
-                position: true,
-                accountNumber: true,
-                bank: true
+                position: true
             });
             return;
         }
-        
-        // Here you would typically send the form data to a server
-        console.log("Form submitted with data:", formData);
-        
-        // Set the form as submitted to show success screen
-        setIsSubmitted(true);
+
+        // Pre-process data before submission to ensure valid formats
+        const processedFormData = {
+            ...formData,
+            // Ensure phone and email are properly formatted 
+            phone: formData.phone.trim(),
+            email: formData.email.trim()
+        };
+
+        // Set processing state
+        console.log('Starting submission process');
+        setIsProcessingDocuments(true);
+        setProcessingError(null);
+
+        try {
+            console.log('Beginning document processing with processed data:', processedFormData);
+            // Process document templates with processed form data
+            await processAllTemplates(processedFormData);
+            console.log("Document templates processed successfully");
+
+            // Log form submission for debugging
+            console.log("Form submitted with data:", processedFormData);
+
+            // Set document processing complete
+            setDocumentProcessingComplete(true);
+
+            // Set the form as submitted to show success screen
+            setIsSubmitted(true);
+        } catch (error: any) {
+            console.error("Error processing document templates:", error);
+            const errorMessage = error?.message || "An unknown error occurred";
+            console.error("Error message:", errorMessage);
+
+            // Show the error to the user
+            setProcessingError(`An error occurred while processing your registration documents: ${errorMessage}. Please try again.`);
+
+            // Don't set isSubmitted to true on error
+            setIsProcessingDocuments(false);
+
+            // Alert for debugging in case the console isn't visible
+            alert(`Document processing failed: ${errorMessage}. Check the console for more details.`);
+        }
     };
 
     if (isSubmitted) {
@@ -288,9 +372,26 @@ export default function SignUpForm() {
                                     {getContentById(signUpFormContent?.sections.successSection?.items, 'success-heading')}
                                 </h1>
 
-                                <p className="text-content font-medium mb-8 text-sm">
+                                <p className="text-content font-medium mb-4 text-sm">
                                     {getContentById(signUpFormContent?.sections.successSection?.items, 'success-message')}
                                 </p>
+
+                                {processingError && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+                                        <p className="text-red-800 font-medium text-sm">
+                                            {processingError}
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                setProcessingError(null);
+                                                handleSubmit();
+                                            }}
+                                            className="mt-2 text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-xs font-medium"
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
+                                )}
 
                                 <Link
                                     to="/our-tours"
@@ -328,7 +429,7 @@ export default function SignUpForm() {
                     {/* Form Container */}
                     <div className="relative w-full h-auto mt-16 lg:mt-0 mb-30 lg:mb-40">
                         <div className="flex justify-center mb-4">
-                            <Link to="/tour-details" className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                            <Link to={currentTour?.returnLink || "/tour-details"} className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 View Tour Information Again
                             </Link>
@@ -357,7 +458,7 @@ export default function SignUpForm() {
                                 <div className={`text-5xl font-semibold text-content ${currentStep === 1 ? 'ms-20 lg:ms-0' : ''} ${currentStep < 4 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : ''}`}>02</div>
                                 <div className={`text-content font-medium lg:block ${currentStep === 2 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : 'hidden'}`}>Tour <br />Package</div>
                             </div>
- 
+
                             <div className={`flex items-center hidden lg:flex ${currentStep < 3 ? 'opacity-50' : ''}`}>
                                 <ArrowRight className="h-6 w-6 text-content" />
                             </div>
@@ -480,13 +581,13 @@ export default function SignUpForm() {
                                     <div className="md:col-span-1">
                                         <div className="relative rounded-xl overflow-hidden">
                                             <img
-                                                src="/hero-banner-1.png"
+                                                src={currentTour?.image || "/hero-banner-1.png"}
                                                 alt="Tour group"
                                                 className="w-full h-auto"
                                             />
                                             <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded-sm flex items-center text-xs">
                                                 <span className="font-semibold mr-1 text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-date')}
+                                                    {currentTour?.date || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-date')}
                                                 </span>
                                             </div>
                                         </div>
@@ -495,7 +596,7 @@ export default function SignUpForm() {
                                     {/* Tour Details */}
                                     <div className="md:col-span-2 space-y-4">
                                         <h3 className="text-xl font-bold text-content border-b-2 border-blue-200/70 pb-3">
-                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-title')}
+                                            {currentTour?.title || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-title')}
                                         </h3>
 
                                         <div className="flex items-center">
@@ -505,7 +606,7 @@ export default function SignUpForm() {
                                                     {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-title')}
                                                 </p>
                                                 <p className="text-xs text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-content')}
+                                                    {currentTour?.location || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-content')}
                                                 </p>
                                             </div>
                                         </div>
@@ -517,7 +618,7 @@ export default function SignUpForm() {
                                                     {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-title')}
                                                 </p>
                                                 <p className="text-xs text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-content')}
+                                                    {currentTour?.duration || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-content')}
                                                 </p>
                                             </div>
                                         </div>
@@ -567,35 +668,24 @@ export default function SignUpForm() {
                                                         <div className="space-y-2">
                                                             <div className="flex items-center">
                                                                 <Checkbox
-                                                                    id="hue"
+                                                                    id="hanoiHaiDuong"
                                                                     className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.cities.hue}
-                                                                    onCheckedChange={(checked) => handleCityChange('hue', checked)}
+                                                                    checked={formData.cities.hanoiHaiDuong}
+                                                                    onCheckedChange={(checked) => handleCityChange('hanoiHaiDuong', checked)}
                                                                 />
-                                                                <label htmlFor="hue" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hue-label')}
+                                                                <label htmlFor="hanoiHaiDuong" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hanoiHaiDuong-label') || "Ha Noi & Hai Duong"}
                                                                 </label>
                                                             </div>
                                                             <div className="flex items-center">
                                                                 <Checkbox
-                                                                    id="danang"
+                                                                    id="hueDaNang"
                                                                     className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.cities.danang}
-                                                                    onCheckedChange={(checked) => handleCityChange('danang', checked)}
+                                                                    checked={formData.cities.hueDaNang}
+                                                                    onCheckedChange={(checked) => handleCityChange('hueDaNang', checked)}
                                                                 />
-                                                                <label htmlFor="danang" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-danang-label')}
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="tamKy"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.cities.tamKy}
-                                                                    onCheckedChange={(checked) => handleCityChange('tamKy', checked)}
-                                                                />
-                                                                <label htmlFor="tamKy" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tamky-label')}
+                                                                <label htmlFor="hueDaNang" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hueDaNang-label') || "Hue & Da Nang"}
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -614,7 +704,7 @@ export default function SignUpForm() {
                                                                     onCheckedChange={(checked) => handleTransferChange('hotel', checked)}
                                                                 />
                                                                 <label htmlFor="hotel" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hotel-label')}
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hotel-label') || "Accommodation for Northern Vietnam tour"}
                                                                 </label>
                                                             </div>
                                                             <div className="flex items-center">
@@ -625,7 +715,18 @@ export default function SignUpForm() {
                                                                     onCheckedChange={(checked) => handleTransferChange('travel', checked)}
                                                                 />
                                                                 <label htmlFor="travel" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-travel-label')}
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-travel-label') || "Accommodation for Central Vietnam tour"}
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <Checkbox
+                                                                    id="flight"
+                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                    checked={formData.transfers.flight}
+                                                                    onCheckedChange={(checked) => handleTransferChange('flight', checked)}
+                                                                />
+                                                                <label htmlFor="flight" className="text-sm text-content font-medium cursor-pointer">
+                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-flight-label') || "One way flight from Hanoi (Northern Vietnam) to Hue (Central Vietnam)"}
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -713,24 +814,7 @@ export default function SignUpForm() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <label htmlFor="businessRegistration" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-registration-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="businessRegistration"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.businessRegistration && touched.businessRegistration ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Your business registration number"
-                                            value={formData.businessRegistration}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.businessRegistration && touched.businessRegistration && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.businessRegistration}</p>
-                                        )}
-                                    </div>
-
+                                <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
                                     <div>
                                         <label htmlFor="legalRepresentative" className="block text-blue-600 mb-2">
                                             {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-representative-label')} <span className="text-red-500">*</span>
@@ -747,6 +831,23 @@ export default function SignUpForm() {
                                             <p className="text-red-500 text-xs mt-1">{errors.legalRepresentative}</p>
                                         )}
                                     </div>
+
+                                    {/* <div>
+                                        <label htmlFor="businessRegistration" className="block text-blue-600 mb-2">
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-registration-label')} <span className="text-gray-500 text-xs">(optional)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="businessRegistration"
+                                            className={`text-xs w-full bg-transparent border-b ${errors.businessRegistration && touched.businessRegistration ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                            placeholder="Business registration number"
+                                            value={formData.businessRegistration}
+                                            onChange={handleInputChange}
+                                        />
+                                        {errors.businessRegistration && touched.businessRegistration && (
+                                            <p className="text-red-500 text-xs mt-1">{errors.businessRegistration}</p>
+                                        )}
+                                    </div> */}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -794,18 +895,16 @@ export default function SignUpForm() {
                                             placeholder="example@gmail.com"
                                         />
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                    <div>
+                                    {/* <div>
                                         <label htmlFor="accountNumber" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-account-label')} <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-account-label')} <span className="text-gray-500 text-xs">(optional)</span>
                                         </label>
                                         <input
                                             type="text"
                                             id="accountNumber"
                                             className={`text-xs w-full bg-transparent border-b ${errors.accountNumber && touched.accountNumber ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Your company's account number"
+                                            placeholder="Account number"
                                             value={formData.accountNumber}
                                             onChange={handleInputChange}
                                         />
@@ -816,34 +915,20 @@ export default function SignUpForm() {
 
                                     <div>
                                         <label htmlFor="bank" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-bank-label')} <span className="text-red-500">*</span>
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-bank-label')} <span className="text-gray-500 text-xs">(optional)</span>
                                         </label>
                                         <input
                                             type="text"
                                             id="bank"
                                             className={`text-xs w-full bg-transparent border-b ${errors.bank && touched.bank ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Where your company account is held"
+                                            placeholder="Bank name"
                                             value={formData.bank}
                                             onChange={handleInputChange}
                                         />
                                         {errors.bank && touched.bank && (
                                             <p className="text-red-500 text-xs mt-1">{errors.bank}</p>
                                         )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="swift" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-swift-label')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="swift"
-                                            className="text-xs w-full bg-transparent border-b border-black py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400"
-                                            placeholder="SWIFT code"
-                                            value={formData.swift}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
@@ -859,10 +944,116 @@ export default function SignUpForm() {
                                         type="button"
                                         className="bg-blue-500 hover:bg-blue-950 text-white text-xs lg:text-sm font-semibold min-w-[130px] px-5 py-4 lg:py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                         onClick={handleSubmit}
+                                        disabled={isProcessingDocuments}
                                     >
-                                        {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-submit-button')}
-                                        <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                        {isProcessingDocuments ? (
+                                            <>
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-submit-button')}
+                                                <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                            </>
+                                        )}
                                     </button>
+
+                                    {/* Temporary debug button - remove in production */}
+                                    {/* <button
+                                        type="button"
+                                        className="bg-red-500 hover:bg-red-700 text-white text-xs px-3 py-2 rounded-md"
+                                        onClick={() => {
+                                            console.log("Testing docx libraries...");
+                                            try {
+                                                alert(`Libraries check: PizZip (${typeof PizZip}), Docxtemplater (${typeof Docxtemplater}), saveAs (${typeof saveAs})`);
+                                                
+                                                // Log the current form data
+                                                console.log("Current form data:", formData);
+                                                
+                                                // Test file fetch
+                                                fetch('/VN_template.docx')
+                                                    .then(response => {
+                                                        if (!response.ok) {
+                                                            throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+                                                        }
+                                                        return response.arrayBuffer();
+                                                    })
+                                                    .then(data => {
+                                                        console.log("Template fetch successful:", data.byteLength, "bytes");
+                                                        alert(`Template fetch successful: ${data.byteLength} bytes`);
+                                                        
+                                                        // Analyze template content
+                                                        try {
+                                                            const zip = new PizZip(data);
+                                                            const doc = zip.files['word/document.xml'];
+                                                            if (doc) {
+                                                                const content = doc.asText();
+                                                                const placeholders = content.match(/\[([^\]]+)\]/g);
+                                                                if (placeholders && placeholders.length > 0) {
+                                                                    const uniquePlaceholders = [...new Set(placeholders)].map(p => p.replace(/\[|\]/g, ''));
+                                                                    console.log('Found placeholders:', uniquePlaceholders);
+                                                                    alert('Found placeholders: ' + uniquePlaceholders.join(', '));
+                                                                } else {
+                                                                    console.log('No [placeholders] found in standard format');
+                                                                    alert('No [placeholders] found in standard format');
+                                                                }
+                                                            }
+                                                        } catch (e: any) {
+                                                            console.error('Error analyzing template:', e);
+                                                            alert('Error analyzing template: ' + e.message);
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        console.error("Fetch error:", error);
+                                                        alert(`Fetch error: ${error.message}`);
+                                                    });
+                                                    
+                                                // Also test the Invoice template
+                                                fetch('/IUC_Invoice VAT_UNIVERSITY_template.docx')
+                                                    .then(response => {
+                                                        if (!response.ok) {
+                                                            throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+                                                        }
+                                                        return response.arrayBuffer();
+                                                    })
+                                                    .then(data => {
+                                                        console.log("Invoice template fetch successful:", data.byteLength, "bytes");
+                                                        
+                                                        // Analyze template content
+                                                        try {
+                                                            const zip = new PizZip(data);
+                                                            const doc = zip.files['word/document.xml'];
+                                                            if (doc) {
+                                                                const content = doc.asText();
+                                                                const placeholders = content.match(/\[([^\]]+)\]/g);
+                                                                if (placeholders && placeholders.length > 0) {
+                                                                    const uniquePlaceholders = [...new Set(placeholders)].map(p => p.replace(/\[|\]/g, ''));
+                                                                    console.log('Invoice template placeholders:', uniquePlaceholders);
+                                                                    alert('Invoice template placeholders: ' + uniquePlaceholders.join(', '));
+                                                                } else {
+                                                                    console.log('No [placeholders] found in Invoice template');
+                                                                    alert('No [placeholders] found in Invoice template');
+                                                                }
+                                                            }
+                                                        } catch (e: any) {
+                                                            console.error('Error analyzing invoice template:', e);
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        console.error("Invoice fetch error:", error);
+                                                    });
+                                            } catch (error: any) {
+                                                console.error("Debug test error:", error);
+                                                alert(`Test error: ${error.message}`);
+                                            }
+                                        }}
+                                    >
+                                        Test Templates
+                                    </button> */}
                                 </div>
                             </div>
                         )}

@@ -6,6 +6,7 @@ const pages = [
   { name: 'About Us', path: '/admin/about-us' },
   { name: 'Our Tours', path: '/admin/our-tours' },
   { name: 'Tour Details', path: '/admin/tour-details' },
+  { name: 'Spring Tour Details', path: '/admin/spring-tour-details' },
   { name: 'Sign Up Form', path: '/admin/signup-form' },
 ];
 

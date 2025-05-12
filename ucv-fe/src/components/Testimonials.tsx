@@ -128,7 +128,7 @@ export function Testimonials() {
                                                             <img src="/testimonial-icon.svg" alt="Testimonial icon" className="w-4 h-4 group-hover/card:text-white transition-all duration-300 " />
                                                         </div>
                                                         <div>
-                                                            <h4 className="text-blue-500 group-hover/card:text-white transition-all duration-300 font-medium text-xs">{testimonial.university}</h4>
+                                                            {/* <h4 className="text-blue-500 group-hover/card:text-white transition-all duration-300 font-medium text-xs">{testimonial.university}</h4> */}
                                                             <p className="text-blue-300 group-hover/card:text-white/70 transition-all duration-300 text-xs">{testimonial.subtitle}</p>
                                                         </div>
                                                     </div>

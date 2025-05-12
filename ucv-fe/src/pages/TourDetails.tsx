@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
-import { ArrowRight } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import { ArrowRight, Settings2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
@@ -19,35 +19,26 @@ interface Tour {
 // Tour data
 const TOURS_DATA: Tour[] = [
     {
-        id: 1,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "JULY 4",
-    },
-    {
         id: 2,
-        title: "Tour Spring 2025",
+        title: "Spring Tour 2026",
         description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
         imageUrl: "/hero-banner-2.png",
         price: 2065,
-        date: "JULY 4",
-    },
-    {
-        id: 3,
-        title: "Tour Spring 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-3.png",
-        price: 2065,
-        date: "JULY 4",
-    },
+        date: "31 MARCH - 10 APRIL 2026",
+    }
 ];
 
 // TourCard component
 function TourCard({ tour }: { tour: Tour }) {
+    // Determine the link based on tour ID
+    const getLink = () => {
+        if (tour.id === 1) return "/tour-details";
+        if (tour.id === 2) return "/spring-tour-details";
+        return "/tour-details"; // Default fallback
+    };
+
     return (
-        <a href="/tour-details" className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={getLink()} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative  overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
@@ -88,16 +79,21 @@ function TourCard({ tour }: { tour: Tour }) {
 export default function TourDetails() {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(1);
-    const count = 3;
+    // const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    // const [showCalendar, setShowCalendar] = useState(false);
+    // const [menuType, setMenuType] = useState<string | null>(null);
+    // const [daysToAdd, setDaysToAdd] = useState('');
+    const count = 4;
     const getItemById = useContentStore(state => state.getItemById);
 
     // Get content from content store
     const tourDate = getItemById('tour-details', 'bannerSection', 'tourBanner-date')?.content || "INCOMING • JULY 4";
     const tourTitle = getItemById('tour-details', 'bannerSection', 'tourBanner-title')?.content || "Tour Spring 2025";
-    const tourDescription = getItemById('tour-details', 'bannerSection', 'tourBanner-description')?.content || 
+    const tourDescription = getItemById('tour-details', 'bannerSection', 'tourBanner-description')?.content ||
         "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.\n\nWe've curated our selection with local experts considering socio-economic demographics to ensure a valuable visit for you.";
     const tourLocation = getItemById('tour-details', 'bannerSection', 'tourBanner-location')?.content || "Central Vietnam (Hue, Da Nang)";
     const tourDuration = getItemById('tour-details', 'bannerSection', 'tourBanner-duration')?.content || "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.";
+    const tourCustomize = getItemById('tour-details', 'bannerSection', 'tourBanner-customize')?.content || "You can choose between the full tour, the northern tour or the central tour.";
     const tourStartDate = getItemById('tour-details', 'bannerSection', 'tourBanner-startDate')?.content || "July, 2025";
 
     useEffect(() => {
@@ -183,7 +179,7 @@ export default function TourDetails() {
                                 <p className="text-content font-medium text-sm mb-4 whitespace-pre-line line-clamp-11 lg:line-clamp-6 overflow-hidden">
                                     {tourDescription}
                                 </p>
-                                <a href="/sign-up">
+                                <a href="/sign-up/fallTour2025">
                                     <button
                                         type="submit"
                                         className="lg:absolute lg:bottom-6 w-full md:w-auto bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
@@ -210,9 +206,16 @@ export default function TourDetails() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <Settings2 className="w-6 h-6 text-blue-950" />
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-content text-xs font-bold uppercase">CUSTOMIZE</span>
+                                            <span className="text-content text-sm">{tourCustomize}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
                                         <img src="/calender.svg" alt="Calender Icon" className="w-6 h-6" />
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-content text-xs font-bold uppercase">PLANNED START DATE</span>
+                                            <span className="text-content text-xs font-bold uppercase">Tour dates</span>
                                             <span className="text-content text-sm">{tourStartDate}</span>
                                         </div>
                                     </div>
@@ -348,89 +351,161 @@ export default function TourDetails() {
                         </div>
 
                         {/* Location cards - 3/4 of grid */}
-                        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Hue Location */}
-                            <div className=" rounded-xl overflow-hidden">
-                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden ">
-                                    <img
-                                        src="/Hue.png"
-                                        alt="Hue"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
-                                        }}
-                                    />
-                                </div>
-                                <div className="p-4 flex items-center gap-4">
-                                    <span className="font-semibold text-content">
-                                        {getItemById('tour-details', 'locationsSection', 'locations-hue')?.content || "Hue"}
-                                    </span>
-                                    <a
-                                        href="https://vi.wikipedia.org/wiki/Hu%E1%BA%BF"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center text-sm text-blue-500"
-                                    >
-                                        <img src="/link.svg" alt="Wikipedia" className="w-4 h-4 mr-1" />
-                                        Wikipedia
-                                    </a>
-                                </div>
-                            </div>
+                        <div className="lg:col-span-3">
+                            {/* Location Cards Carousel */}
+                            <div className="location-carousel-container relative">
+                                <Carousel 
+                                    className="location-carousel w-full" 
+                                    opts={{
+                                        align: "start",
+                                        loop: true,
+                                    }}
+                                    setApi={setApi}
+                                >
+                                    <CarouselContent className="location-carousel-content">
+                                        {/* Ha Noi Location */}
+                                        <CarouselItem className="basis-full md:basis-1/3">
+                                            <div className="location-card-container rounded-xl overflow-hidden">
+                                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden">
+                                                    <img
+                                                        src="/HaNoi.jpg"
+                                                        alt="HaNoi"
+                                                        className="location-image w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="location-details p-4 flex items-center gap-4">
+                                                    <span className="location-name font-semibold text-content">
+                                                        {getItemById('tour-details', 'locationsSection', 'locations-hanoi')?.content || "Ha Noi"}
+                                                    </span>
+                                                    <a
+                                                        href="https://en.wikipedia.org/wiki/Hanoi"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="location-link flex items-center text-sm text-blue-500 cursor-pointer"
+                                                    >
+                                                        <img src="/link.svg" alt="Wikipedia" className="link-icon w-4 h-4 mr-1" />
+                                                        Wikipedia
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
 
-                            {/* Danang Location */}
-                            <div className=" rounded-xl overflow-hidden">
-                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden ">
-                                    <img
-                                        src="/DaNang.png"
-                                        alt="DaNang"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
-                                        }}
-                                    />
-                                </div>
-                                <div className="p-4 flex items-center gap-4">
-                                    <span className="font-semibold text-content">
-                                        {getItemById('tour-details', 'locationsSection', 'locations-danang')?.content || "Da Nang"}
-                                    </span>
-                                    <a
-                                        href="https://vi.wikipedia.org/wiki/Hu%E1%BA%BF"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center text-sm text-blue-500"
-                                    >
-                                        <img src="/link.svg" alt="Wikipedia" className="w-4 h-4 mr-1" />
-                                        Wikipedia
-                                    </a>
-                                </div>
-                            </div>
+                                        {/* Hai Duong Location */}
+                                        <CarouselItem className="basis-full md:basis-1/3">
+                                            <div className="location-card-container rounded-xl overflow-hidden">
+                                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden">
+                                                    <img
+                                                        src="/HaiDuong.jpg"
+                                                        alt="HaiDuong"
+                                                        className="location-image w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="location-details p-4 flex items-center gap-4">
+                                                    <span className="location-name font-semibold text-content">
+                                                        {getItemById('tour-details', 'locationsSection', 'locations-haiduong')?.content || "Hai Duong"}
+                                                    </span>
+                                                    <a
+                                                        href="https://en.wikipedia.org/wiki/H%E1%BA%A3i_D%C6%B0%C6%A1ng"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="location-link flex items-center text-sm text-blue-500 cursor-pointer"
+                                                    >
+                                                        <img src="/link.svg" alt="Wikipedia" className="link-icon w-4 h-4 mr-1" />
+                                                        Wikipedia
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
 
-                            {/* Tam Ky/Hoi An Location */}
-                            <div className=" rounded-xl overflow-hidden">
-                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden ">
-                                    <img
-                                        src="/HoiAn.png"
-                                        alt="HoiAn"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
-                                        }}
-                                    />
-                                </div>
-                                <div className="p-4 flex items-center gap-4">
-                                    <span className="font-semibold text-content">
-                                        {getItemById('tour-details', 'locationsSection', 'locations-tamky')?.content || "Tam Ky/Hoi An"}
-                                    </span>
-                                    <a
-                                        href="https://vi.wikipedia.org/wiki/Hu%E1%BA%BF"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center text-sm text-blue-500"
-                                    >
-                                        <img src="/link.svg" alt="Wikipedia" className="w-4 h-4 mr-1" />
-                                        Wikipedia
-                                    </a>
-                                </div>
+                                        {/* Hue Location */}
+                                        <CarouselItem className="basis-full md:basis-1/3">
+                                            <div className="location-card-container rounded-xl overflow-hidden">
+                                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden">
+                                                    <img
+                                                        src="/Hue.png"
+                                                        alt="Hue"
+                                                        className="location-image w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="location-details p-4 flex items-center gap-4">
+                                                    <span className="location-name font-semibold text-content">
+                                                        {getItemById('tour-details', 'locationsSection', 'locations-hue')?.content || "Hue"}
+                                                    </span>
+                                                    <a
+                                                        href="https://en.wikipedia.org/wiki/Hu%E1%BA%BF"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="location-link flex items-center text-sm text-blue-500 cursor-pointer"
+                                                    >
+                                                        <img src="/link.svg" alt="Wikipedia" className="link-icon w-4 h-4 mr-1" />
+                                                        Wikipedia
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
+
+                                        {/* Danang Location */}
+                                        <CarouselItem className="basis-full md:basis-1/3">
+                                            <div className="location-card-container rounded-xl overflow-hidden">
+                                                <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden">
+                                                    <img
+                                                        src="/DaNang.png"
+                                                        alt="DaNang"
+                                                        className="location-image w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = "/hero-banner-1.png";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="location-details p-4 flex items-center gap-4">
+                                                    <span className="location-name font-semibold text-content">
+                                                        {getItemById('tour-details', 'locationsSection', 'locations-danang')?.content || "Da Nang"}
+                                                    </span>
+                                                    <a
+                                                        href="https://en.wikipedia.org/wiki/Da_Nang"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="location-link flex items-center text-sm text-blue-500 cursor-pointer"
+                                                    >
+                                                        <img src="/link.svg" alt="Wikipedia" className="link-icon w-4 h-4 mr-1" />
+                                                        Wikipedia
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
+                                    </CarouselContent>
+
+                                    {/* Navigation buttons */}
+                                    <div className="carousel-navigation flex items-center justify-between">
+                                        <CarouselPrevious className="carousel-prev-button relative -left-0 translate-y-0 lg:-left-0 cursor-pointer" />
+                                        <CarouselNext className="carousel-next-button relative -right-0 translate-y-0 lg:-right-0 cursor-pointer" />
+                                    </div>
+
+                                    {/* Carousel indicators */}
+                                    <div className="carousel-indicators flex justify-center mt-4">
+                                        <div className="carousel-indicator-container flex space-x-2 items-center">
+                                            {Array.from({ length: count }).map((_, i) => (
+                                                <span
+                                                    key={i}
+                                                    className={`carousel-indicator block rounded-full cursor-pointer ${current === i + 1
+                                                        ? 'carousel-indicator-active bg-blue-500 h-2 w-2'
+                                                        : 'carousel-indicator-inactive bg-gray-300 h-1.5 w-1.5'
+                                                        } transition-all duration-300`}
+                                                    onClick={() => api?.scrollTo(i)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </Carousel>
                             </div>
                         </div>
                     </div>
@@ -502,13 +577,13 @@ export default function TourDetails() {
                                         </p>
                                     </div>
                                     <div className="col-span-2 p-4 flex items-center ">
-                                    <a href="/sign-up">
-                                        <button
-                                            type="submit"
-                                            className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
-                                        >
-                                            Sign Up Now
-                                            <img src="/send-icon.svg" alt="Send Icon" className="h-3 w-3 ms-2 group-hover:translate-x-2 transition-transform duration-300" />
+                                        <a href="/sign-up/fallTour2025">
+                                            <button
+                                                type="submit"
+                                                className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
+                                            >
+                                                Sign Up Now
+                                                <img src="/send-icon.svg" alt="Send Icon" className="h-3 w-3 ms-2 group-hover:translate-x-2 transition-transform duration-300" />
                                             </button>
                                         </a>
                                     </div>
@@ -529,24 +604,24 @@ export default function TourDetails() {
                             </div>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="flex flex-col ">
-                                    {(getItemById('tour-details', 'packageSection', 'package-items1')?.content || 
-                                      "9 - 11 school visits in 3 cities.\nSupport throughout the tour and school visits.\nOne stall at each school fair.\nReception dinner.")
+                                    {(getItemById('tour-details', 'packageSection', 'package-items1')?.content ||
+                                        "9 - 11 school visits in 3 cities.\nSupport throughout the tour and school visits.\nOne stall at each school fair.\nReception dinner.")
                                         .split('\n').map((item, index) => (
-                                        <div key={index} className="flex items-center">
-                                            <div className="text-content text-lg mr-2">•</div>
-                                            <p className="text-content text-sm font-medium">{item}</p>
-                                        </div>
-                                    ))}
+                                            <div key={index} className="flex items-center">
+                                                <div className="text-content text-lg mr-2">•</div>
+                                                <p className="text-content text-sm font-medium">{item}</p>
+                                            </div>
+                                        ))}
                                 </div>
                                 <div className="flex flex-col ">
-                                    {(getItemById('tour-details', 'packageSection', 'package-items2')?.content || 
-                                      "Refreshments and snacks between sessions.\nLunch, coffee and dinner on all 4 days (no dinner on final day).\nIntra and inter city transport (in Hue, Danang and Tam Ky).\nHotel suggestions & discount.")
+                                    {(getItemById('tour-details', 'packageSection', 'package-items2')?.content ||
+                                        "Refreshments and snacks between sessions.\nLunch, coffee and dinner on all 4 days (no dinner on final day).\nIntra and inter city transport (in Hue, Danang and Tam Ky).\nHotel suggestions & discount.")
                                         .split('\n').map((item, index) => (
-                                        <div key={index} className="flex items-center">
-                                            <div className="text-content text-lg mr-2">•</div>
-                                            <p className="text-content text-sm font-medium">{item}</p>
-                                        </div>
-                                    ))}
+                                            <div key={index} className="flex items-center">
+                                                <div className="text-content text-lg mr-2">•</div>
+                                                <p className="text-content text-sm font-medium">{item}</p>
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
                         </div>

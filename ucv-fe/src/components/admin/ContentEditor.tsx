@@ -69,8 +69,10 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
           <textarea
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="w-full p-2 border border-gray-300 rounded-md font-mono"
             rows={rows}
+            spellCheck="false"
+            style={{ whiteSpace: 'pre-wrap' }}
           />
         );
       case 'image':
@@ -136,20 +138,37 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
       case 'heading':
         return <h3 className="text-lg font-bold">{displayContent.content}</h3>;
       case 'paragraph':
-        // Check if this is a multi-line paragraph that represents a list
+        // For any paragraph that contains line breaks
         if (displayContent.content.includes('\n')) {
-          const lines = displayContent.content.split('\n');
-          return (
-            <div>
-              {lines.map((line, idx) => (
-                <p key={idx} className="text-gray-700 mb-1">
-                  {line.startsWith('-') ? <span>• {line.substring(2)}</span> : line}
-                </p>
-              ))}
-            </div>
-          );
+          // Special handling for lists with bullet points
+          if (displayContent.content.includes('- ')) {
+            const lines = displayContent.content.split('\n');
+            return (
+              <div>
+                {lines.map((line, idx) => (
+                  <p key={idx} className="text-gray-700 mb-1">
+                    {line.startsWith('-') ? <span>• {line.substring(2)}</span> : line}
+                  </p>
+                ))}
+              </div>
+            );
+          }
+          
+          // For regular multi-line paragraphs
+          const paragraphs = displayContent.content.split('\n\n');
+          if (paragraphs.length > 1) {
+            return (
+              <div>
+                {paragraphs.map((paragraph, idx) => (
+                  <p key={idx} className="text-gray-700 mb-3 whitespace-pre-line">{paragraph}</p>
+                ))}
+              </div>
+            );
+          }
         }
-        return <p className="text-gray-700">{displayContent.content}</p>;
+        
+        // For single-line paragraphs or those with only line breaks
+        return <p className="text-gray-700 whitespace-pre-line">{displayContent.content}</p>;
       case 'button':
         return (
           <button className="px-4 py-2 bg-blue-500 text-white rounded-md">

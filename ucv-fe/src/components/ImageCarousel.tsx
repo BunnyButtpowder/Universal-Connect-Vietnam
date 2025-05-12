@@ -10,7 +10,7 @@ const ImageCarousel: React.FC = () => {
   const images: Image[] = [
     { src: '/display1.png', alt: 'Students at an event' },
     { src: '/display2.png', alt: 'Academic conference' },
-    { src: '/display3.png', alt: 'Classroom session' },
+    { src: '/classroom.png', alt: 'Classroom session' },
     { src: '/display4.png', alt: 'Students collaborating' },
     { src: '/university-event.png', alt: 'School exhibition' },
   ];

@@ -72,7 +72,7 @@ export function Footer() {
             };
 
             // Send API request
-            const response = await fetch("http://localhost:3000/api/contact/submit", {
+            const response = await fetch("https://api.ucv.com.vn/api/contact/submit", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
