@@ -34,7 +34,7 @@ export function SignUpFormStep3Editor({ pageContent }: SignUpFormStep3EditorProp
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Head Office Label</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Head Office Label <span className="text-red-500">*</span></label>
               <InlineEditableField
                 pageName="signup-form"
                 sectionId="step3Section"
@@ -43,20 +43,11 @@ export function SignUpFormStep3Editor({ pageContent }: SignUpFormStep3EditorProp
               />
               <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
             </div>
-
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4 bg-white p-4 rounded-md">
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Business Registration Label</label>
-              <InlineEditableField
-                pageName="signup-form"
-                sectionId="step3Section"
-                item={pageContent.sections.step3Section.items.find(item => item.id === 'step3-registration-label')}
-                className="text-sm font-medium"
-              />
-              <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Legal Representative Label</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Legal Representative Label <span className="text-red-500">*</span></label>
               <InlineEditableField
                 pageName="signup-form"
                 sectionId="step3Section"
@@ -65,9 +56,11 @@ export function SignUpFormStep3Editor({ pageContent }: SignUpFormStep3EditorProp
               />
               <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-md">
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position Label</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Position Label <span className="text-red-500">*</span></label>
               <InlineEditableField
                 pageName="signup-form"
                 sectionId="step3Section"
@@ -97,39 +90,6 @@ export function SignUpFormStep3Editor({ pageContent }: SignUpFormStep3EditorProp
                 className="text-sm font-medium"
               />
               <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Auto-filled field (not editable)</div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number Label</label>
-              <InlineEditableField
-                pageName="signup-form"
-                sectionId="step3Section"
-                item={pageContent.sections.step3Section.items.find(item => item.id === 'step3-account-label')}
-                className="text-sm font-medium"
-              />
-              <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bank Label</label>
-              <InlineEditableField
-                pageName="signup-form"
-                sectionId="step3Section"
-                item={pageContent.sections.step3Section.items.find(item => item.id === 'step3-bank-label')}
-                className="text-sm font-medium"
-              />
-              <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">SWIFT Label</label>
-              <InlineEditableField
-                pageName="signup-form"
-                sectionId="step3Section"
-                item={pageContent.sections.step3Section.items.find(item => item.id === 'step3-swift-label')}
-                className="text-sm font-medium"
-              />
-              <div className="mt-1 bg-gray-100 p-2 rounded text-xs text-gray-500">Input field (not editable)</div>
             </div>
           </div>
 

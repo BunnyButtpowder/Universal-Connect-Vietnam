@@ -119,19 +119,9 @@ export function Testimonials() {
                                 {testimonials.map((testimonial) => (
                                     <CarouselItem key={testimonial.id} className="md:basis-1/3 lg:basis-1/3 flex items-center">
                                         <div className="p-1">
-                                            <Card className="bg-blue-50 hover:bg-blue-950 group/card transition-all duration-300 testimonial-card border-slate-100 shadow-sm max-h-64 overflow-auto">
-                                                <CardContent className="space-y-1">
-                                                    <p className="text-blue-950 group-hover/card:text-white transition-all duration-300 font-medium leading-relaxed text-xs line-clamp-4 mb-15">{testimonial.content}</p>
-                                                    <div className="border-t-2 border-blue-300 group-hover/card:border-white/10 group-hover/card:-translate-y-3 transition-all duration-300 pt-3"></div>
-                                                    <div className="flex items-center gap-2 group-hover/card:-translate-y-3 transition-all duration-300">
-                                                        <div className="testimonial-logo bg-blue-50 group-hover/card:bg-blue-950 transition-all duration-300 p-2 rounded">
-                                                            <img src="/testimonial-icon.svg" alt="Testimonial icon" className="w-4 h-4 group-hover/card:text-white transition-all duration-300 " />
-                                                        </div>
-                                                        <div>
-                                                            {/* <h4 className="text-blue-500 group-hover/card:text-white transition-all duration-300 font-medium text-xs">{testimonial.university}</h4> */}
-                                                            <p className="text-blue-300 group-hover/card:text-white/70 transition-all duration-300 text-xs">{testimonial.subtitle}</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="bg-blue-50 hover:bg-blue-950 group/card transition-all duration-300 testimonial-card border-slate-100 shadow-sm h-64">
+                                                <CardContent className="space-y-1 h-full flex flex-col justify-center">
+                                                    <p className="text-blue-950 group-hover/card:text-white transition-all duration-300 font-medium leading-relaxed text-xs italic">"{testimonial.content}"</p>
                                                 </CardContent>
                                             </Card>
                                         </div>
@@ -140,7 +130,7 @@ export function Testimonials() {
                                 {/* Special image item for the third carousel slot */}
                                 <CarouselItem className="md:basis-1/3 lg:basis-1/3">
                                     <div className="p-1">
-                                        <div className="testimonial-image-container rounded-lg overflow-hidden max-h-64">
+                                        <div className="testimonial-image-container rounded-lg overflow-hidden h-64">
                                             <img
                                                 src="/university-event.png"
                                                 alt="University event"

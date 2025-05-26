@@ -24,8 +24,18 @@ export function FooterEditor({ pageContent }: FooterEditorProps) {
   const contactHeading = getItemById('footer-contact-heading');
   const contactTitle = getItemById('footer-contact-title');
   
+  // Region option labels with fallbacks
+  const regionNorthern = getItemById('footer-region-northern');
+  const northernLabel = regionNorthern ? regionNorthern.content : 'Northern Vietnam (Hanoi and surrounding areas)';
+  
+  const regionCentral = getItemById('footer-region-central');
+  const centralLabel = regionCentral ? regionCentral.content : 'Central Vietnam (Da Nang and surrounding areas)';
+  
+  const regionSouthern = getItemById('footer-region-southern');
+  const southernLabel = regionSouthern ? regionSouthern.content : 'Southern Vietnam (HCMC and surrounding areas)';
+  
   return (
-    <div className="preview-container space-y-8">
+    <div className="preview-container space-y-8 mt-5">
       <div className="border border-gray-200 rounded-lg bg-gray-700 text-white p-6">
         <h3 className="font-semibold text-white mb-6 border-b border-gray-600 pb-2">Footer Content</h3>
         
@@ -141,6 +151,58 @@ export function FooterEditor({ pageContent }: FooterEditorProps) {
                   multiline
                 />
               )}
+            </div>
+            
+            {/* Tour Regions Options */}
+            <div className="bg-gray-600 p-3 rounded-lg">
+              <div className="font-semibold text-gray-300 text-xs mb-3">Tour Region Options:</div>
+              <div className="space-y-4">
+                <div>
+                  <div className="font-semibold text-gray-300 text-xs mb-1">Northern Region:</div>
+                  {regionNorthern ? (
+                    <InlineEditableField
+                      item={regionNorthern}
+                      pageName={pageContent.pageName}
+                      sectionId={sectionId}
+                      className="text-xs text-white"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-400">
+                      {northernLabel} <span className="text-gray-500">(Default - Add content item to edit)</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-300 text-xs mb-1">Central Region:</div>
+                  {regionCentral ? (
+                    <InlineEditableField
+                      item={regionCentral}
+                      pageName={pageContent.pageName}
+                      sectionId={sectionId}
+                      className="text-xs text-white"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-400">
+                      {centralLabel} <span className="text-gray-500">(Default - Add content item to edit)</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-300 text-xs mb-1">Southern Region:</div>
+                  {regionSouthern ? (
+                    <InlineEditableField
+                      item={regionSouthern}
+                      pageName={pageContent.pageName}
+                      sectionId={sectionId}
+                      className="text-xs text-white"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-400">
+                      {southernLabel} <span className="text-gray-500">(Default - Add content item to edit)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             
             <div className="bg-gray-800 p-4 rounded-lg mt-4">

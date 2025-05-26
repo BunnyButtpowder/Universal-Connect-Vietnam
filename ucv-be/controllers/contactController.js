@@ -82,15 +82,20 @@ exports.submitDocuments = async (req, res) => {
         // Selected cities as text
         const selectedCities = [
             formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : ''
+            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
+            formData.cities.hcmc ? 'Ho Chi Minh City (HCMC)' : ''
         ].filter(Boolean).join(', ') || 'None selected';
         
-        // Selected transfers as text
-        const selectedTransfers = [
-            formData.transfers.hotel ? 'Accommodation for Northern Vietnam tour' : '',
-            formData.transfers.travel ? 'Accommodation for Central Vietnam tour' : '',
-            formData.transfers.flight ? 'One way flight from Hanoi to Hue' : ''
+        // Selected promotions as text
+        const selectedPromotions = [
+            formData.promotions.earlyBird ? 'Early Bird 10%' : '',
+            formData.promotions.returningClient ? 'Returning Client 15%' : ''
         ].filter(Boolean).join(', ') || 'None selected';
+
+        // Early bird expiration date based on tour
+        const earlyBirdExpiration = formData.tourId === 'fallTour2025' 
+            ? '10 July 2025'
+            : '10 December 2025';
 
         // Create email content
         const mailOptions = {
@@ -112,8 +117,10 @@ exports.submitDocuments = async (req, res) => {
                 <p><strong>Selected Tour:</strong> ${selectedTour}</p>
                 <p><strong>Tour Date:</strong> ${tourDate}</p>
                 <p><strong>Selected Cities:</strong> ${selectedCities}</p>
-                <p><strong>Selected Transfers:</strong> ${selectedTransfers}</p>
+                <p><strong>Applied Promotions:</strong> ${selectedPromotions}</p>
                 <p><strong>Want Callback:</strong> ${formData.wantCallback ? 'Yes' : 'No'}</p>
+                <p><strong>Early Bird Expiration:</strong> ${earlyBirdExpiration}</p>
+                <p><strong>Registration Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
             `,
             attachments: attachments
         };

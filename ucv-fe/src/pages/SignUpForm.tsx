@@ -7,6 +7,7 @@ import React from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { ContentItem } from "@/lib/types";
 import { processAllTemplates } from "@/utils/documentProcessor";
+import { toursApi, TourFull } from "@/lib/api";
 
 // Define types for form data
 interface FormData {
@@ -17,13 +18,11 @@ interface FormData {
     wantCallback: boolean;
     selectedPackage: string;
     cities: {
-        hanoiHaiDuong: boolean;
-        hueDaNang: boolean;
+        [key: string]: boolean;
     };
-    transfers: {
-        hotel: boolean;
-        travel: boolean;
-        flight: boolean;
+    promotions: {
+        earlyBird: boolean;
+        returningClient: boolean;
     };
     // Step 3 fields
     headOffice: string;
@@ -50,39 +49,6 @@ interface ValidationErrors {
     bank?: string;
 }
 
-// Define tour-specific data
-interface TourData {
-    id: string;
-    title: string;
-    date: string;
-    image: string;
-    location: string;
-    duration: string;
-    returnLink: string;
-}
-
-// Tour data mapping
-const TOURS_DATA: Record<string, TourData> = {
-    fallTour2025: {
-        id: "fallTour2025",
-        title: "Fall Tour 2025",
-        date: "1 - 8 OCTOBER 2025",
-        image: "/hero-banner-1.png",
-        location: "Central Vietnam (Hue, Da Nang)",
-        duration: "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.",
-        returnLink: "/tour-details"
-    },
-    springTour2026: {
-        id: "springTour2026",
-        title: "Spring Tour 2026",
-        date: "31 MARCH - 10 APRIL 2026",
-        image: "/hero-banner-2.png",
-        location: "Northern Vietnam (Hanoi, Hai Duong)",
-        duration: "10 schools across 3 northern cities over 5 days.",
-        returnLink: "/spring-tour-details"
-    }
-};
-
 // Helper function to get content item by ID
 const getContentById = (items: ContentItem[] | undefined, id: string): string => {
     if (!items) return "";
@@ -91,37 +57,64 @@ const getContentById = (items: ContentItem[] | undefined, id: string): string =>
 };
 
 export default function SignUpForm() {
-    const { tourId = "fallTour2025" } = useParams<{ tourId: string }>();
+    const { tourId } = useParams<{ tourId: string }>();
     const getPageContent = useContentStore(state => state.getPageContent);
+    // const getItemById = useContentStore(state => state.getItemById);
     const [signUpFormContent, setSignUpFormContent] = useState(getPageContent('signup-form'));
-    const [currentTour, setCurrentTour] = useState<TourData | null>(null);
 
+    // State for tour data from API
+    const [currentTour, setCurrentTour] = useState<TourFull | null>(null);
+    const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
+    const [isLoadingTour, setIsLoadingTour] = useState(true);
+    const [tourError, setTourError] = useState<string | null>(null);
+
+    // Load tour data from API
     useEffect(() => {
-        const content = getPageContent('signup-form');
-        if (content) {
-            setSignUpFormContent(content);
-        }
+        const loadTourData = async () => {
+            if (!tourId) {
+                setTourError("No tour ID provided");
+                setIsLoadingTour(false);
+                return;
+            }
 
-        // Set the current tour data
-        if (tourId && TOURS_DATA[tourId]) {
-            setCurrentTour(TOURS_DATA[tourId]);
+            try {
+                setIsLoadingTour(true);
+                setTourError(null);
 
-            // Update form data based on selected tour
-            setFormData(prev => ({
-                ...prev,
-                tourId: tourId,
-                // For Fall Tour (Central Vietnam), activate Hue & Da Nang
-                // For Spring Tour (Northern Vietnam), activate Hanoi & Hai Duong
-                cities: {
-                    hanoiHaiDuong: tourId === 'springTour2026', // True for Spring Tour
-                    hueDaNang: tourId === 'fallTour2025' // True for Fall Tour
-                }
-            }));
-        } else {
-            // Default to fall tour if not found
-            setCurrentTour(TOURS_DATA.fallTour2025);
-        }
-    }, [getPageContent, tourId]);
+                const tourData = await toursApi.getById(tourId);
+                setCurrentTour(tourData);
+
+                // Initialize form data with dynamic cities based on customize options
+                const initialCities: { [key: string]: boolean } = {};
+                tourData.customizeOptions?.forEach(option => {
+                    if (option.key !== 'grandTotal') {
+                        initialCities[option.key] = true;
+                    }
+                });
+
+                setFormData(prev => ({
+                    ...prev,
+                    tourId: tourData.id,
+                    cities: initialCities
+                }));
+
+                // Calculate initial price
+                const initialPrice = calculatePrice(tourData, initialCities, {
+                    earlyBird: true,
+                    returningClient: false
+                });
+                setCalculatedPrice(initialPrice);
+
+            } catch (error) {
+                console.error('Error loading tour data:', error);
+                setTourError('Failed to load tour information');
+            } finally {
+                setIsLoadingTour(false);
+            }
+        };
+
+        loadTourData();
+    }, [tourId]);
 
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -135,14 +128,10 @@ export default function SignUpForm() {
         email: "",
         wantCallback: false,
         selectedPackage: "earlyBird",
-        cities: {
-            hanoiHaiDuong: true,
-            hueDaNang: true
-        },
-        transfers: {
-            hotel: true,
-            travel: true,
-            flight: true
+        cities: {},
+        promotions: {
+            earlyBird: true,
+            returningClient: false
         },
         // Step 3 fields initialized with empty values
         headOffice: "",
@@ -152,10 +141,26 @@ export default function SignUpForm() {
         accountNumber: "",
         bank: "",
         swift: "",
-        tourId: tourId || "fallTour2025"
+        tourId: tourId || ""
     });
     const [errors, setErrors] = useState<ValidationErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    // Load signup form content
+    useEffect(() => {
+        const content = getPageContent('signup-form');
+        if (content) {
+            setSignUpFormContent(content);
+        }
+    }, [getPageContent]);
+
+    // Update initial price calculation when tour data is loaded
+    useEffect(() => {
+        if (currentTour) {
+            const price = calculatePrice(currentTour, formData.cities, formData.promotions);
+            setCalculatedPrice(price);
+        }
+    }, [currentTour, formData.cities, formData.promotions]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -187,23 +192,39 @@ export default function SignUpForm() {
     };
 
     const handleCityChange = (city: string, checked: boolean | string) => {
+        const newCities = {
+            ...formData.cities,
+            [city]: checked === "indeterminate" ? false : !!checked
+        };
+
         setFormData(prev => ({
             ...prev,
-            cities: {
-                ...prev.cities,
-                [city]: checked === "indeterminate" ? false : !!checked
-            }
+            cities: newCities
         }));
+
+        // Update price calculation
+        if (currentTour) {
+            const newPrice = calculatePrice(currentTour, newCities, formData.promotions);
+            setCalculatedPrice(newPrice);
+        }
     };
 
-    const handleTransferChange = (transfer: string, checked: boolean | string) => {
+    const handlePromotionChange = (promotion: string, checked: boolean | string) => {
+        const newPromotions = {
+            ...formData.promotions,
+            [promotion]: checked === "indeterminate" ? false : !!checked
+        };
+
         setFormData(prev => ({
             ...prev,
-            transfers: {
-                ...prev.transfers,
-                [transfer]: checked === "indeterminate" ? false : !!checked
-            }
+            promotions: newPromotions
         }));
+
+        // Update price calculation
+        if (currentTour) {
+            const newPrice = calculatePrice(currentTour, formData.cities, newPromotions);
+            setCalculatedPrice(newPrice);
+        }
     };
 
     const validateStep1 = (): boolean => {
@@ -304,12 +325,21 @@ export default function SignUpForm() {
             return;
         }
 
+        // Transform the flexible cities structure to the format expected by processAllTemplates
+        const transformedCities = {
+            hanoiHaiDuong: formData.cities.northern || formData.cities.hanoiHaiDuong || false,
+            hueDaNang: formData.cities.central || formData.cities.hueDaNang || false,
+            hcmc: formData.cities.southern || formData.cities.hcmc || false
+        };
+
         // Pre-process data before submission to ensure valid formats
         const processedFormData = {
             ...formData,
             // Ensure phone and email are properly formatted 
             phone: formData.phone.trim(),
-            email: formData.email.trim()
+            email: formData.email.trim(),
+            // Transform cities to expected format
+            cities: transformedCities
         };
 
         // Set processing state
@@ -319,8 +349,9 @@ export default function SignUpForm() {
 
         try {
             console.log('Beginning document processing with processed data:', processedFormData);
+            console.log('Current calculated price:', calculatedPrice);
             // Process document templates with processed form data
-            await processAllTemplates(processedFormData);
+            await processAllTemplates(processedFormData, calculatedPrice);
             console.log("Document templates processed successfully");
 
             // Log form submission for debugging
@@ -347,6 +378,57 @@ export default function SignUpForm() {
         }
     };
 
+    // Function to calculate price based on tour data and selections
+    const calculatePrice = (tour: TourFull, cities: { [key: string]: boolean }, promotions: FormData['promotions']): number => {
+        if (!tour.customizeOptions || tour.customizeOptions.length === 0) {
+            return 0;
+        }
+
+        // Determine which price category to use based on promotions
+        const isEarlyBird = promotions.earlyBird;
+        const isReturningClient = promotions.returningClient;
+
+        // Get selected regions
+        const selectedRegions = Object.keys(cities).filter(key => cities[key]);
+
+        // If no regions selected or all regions selected, use grandTotal
+        const grandTotalOption = tour.customizeOptions.find(opt => opt.key === 'grandTotal');
+        const totalRegions = tour.customizeOptions.filter(opt => opt.key !== 'grandTotal').length;
+
+        if (selectedRegions.length === 0 || selectedRegions.length === totalRegions) {
+            if (grandTotalOption) {
+                if (isEarlyBird && isReturningClient) {
+                    return Number(grandTotalOption.pricing.earlyBird.returningUniversity);
+                } else if (isEarlyBird) {
+                    return Number(grandTotalOption.pricing.earlyBird.regular);
+                } else if (isReturningClient) {
+                    return Number(grandTotalOption.pricing.standard.returningUniversity);
+                } else {
+                    return Number(grandTotalOption.pricing.standard.regular);
+                }
+            }
+        }
+
+        // Calculate price based on selected regions
+        let totalPrice = 0;
+        selectedRegions.forEach(regionKey => {
+            const option = tour.customizeOptions.find(opt => opt.key === regionKey);
+            if (option) {
+                if (isEarlyBird && isReturningClient) {
+                    totalPrice += Number(option.pricing.earlyBird.returningUniversity);
+                } else if (isEarlyBird) {
+                    totalPrice += Number(option.pricing.earlyBird.regular);
+                } else if (isReturningClient) {
+                    totalPrice += Number(option.pricing.standard.returningUniversity);
+                } else {
+                    totalPrice += Number(option.pricing.standard.regular);
+                }
+            }
+        });
+
+        return totalPrice;
+    };
+
     if (isSubmitted) {
         return (
             <div>
@@ -363,7 +445,7 @@ export default function SignUpForm() {
                         <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4">
                             <div className="max-w-lg mx-auto">
                                 <img
-                                    src="/party-popper.png"
+                                    src={getContentById(signUpFormContent?.sections.successSection?.items, 'success-image') || "/party-popper.png"}
                                     alt="Celebration"
                                     className="w-58 h-58 lg:w-68 lg:h-68 mx-auto mb-6"
                                 />
@@ -426,638 +508,506 @@ export default function SignUpForm() {
                         alt="Decorative element"
                         className="absolute -top-3 lg:top-10 left-0 lg:-left-20 max-w-none w-[200%] lg:w-300 h-[180px] lg:h-70 pointer-events-none -z-1"
                     />
-                    {/* Form Container */}
-                    <div className="relative w-full h-auto mt-16 lg:mt-0 mb-30 lg:mb-40">
-                        <div className="flex justify-center mb-4">
-                            <Link to={currentTour?.returnLink || "/tour-details"} className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                View Tour Information Again
-                            </Link>
-                        </div>
 
-                        <h1 className="text-4xl font-semibold text-center text-content mb-4">
-                            {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-title')}
-                        </h1>
-
-                        <p className="text-center text-content font-medium text-sm mb-5 max-w-3xl mx-auto lg:px-4">
-                            {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-description')}
-                        </p>
-
-                        {/* Steps Tracker */}
-                        <div className="flex justify-between max-w-3xl mx-auto mb-5">
-                            <div className="flex flex-row gap-5 items-center">
-                                <div className={`text-5xl font-semibold text-content`}>01</div>
-                                <div className={`text-content font-medium lg:block ${currentStep === 1 ? '' : 'hidden'}`}>Basic <br />Information</div>
-                            </div>
-
-                            <div className="flex items-center hidden lg:flex">
-                                <ArrowRight className="h-6 w-6 text-content" />
-                            </div>
-
-                            <div className="flex flex-row gap-5 items-center" style={{ opacity: currentStep < 2 ? 0.5 : 1 }}>
-                                <div className={`text-5xl font-semibold text-content ${currentStep === 1 ? 'ms-20 lg:ms-0' : ''} ${currentStep < 4 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : ''}`}>02</div>
-                                <div className={`text-content font-medium lg:block ${currentStep === 2 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : 'hidden'}`}>Tour <br />Package</div>
-                            </div>
-
-                            <div className={`flex items-center hidden lg:flex ${currentStep < 3 ? 'opacity-50' : ''}`}>
-                                <ArrowRight className="h-6 w-6 text-content" />
-                            </div>
-
-                            <div className="flex flex-row gap-5 items-center" style={{ opacity: currentStep < 3 ? 0.5 : 1 }}>
-                                <div className={`text-5xl font-semibold text-content ${currentStep === 3 ? 'transform-all duration-300 -translate-x-20 lg:translate-x-0' : ''}`}>03</div>
-                                <div className={`text-content font-medium lg:block ${currentStep === 3 ? 'transform-all duration-300 -translate-x-20 lg:translate-x-0' : 'hidden'}`}>Details for <br />Contract</div>
+                    {/* Loading State */}
+                    {isLoadingTour && (
+                        <div className="flex justify-center items-center min-h-[60vh]">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p className="text-content font-medium">Loading tour information...</p>
                             </div>
                         </div>
+                    )}
 
-                        {currentStep === 1 && (
-                            <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-xl font-bold text-content mb-2">
-                                    {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-heading')}
-                                </h2>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <label htmlFor="fullName" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-fullname-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="fullName"
-                                            placeholder="What's your name?"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.fullName && touched.fullName ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            value={formData.fullName}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.fullName && touched.fullName && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="organization" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-organization-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="organization"
-                                            placeholder="Tell us what's on your mind!"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.organization && touched.organization ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            value={formData.organization}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.organization && touched.organization && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.organization}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="phone" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-phone-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="phone"
-                                            placeholder="Minimum 8 digits, maximum 15 digits"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.phone && touched.phone ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.phone && touched.phone && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="email" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-email-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="email"
-                                            id="email"
-                                            placeholder="example@gmail.com"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.email && touched.email ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            value={formData.email}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.email && touched.email && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center mb-6">
-                                    <Checkbox
-                                        id="wantCallback"
-                                        className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
-                                        checked={formData.wantCallback}
-                                        onCheckedChange={(checked) => handleCheckboxChange('wantCallback', checked)}
-                                    />
-                                    <label htmlFor="wantCallback" className="text-content font-medium text-xs pt-1 cursor-pointer">
-                                        {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-callback-label')}
-                                    </label>
-                                </div>
-
-                                <div className="flex justify-center">
+                    {/* Error State */}
+                    {tourError && !isLoadingTour && (
+                        <div className="flex justify-center items-center min-h-[60vh]">
+                            <div className="text-center max-w-md">
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                                    <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Tour</h2>
+                                    <p className="text-red-600 mb-4">{tourError}</p>
                                     <button
-                                        type="button"
-                                        className="w-full md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
-                                        onClick={nextStep}
+                                        onClick={() => window.location.reload()}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium"
                                     >
-                                        {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-next-button')}
-                                        <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                        Retry
                                     </button>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {currentStep === 2 && (
-                            <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-xl font-bold text-content mb-6">
-                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-heading')}
-                                </h2>
+                    {/* Form Container - Only show when tour data is loaded */}
+                    {!isLoadingTour && !tourError && currentTour && (
+                        <div className="relative w-full h-auto mt-16 lg:mt-0 mb-30 lg:mb-40">
+                            <div className="flex justify-center mb-4">
+                                <Link to={`/tour-details/${currentTour.id}`} className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                    View Tour Information Again
+                                </Link>
+                            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {/* Tour Image */}
-                                    <div className="md:col-span-1">
-                                        <div className="relative rounded-xl overflow-hidden">
-                                            <img
-                                                src={currentTour?.image || "/hero-banner-1.png"}
-                                                alt="Tour group"
-                                                className="w-full h-auto"
-                                            />
-                                            <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded-sm flex items-center text-xs">
-                                                <span className="font-semibold mr-1 text-content">
-                                                    {currentTour?.date || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-date')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <h1 className="text-4xl font-semibold text-center text-content mb-4">
+                                {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-title')}
+                            </h1>
 
-                                    {/* Tour Details */}
-                                    <div className="md:col-span-2 space-y-4">
-                                        <h3 className="text-xl font-bold text-content border-b-2 border-blue-200/70 pb-3">
-                                            {currentTour?.title || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-tour-title')}
-                                        </h3>
+                            <p className="text-center text-content font-medium text-sm mb-5 max-w-3xl mx-auto lg:px-4">
+                                {getContentById(signUpFormContent?.sections.headerSection?.items, 'signup-header-description')}
+                            </p>
 
-                                        <div className="flex items-center">
-                                            <img src="/map-pin-blue-950.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-bold uppercase text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-title')}
-                                                </p>
-                                                <p className="text-xs text-content">
-                                                    {currentTour?.location || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-content')}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center">
-                                            <img src="/duration.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-bold uppercase text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-title')}
-                                                </p>
-                                                <p className="text-xs text-content">
-                                                    {currentTour?.duration || getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-content')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                            {/* Steps Tracker */}
+                            <div className="flex justify-between max-w-3xl mx-auto mb-5">
+                                <div className="flex flex-row gap-5 items-center">
+                                    <div className={`text-5xl font-semibold text-content`}>01</div>
+                                    <div className={`text-content font-medium lg:block ${currentStep === 1 ? '' : 'hidden'}`}>Basic <br />Information</div>
                                 </div>
 
-                                {/* Registration Options */}
-                                <div className="mt-6 rounded-xl bg-white overflow-hidden">
-                                    <div className="lg:grid grid-cols-4">
-                                        <div className="p-3 bg-content text-white text-start font-semibold lg:border-r-3 border-white lg:col-span-3 text-sm">
-                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-registration-title')}
+                                <div className="flex items-center hidden lg:flex">
+                                    <ArrowRight className="h-6 w-6 text-content" />
+                                </div>
+
+                                <div className="flex flex-row gap-5 items-center" style={{ opacity: currentStep < 2 ? 0.5 : 1 }}>
+                                    <div className={`text-5xl font-semibold text-content ${currentStep === 1 ? 'ms-20 lg:ms-0' : ''} ${currentStep < 4 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : ''}`}>02</div>
+                                    <div className={`text-content font-medium lg:block ${currentStep === 2 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : 'hidden'}`}>Tour <br />Package</div>
+                                </div>
+
+                                <div className={`flex items-center hidden lg:flex ${currentStep < 3 ? 'opacity-50' : ''}`}>
+                                    <ArrowRight className="h-6 w-6 text-content" />
+                                </div>
+
+                                <div className="flex flex-row gap-5 items-center" style={{ opacity: currentStep < 3 ? 0.5 : 1 }}>
+                                    <div className={`text-5xl font-semibold text-content ${currentStep === 3 ? 'transform-all duration-300 -translate-x-20 lg:translate-x-0' : ''}`}>03</div>
+                                    <div className={`text-content font-medium lg:block ${currentStep === 3 ? 'transform-all duration-300 -translate-x-20 lg:translate-x-0' : 'hidden'}`}>Details for <br />Contract</div>
+                                </div>
+                            </div>
+
+                            {currentStep === 1 && (
+                                <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
+                                    <h2 className="text-xl font-bold text-content mb-2">
+                                        {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-heading')}
+                                    </h2>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <label htmlFor="fullName" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-fullname-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="fullName"
+                                                placeholder="What's your name?"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.fullName && touched.fullName ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                value={formData.fullName}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.fullName && touched.fullName && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+                                            )}
                                         </div>
-                                        <div className="p-3 bg-content text-white text-start font-semibold lg:col-span-1 text-sm hidden lg:block">
-                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-title')}
+
+                                        <div>
+                                            <label htmlFor="organization" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-organization-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="organization"
+                                                placeholder="Tell us what's on your mind!"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.organization && touched.organization ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                value={formData.organization}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.organization && touched.organization && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.organization}</p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="phone" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-phone-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="phone"
+                                                placeholder="Minimum 8 digits, maximum 15 digits"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.phone && touched.phone ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.phone && touched.phone && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="email" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-email-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                placeholder="example@gmail.com"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.email && touched.email ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.email && touched.email && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="lg:grid grid-cols-4">
-                                        <div className="p-3 lg:col-span-3">
-                                            <div className="font-bold border-b-2 border-blue-200/70 text-content pb-3 text-md">
-                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-earlybird-title')}
-                                            </div>
-                                            <div className="my-3">
-                                                <h4 className="font-bold text-content">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-include-title')}
-                                                </h4>
-                                                <ul className="m-3 text-sm list-disc list-inside text-content font-medium">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-include-list')
-                                                        .split('\n')
-                                                        .map((item, index) => (
-                                                            <li key={index}>{item}</li>
-                                                        ))
-                                                    }
-                                                </ul>
-                                            </div>
-                                            {/* Preferences */}
-                                            <div className="my-1">
-                                                <h4 className="font-bold text-content mb-4">
-                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-preferences-title')}
-                                                </h4>
+                                    <div className="flex items-center mb-6">
+                                        <Checkbox
+                                            id="wantCallback"
+                                            className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
+                                            checked={formData.wantCallback}
+                                            onCheckedChange={(checked) => handleCheckboxChange('wantCallback', checked)}
+                                        />
+                                        <label htmlFor="wantCallback" className="text-content font-medium text-xs pt-1 cursor-pointer">
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-callback-label')}
+                                        </label>
+                                    </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div>
-                                                        <p className="font-bold text-content text-sm mb-2">
-                                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-cities-title')}
-                                                        </p>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="hanoiHaiDuong"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.cities.hanoiHaiDuong}
-                                                                    onCheckedChange={(checked) => handleCityChange('hanoiHaiDuong', checked)}
-                                                                />
-                                                                <label htmlFor="hanoiHaiDuong" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hanoiHaiDuong-label') || "Ha Noi & Hai Duong"}
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="hueDaNang"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.cities.hueDaNang}
-                                                                    onCheckedChange={(checked) => handleCityChange('hueDaNang', checked)}
-                                                                />
-                                                                <label htmlFor="hueDaNang" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hueDaNang-label') || "Hue & Da Nang"}
-                                                                </label>
+                                    <div className="flex justify-center">
+                                        <button
+                                            type="button"
+                                            className="w-full md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
+                                            onClick={nextStep}
+                                        >
+                                            {getContentById(signUpFormContent?.sections.step1Section?.items, 'step1-next-button')}
+                                            <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {currentStep === 2 && (
+                                <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
+                                    <h2 className="text-xl font-bold text-content mb-6">
+                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-heading')}
+                                    </h2>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {/* Tour Image */}
+                                        <div className="md:col-span-1">
+                                            <div className="relative rounded-xl overflow-hidden">
+                                                <img
+                                                    src={currentTour?.imageUrl || "/hero-banner-1.png"}
+                                                    alt="Tour group"
+                                                    className="w-full h-auto"
+                                                />
+                                                <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded-sm flex items-center text-xs">
+                                                    <span className="font-semibold mr-1 text-content">
+                                                        INCOMING • {currentTour?.date}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Tour Details */}
+                                        <div className="md:col-span-2 space-y-4">
+                                            <h3 className="text-xl font-bold text-content border-b-2 border-blue-200/70 pb-3">
+                                                {currentTour?.title}
+                                            </h3>
+
+                                            <div className="flex items-center">
+                                                <img src="/map-pin-blue-950.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-bold uppercase text-content">
+                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-location-title')}
+                                                    </p>
+                                                    <p className="text-xs text-content">
+                                                        {currentTour?.location}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center">
+                                                <img src="/duration.svg" className="h-5 w-5 mr-4 mt-1 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-bold uppercase text-content">
+                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-duration-title')}
+                                                    </p>
+                                                    <p className="text-xs text-content">
+                                                        {currentTour?.duration}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Registration Options */}
+                                    <div className="mt-6 rounded-xl bg-white overflow-hidden">
+                                        <div className="lg:grid grid-cols-4">
+                                            <div className="p-3 bg-content text-white text-start font-semibold lg:border-r-3 border-white lg:col-span-3 text-sm">
+                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-registration-title')}
+                                            </div>
+                                            <div className="p-3 bg-content text-white text-center font-semibold lg:col-span-1 text-sm hidden lg:block">
+                                                Final Price
+                                            </div>
+                                        </div>
+
+                                        <div className="lg:grid grid-cols-4">
+                                            <div className="p-3 lg:col-span-3">
+                                                <div className="font-bold border-b-2 border-blue-200/70 text-content pb-3 text-md">
+                                                    {currentTour?.title} Registration
+                                                </div>
+                                                <div className="my-3">
+                                                    <h4 className="font-bold text-content">
+                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-include-title')}
+                                                    </h4>
+                                                    <ul className="m-3 text-sm list-disc list-inside text-content font-medium">
+                                                        {currentTour?.packageIncludes?.map((item, index) => (
+                                                            <li key={index}>{item}</li>
+                                                        )) || (
+                                                                <li>Package details will be provided</li>
+                                                            )}
+                                                    </ul>
+                                                </div>
+                                                {/* Preferences */}
+                                                <div className="my-1">
+                                                    <h4 className="font-bold text-content mb-4">
+                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-preferences-title')}
+                                                    </h4>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div>
+                                                            <p className="font-bold text-content text-sm mb-2">
+                                                                Tour Segments
+                                                            </p>
+                                                            <div className="space-y-2">
+                                                                {currentTour?.customizeOptions?.filter(opt => opt.key !== 'grandTotal').map((option) => (
+                                                                    <div key={option.key} className="flex items-center">
+                                                                        <Checkbox
+                                                                            id={option.key}
+                                                                            className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                            checked={formData.cities[option.key] || false}
+                                                                            onCheckedChange={(checked) => handleCityChange(option.key, checked)}
+                                                                        />
+                                                                        <label htmlFor={option.key} className="text-sm text-content font-medium cursor-pointer">
+                                                                            {option.name}
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                    </div>
 
-                                                    <div>
-                                                        <p className="font-bold text-content text-sm mb-2">
-                                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-transfers-title')}
-                                                        </p>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="hotel"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.transfers.hotel}
-                                                                    onCheckedChange={(checked) => handleTransferChange('hotel', checked)}
-                                                                />
-                                                                <label htmlFor="hotel" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-hotel-label') || "Accommodation for Northern Vietnam tour"}
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="travel"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.transfers.travel}
-                                                                    onCheckedChange={(checked) => handleTransferChange('travel', checked)}
-                                                                />
-                                                                <label htmlFor="travel" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-travel-label') || "Accommodation for Central Vietnam tour"}
-                                                                </label>
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Checkbox
-                                                                    id="flight"
-                                                                    className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
-                                                                    checked={formData.transfers.flight}
-                                                                    onCheckedChange={(checked) => handleTransferChange('flight', checked)}
-                                                                />
-                                                                <label htmlFor="flight" className="text-sm text-content font-medium cursor-pointer">
-                                                                    {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-flight-label') || "One way flight from Hanoi (Northern Vietnam) to Hue (Central Vietnam)"}
-                                                                </label>
+                                                        <div>
+                                                            <p className="font-bold text-content text-sm mb-2">
+                                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-promotions-title') || "Promotion"}
+                                                            </p>
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center">
+                                                                    <Checkbox
+                                                                        id="earlyBird"
+                                                                        className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                        checked={formData.promotions.earlyBird}
+                                                                        onCheckedChange={(checked) => handlePromotionChange('earlyBird', checked)}
+                                                                    />
+                                                                    <label htmlFor="earlyBird" className="text-sm text-content font-medium cursor-pointer">
+                                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-earlybird-label') || "Early Bird 10%"}
+                                                                    </label>
+                                                                </div>
+                                                                <div className="flex items-center">
+                                                                    <Checkbox
+                                                                        id="returningClient"
+                                                                        className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                        checked={formData.promotions.returningClient}
+                                                                        onCheckedChange={(checked) => handlePromotionChange('returningClient', checked)}
+                                                                    />
+                                                                    <label htmlFor="returningClient" className="text-sm text-content font-medium cursor-pointer">
+                                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-label') || "Returning Client 15%"}
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="p-4 lg:col-span-1 signup-form-bg flex items-center justify-center hidden lg:block">
-                                            <div className="text-lg font-bold p-4 text-content">
-                                                {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-price')}
+                                            <div className="lg:col-span-1 signup-form-bg hidden lg:block">
+                                                <div className="h-full flex items-center justify-center" style={{ minHeight: "400px" }}>
+                                                    <div className="text-lg font-bold text-content text-center">
+                                                        {`$${calculatedPrice.toLocaleString()}`}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Mobile display only */}
-                                <div className="mt-5 rounded-xl signup-form-bg overflow-hidden lg:hidden">
-                                    <div className="p-3 bg-content text-white text-start font-semibold text-sm">
-                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-title')}
-                                    </div>
-                                    <div className="px-3 py-4 lg:col-span-1 signup-form-bg flex items-center">
-                                        <div className="text-lg font-bold text-content">
-                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-price')}
+                                    {/* Mobile display only */}
+                                    <div className="mt-5 rounded-xl signup-form-bg overflow-hidden lg:hidden">
+                                        <div className="p-3 bg-content text-white text-center font-semibold text-sm">
+                                            Final Price
+                                        </div>
+                                        <div className="px-3 py-4 signup-form-bg flex items-center justify-center min-h-[80px]">
+                                            <div className="text-lg font-bold text-content text-center">
+                                                {`$${calculatedPrice.toLocaleString()}`}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
-                                    <button
-                                        type="button"
-                                        className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
-                                        onClick={prevStep}
-                                    >
-                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-back-button')}
-                                    </button>
+                                    <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
+                                            onClick={prevStep}
+                                        >
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-back-button')}
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        className="bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
-                                        onClick={nextStep}
-                                    >
-                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-next-button')}
-                                        <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {currentStep === 3 && (
-                            <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
-                                <h2 className="text-lg font-bold text-content mb-2">
-                                    {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-heading')}
-                                </h2>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <label htmlFor="organization" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-organization-label')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="organization"
-                                            value={formData.organization}
-                                            readOnly
-                                            className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
-                                            placeholder="Autofill from form number 1"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="headOffice" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-headoffice-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="headOffice"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.headOffice && touched.headOffice ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Official address of your organization"
-                                            value={formData.headOffice}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.headOffice && touched.headOffice && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.headOffice}</p>
-                                        )}
+                                        <button
+                                            type="button"
+                                            className="bg-blue-500 hover:bg-blue-950 text-white text-sm font-semibold min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
+                                            onClick={nextStep}
+                                        >
+                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-next-button')}
+                                            <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                        </button>
                                     </div>
                                 </div>
+                            )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
-                                    <div>
-                                        <label htmlFor="legalRepresentative" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-representative-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="legalRepresentative"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.legalRepresentative && touched.legalRepresentative ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Name of the authorized representative"
-                                            value={formData.legalRepresentative}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.legalRepresentative && touched.legalRepresentative && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.legalRepresentative}</p>
-                                        )}
+                            {currentStep === 3 && (
+                                <div className="tour-info-card-bg rounded-3xl p-6 max-w-3xl mx-auto">
+                                    <h2 className="text-lg font-bold text-content mb-2">
+                                        {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-heading')}
+                                    </h2>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <label htmlFor="organization" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-organization-label')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="organization"
+                                                value={formData.organization}
+                                                readOnly
+                                                className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
+                                                placeholder="Autofill from form number 1"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="headOffice" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-headoffice-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="headOffice"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.headOffice && touched.headOffice ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                placeholder="Official address of your organization"
+                                                value={formData.headOffice}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.headOffice && touched.headOffice && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.headOffice}</p>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* <div>
-                                        <label htmlFor="businessRegistration" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-registration-label')} <span className="text-gray-500 text-xs">(optional)</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="businessRegistration"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.businessRegistration && touched.businessRegistration ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Business registration number"
-                                            value={formData.businessRegistration}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.businessRegistration && touched.businessRegistration && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.businessRegistration}</p>
-                                        )}
-                                    </div> */}
+                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+                                        <div>
+                                            <label htmlFor="legalRepresentative" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-representative-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="legalRepresentative"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.legalRepresentative && touched.legalRepresentative ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                placeholder="Name of the authorized representative"
+                                                value={formData.legalRepresentative}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.legalRepresentative && touched.legalRepresentative && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.legalRepresentative}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                        <div>
+                                            <label htmlFor="position" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-position-label')} <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="position"
+                                                className={`text-xs w-full bg-transparent border-b ${errors.position && touched.position ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                placeholder="Your role within the organization"
+                                                value={formData.position}
+                                                onChange={handleInputChange}
+                                            />
+                                            {errors.position && touched.position && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.position}</p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="phone" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-phone-label')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="phone"
+                                                value={formData.phone}
+                                                readOnly
+                                                className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
+                                                placeholder="Minimum 8 digits, maximum 15 digits"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="email" className="block text-blue-600 mb-2">
+                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-email-label')}
+                                            </label>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                value={formData.email}
+                                                readOnly
+                                                className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
+                                                placeholder="example@gmail.com"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
+                                            onClick={prevStep}
+                                        >
+                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-back-button')}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="bg-blue-500 hover:bg-blue-950 text-white text-xs lg:text-sm font-semibold min-w-[130px] px-5 py-4 lg:py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
+                                            onClick={handleSubmit}
+                                            disabled={isProcessingDocuments}
+                                        >
+                                            {isProcessingDocuments ? (
+                                                <>
+                                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-submit-button')}
+                                                    <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                    <div>
-                                        <label htmlFor="position" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-position-label')} <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="position"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.position && touched.position ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Your role within the organization"
-                                            value={formData.position}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.position && touched.position && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.position}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="phone" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-phone-label')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="phone"
-                                            value={formData.phone}
-                                            readOnly
-                                            className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
-                                            placeholder="Minimum 8 digits, maximum 15 digits"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="email" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-email-label')}
-                                        </label>
-                                        <input
-                                            type="email"
-                                            id="email"
-                                            value={formData.email}
-                                            readOnly
-                                            className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
-                                            placeholder="example@gmail.com"
-                                        />
-                                    </div>
-
-                                    {/* <div>
-                                        <label htmlFor="accountNumber" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-account-label')} <span className="text-gray-500 text-xs">(optional)</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="accountNumber"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.accountNumber && touched.accountNumber ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Account number"
-                                            value={formData.accountNumber}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.accountNumber && touched.accountNumber && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.accountNumber}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="bank" className="block text-blue-600 mb-2">
-                                            {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-bank-label')} <span className="text-gray-500 text-xs">(optional)</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="bank"
-                                            className={`text-xs w-full bg-transparent border-b ${errors.bank && touched.bank ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                            placeholder="Bank name"
-                                            value={formData.bank}
-                                            onChange={handleInputChange}
-                                        />
-                                        {errors.bank && touched.bank && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.bank}</p>
-                                        )}
-                                    </div> */}
-                                </div>
-
-                                <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
-                                    <button
-                                        type="button"
-                                        className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
-                                        onClick={prevStep}
-                                    >
-                                        {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-back-button')}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="bg-blue-500 hover:bg-blue-950 text-white text-xs lg:text-sm font-semibold min-w-[130px] px-5 py-4 lg:py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
-                                        onClick={handleSubmit}
-                                        disabled={isProcessingDocuments}
-                                    >
-                                        {isProcessingDocuments ? (
-                                            <>
-                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-submit-button')}
-                                                <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                                            </>
-                                        )}
-                                    </button>
-
-                                    {/* Temporary debug button - remove in production */}
-                                    {/* <button
-                                        type="button"
-                                        className="bg-red-500 hover:bg-red-700 text-white text-xs px-3 py-2 rounded-md"
-                                        onClick={() => {
-                                            console.log("Testing docx libraries...");
-                                            try {
-                                                alert(`Libraries check: PizZip (${typeof PizZip}), Docxtemplater (${typeof Docxtemplater}), saveAs (${typeof saveAs})`);
-                                                
-                                                // Log the current form data
-                                                console.log("Current form data:", formData);
-                                                
-                                                // Test file fetch
-                                                fetch('/VN_template.docx')
-                                                    .then(response => {
-                                                        if (!response.ok) {
-                                                            throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
-                                                        }
-                                                        return response.arrayBuffer();
-                                                    })
-                                                    .then(data => {
-                                                        console.log("Template fetch successful:", data.byteLength, "bytes");
-                                                        alert(`Template fetch successful: ${data.byteLength} bytes`);
-                                                        
-                                                        // Analyze template content
-                                                        try {
-                                                            const zip = new PizZip(data);
-                                                            const doc = zip.files['word/document.xml'];
-                                                            if (doc) {
-                                                                const content = doc.asText();
-                                                                const placeholders = content.match(/\[([^\]]+)\]/g);
-                                                                if (placeholders && placeholders.length > 0) {
-                                                                    const uniquePlaceholders = [...new Set(placeholders)].map(p => p.replace(/\[|\]/g, ''));
-                                                                    console.log('Found placeholders:', uniquePlaceholders);
-                                                                    alert('Found placeholders: ' + uniquePlaceholders.join(', '));
-                                                                } else {
-                                                                    console.log('No [placeholders] found in standard format');
-                                                                    alert('No [placeholders] found in standard format');
-                                                                }
-                                                            }
-                                                        } catch (e: any) {
-                                                            console.error('Error analyzing template:', e);
-                                                            alert('Error analyzing template: ' + e.message);
-                                                        }
-                                                    })
-                                                    .catch(error => {
-                                                        console.error("Fetch error:", error);
-                                                        alert(`Fetch error: ${error.message}`);
-                                                    });
-                                                    
-                                                // Also test the Invoice template
-                                                fetch('/IUC_Invoice VAT_UNIVERSITY_template.docx')
-                                                    .then(response => {
-                                                        if (!response.ok) {
-                                                            throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
-                                                        }
-                                                        return response.arrayBuffer();
-                                                    })
-                                                    .then(data => {
-                                                        console.log("Invoice template fetch successful:", data.byteLength, "bytes");
-                                                        
-                                                        // Analyze template content
-                                                        try {
-                                                            const zip = new PizZip(data);
-                                                            const doc = zip.files['word/document.xml'];
-                                                            if (doc) {
-                                                                const content = doc.asText();
-                                                                const placeholders = content.match(/\[([^\]]+)\]/g);
-                                                                if (placeholders && placeholders.length > 0) {
-                                                                    const uniquePlaceholders = [...new Set(placeholders)].map(p => p.replace(/\[|\]/g, ''));
-                                                                    console.log('Invoice template placeholders:', uniquePlaceholders);
-                                                                    alert('Invoice template placeholders: ' + uniquePlaceholders.join(', '));
-                                                                } else {
-                                                                    console.log('No [placeholders] found in Invoice template');
-                                                                    alert('No [placeholders] found in Invoice template');
-                                                                }
-                                                            }
-                                                        } catch (e: any) {
-                                                            console.error('Error analyzing invoice template:', e);
-                                                        }
-                                                    })
-                                                    .catch(error => {
-                                                        console.error("Invoice fetch error:", error);
-                                                    });
-                                            } catch (error: any) {
-                                                console.error("Debug test error:", error);
-                                                alert(`Test error: ${error.message}`);
-                                            }
-                                        }}
-                                    >
-                                        Test Templates
-                                    </button> */}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Decorative Image - Lower Right */}
                     <img

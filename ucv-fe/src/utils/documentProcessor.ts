@@ -14,11 +14,11 @@ interface FormData {
     cities: {
         hanoiHaiDuong: boolean;
         hueDaNang: boolean;
+        hcmc: boolean;
     };
-    transfers: {
-        hotel: boolean;
-        travel: boolean;
-        flight: boolean;
+    promotions: {
+        earlyBird: boolean;
+        returningClient: boolean;
     };
     headOffice: string;
     businessRegistration: string;
@@ -34,9 +34,10 @@ interface FormData {
  * Creates a mapping of form data to document template fields
  * This function centralizes the mapping logic so we can easily adjust field mappings
  * @param formData The form data from the signup form
+ * @param calculatedPrice The calculated price based on selected options
  * @returns An object with key-value pairs matching the document template fields
  */
-function createTemplateData(formData: FormData): Record<string, string | boolean | number> {
+function createTemplateData(formData: FormData, calculatedPrice: number = 0): Record<string, string | boolean | number> {
     console.log("Creating template data from form data:", formData);
     const selectedTour = formData.tourId === 'fallTour2025' 
         ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
@@ -45,6 +46,22 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
     const tourDate = formData.tourId === 'fallTour2025'
         ? '1 - 8 OCTOBER 2025'
         : '31 MARCH - 10 APRIL 2026';
+        
+    // Get current date in DD/MM/YYYY format for TODAY placeholder
+    const today = new Date();
+    const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    
+    // Define early bird expiration date based on tour
+    const earlyBirdExpirationDate = formData.tourId === 'fallTour2025' 
+        ? '10/07/2025'  // 10 July 2025 for Fall Tour
+        : '10/12/2025'; // 10 December 2025 for Spring Tour
+        
+    // Generate an invoice number (in a real app, this would come from a database or sequence)
+    // For demo purposes, we'll use a timestamp-based number
+    const invoiceNumber = `${(new Date().getTime() % 1000).toString().padStart(3, '0')}`;
+    
+    // Calculate prices with VAT
+    const priceWithVAT = Math.round(calculatedPrice * 1.1).toLocaleString();
     
     // Create a comprehensive mapping that covers all possible template placeholders
     return {
@@ -62,6 +79,18 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
         "[EMAIL]": formData.email, // Explicitly add bracketed versions
         "[Phone]": formData.phone,
         "[Email]": formData.email,
+        
+        // New special placeholders for price, dates, etc.
+        "FINAL PRICE": calculatedPrice.toLocaleString(),
+        "[FINAL PRICE]": calculatedPrice.toLocaleString(),
+        "FINAL PRICE * 110%": priceWithVAT,
+        "[FINAL PRICE * 110%]": priceWithVAT,
+        "NO": invoiceNumber,
+        "[NO]": invoiceNumber,
+        "TODAY": formattedToday,
+        "[TODAY]": formattedToday,
+        "DATE": earlyBirdExpirationDate,
+        "[DATE]": earlyBirdExpirationDate,
         
         // Business information with variations
         headOffice: formData.headOffice,
@@ -104,23 +133,23 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
         // Selected cities (comma-separated list of selected cities)
         selectedCities: [
             formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : ''
+            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
+            formData.cities.hcmc ? 'Ho Chi Minh City' : ''
         ].filter(Boolean).join(', ') || 'None selected',
         "Selected Cities": [
             formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : ''
+            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
+            formData.cities.hcmc ? 'Ho Chi Minh City' : ''
         ].filter(Boolean).join(', ') || 'None selected',
             
-        // Selected transfers (comma-separated list of selected transfers)
-        selectedTransfers: [
-            formData.transfers.hotel ? 'Accommodation for Northern Vietnam tour' : '',
-            formData.transfers.travel ? 'Accommodation for Central Vietnam tour' : '',
-            formData.transfers.flight ? 'One way flight from Hanoi to Hue' : ''
+        // Selected promotions (comma-separated list of selected promotions)
+        selectedPromotions: [
+            formData.promotions.earlyBird ? 'Early Bird 10%' : '',
+            formData.promotions.returningClient ? 'Returning Client 15%' : ''
         ].filter(Boolean).join(', ') || 'None selected',
-        "Selected Transfers": [
-            formData.transfers.hotel ? 'Accommodation for Northern Vietnam tour' : '',
-            formData.transfers.travel ? 'Accommodation for Central Vietnam tour' : '',
-            formData.transfers.flight ? 'One way flight from Hanoi to Hue' : ''
+        "Selected Promotions": [
+            formData.promotions.earlyBird ? 'Early Bird 10%' : '',
+            formData.promotions.returningClient ? 'Returning Client 15%' : ''
         ].filter(Boolean).join(', ') || 'None selected',
         
         // Checkbox values as Yes/No
@@ -132,14 +161,14 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
         "Hanoi Hai Duong": formData.cities.hanoiHaiDuong ? 'Yes' : 'No',  
         hueDaNang: formData.cities.hueDaNang ? 'Yes' : 'No',
         "Hue Da Nang": formData.cities.hueDaNang ? 'Yes' : 'No',
+        hcmc: formData.cities.hcmc ? 'Yes' : 'No',
+        "HCMC": formData.cities.hcmc ? 'Yes' : 'No',
         
-        // Individual transfer preferences
-        hotelTransfer: formData.transfers.hotel ? 'Yes' : 'No',
-        "Hotel Transfer": formData.transfers.hotel ? 'Yes' : 'No',
-        travelTransfer: formData.transfers.travel ? 'Yes' : 'No',
-        "Travel Transfer": formData.transfers.travel ? 'Yes' : 'No',
-        flightTransfer: formData.transfers.flight ? 'Yes' : 'No',
-        "Flight Transfer": formData.transfers.flight ? 'Yes' : 'No',
+        // Individual promotion preferences
+        earlyBird: formData.promotions.earlyBird ? 'Yes' : 'No',
+        "Early Bird": formData.promotions.earlyBird ? 'Yes' : 'No',
+        returningClient: formData.promotions.returningClient ? 'Yes' : 'No',
+        "Returning Client": formData.promotions.returningClient ? 'Yes' : 'No',
         
         // Date information
         currentDate: new Date().toLocaleDateString('en-GB'),  // DD/MM/YYYY format
@@ -148,8 +177,8 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
         // Package information
         selectedPackage: formData.selectedPackage || 'Early Bird',
         "Selected Package": formData.selectedPackage || 'Early Bird',
-        packagePrice: '€5,500',  // This should be dynamic based on package selection
-        "Package Price": '€5,500',
+        packagePrice: `$${calculatedPrice.toLocaleString()}`,  // Dynamic based on calculation
+        "Package Price": `$${calculatedPrice.toLocaleString()}`,
         
         // Tour code - needed for invoice
         tourCode: formData.tourId === 'fallTour2025' ? 'UCV-F25' : 'UCV-S26',
@@ -174,11 +203,13 @@ function createTemplateData(formData: FormData): Record<string, string | boolean
  * @param templateUrl The URL of the template file
  * @param formData The form data to insert into the template
  * @param outputFilename The name of the output file to save
+ * @param calculatedPrice The calculated price based on user selections
  */
 export async function processDocumentTemplate(
     templateUrl: string,
     formData: FormData,
-    outputFilename: string
+    outputFilename: string,
+    calculatedPrice: number = 0
 ): Promise<void> {
     console.log(`Starting to process document template: ${templateUrl}`);
     try {
@@ -254,7 +285,7 @@ export async function processDocumentTemplate(
         }
         
         // Get data for template
-        const templateData = createTemplateData(formData);
+        const templateData = createTemplateData(formData, calculatedPrice);
         console.log('Template data prepared:', templateData);
         
         // Set the template data
@@ -312,8 +343,9 @@ export async function processDocumentTemplate(
 /**
  * Process all document templates with the given form data
  * @param formData The form data to fill in the templates
+ * @param calculatedPrice The calculated price based on user selections
  */
-export async function processAllTemplates(formData: FormData): Promise<void> {
+export async function processAllTemplates(formData: FormData, calculatedPrice: number = 0): Promise<void> {
     console.log("Starting to process all templates with form data", formData);
     try {
         // Make a copy of formData to ensure we don't modify the original
@@ -329,6 +361,7 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
         
         console.log("Processing with phone:", phoneValue);
         console.log("Processing with email:", emailValue);
+        console.log("Processing with calculated price:", calculatedPrice);
         
         // Create replacement mapping for direct text replacement if needed
         const replacements: Record<string, string> = {
@@ -345,6 +378,22 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
             'POSITION': formData.position,
             'Position': formData.position,
             'position': formData.position,
+            
+            // Dynamic pricing
+            'FINAL PRICE': `$${calculatedPrice.toLocaleString()}`,
+            '[FINAL PRICE]': `$${calculatedPrice.toLocaleString()}`,
+            'FINAL PRICE * 110%': `$${Math.round(calculatedPrice * 1.1).toLocaleString()}`,
+            '[FINAL PRICE * 110%]': `$${Math.round(calculatedPrice * 1.1).toLocaleString()}`,
+            
+            // Date placeholders
+            'DATE': formData.tourId === 'fallTour2025' ? '10/07/2025' : '10/12/2025',
+            '[DATE]': formData.tourId === 'fallTour2025' ? '10/07/2025' : '10/12/2025',
+            'TODAY': new Date().toLocaleDateString('en-GB'),
+            '[TODAY]': new Date().toLocaleDateString('en-GB'),
+            
+            // Invoice number
+            'NO': `${(new Date().getTime() % 1000).toString().padStart(3, '0')}`,
+            '[NO]': `${(new Date().getTime() % 1000).toString().padStart(3, '0')}`,
             
             // Account information (optional)
             'Account number': formData.accountNumber || 'N/A',
@@ -403,7 +452,8 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
             const vnDoc = await processDocumentTemplateForEmail(
                 '/VN_template.docx',
                 processedFormData,
-                `Registration_Form_${formData.organization.replace(/\s+/g, '_')}.docx`
+                `Registration_Form_${formData.organization.replace(/\s+/g, '_')}.docx`,
+                calculatedPrice
             );
             
             if (vnDoc) {
@@ -419,16 +469,10 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
                 'PHONE': phoneValue,
                 'Phone': phoneValue,
                 'phone': phoneValue,
-                '[PHONE]': phoneValue,
-                '[Phone]': phoneValue,
-                '[phone]': phoneValue,
                 
                 'EMAIL': emailValue,
                 'Email': emailValue, 
                 'email': emailValue,
-                '[EMAIL]': emailValue,
-                '[Email]': emailValue,
-                '[email]': emailValue,
                 
                 // Additional variations for the exact format in VN_template
                 'Phone/Điện thoại': `Phone/Điện thoại: ${phoneValue}`,
@@ -466,7 +510,8 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
             const invoiceDoc = await processDocumentTemplateForEmail(
                 '/IUC_Invoice VAT_UNIVERSITY_template.docx',
                 processedFormData,
-                `Invoice_${formData.organization.replace(/\s+/g, '_')}.docx`
+                `Invoice_${formData.organization.replace(/\s+/g, '_')}.docx`,
+                calculatedPrice
             );
             
             if (invoiceDoc) {
@@ -571,7 +616,8 @@ export async function processAllTemplates(formData: FormData): Promise<void> {
 async function processDocumentTemplateForEmail(
     templateUrl: string,
     formData: FormData,
-    outputFilename: string
+    outputFilename: string,
+    calculatedPrice: number = 0
 ): Promise<File | null> {
     console.log(`Starting to process document template for email: ${templateUrl}`);
     try {
@@ -604,7 +650,7 @@ async function processDocumentTemplateForEmail(
             });
         
         // Set template data
-        const templateData = createTemplateData(formData);
+        const templateData = createTemplateData(formData, calculatedPrice);
         doc.setData(templateData);
         
         // Render document

@@ -10,42 +10,46 @@ import { ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
+import { toursApi, TourBasic } from "../lib/api";
 
-// Define Tour type
-interface Tour {
-    id: number;
-    title: string;
-    description: string;
-    imageUrl: string;
-    price: number;
-    date: string;
+// Define Tour type for local use (extending TourBasic with detailsUrl)
+interface Tour extends TourBasic {
     detailsUrl: string;
 }
 
-// Tours data matching the OurTours page
-const TOURS_DATA: Tour[] = [
-    {
-        id: 1,
-        title: "Fall Tour 2025",
-        description: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "1 - 8 OCTOBER 2025",
-        detailsUrl: "/tour-details"
-    },
-    {
-        id: 2,
-        title: "Spring Tour 2026",
-        description: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "31 MARCH - 10 APRIL 2026",
-        detailsUrl: "/spring-tour-details"
-    }
-];
-
 export function HeroBanner() {
     const getItemById = useContentStore(state => state.getItemById);
+    const [tours, setTours] = useState<Tour[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch tours from API
+    useEffect(() => {
+        const fetchTours = async () => {
+            try {
+                setLoading(true);
+                const fetchedTours = await toursApi.getAll();
+                
+                // Transform API tours to include detailsUrl
+                const transformedTours: Tour[] = fetchedTours.map(tour => ({
+                    ...tour,
+                    detailsUrl: `/tour-details/${tour.id}` // Generate URL based on tour ID
+                }));
+                
+                setTours(transformedTours);
+                setError(null);
+            } catch (err) {
+                console.error('Failed to fetch tours:', err);
+                setError('Failed to load tours');
+                // Fallback to empty array or could use hardcoded data as fallback
+                setTours([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTours();
+    }, []);
 
     // Get content from store
     const headingContent = getItemById('home', 'heroBanner', 'heroBanner-heading')?.content ||
@@ -53,7 +57,7 @@ export function HeroBanner() {
     const paragraph1Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph1')?.content ||
         "Welcome to UCV - we aim to bridge top schools in Vietnam and international universities. We're a unique connector - we have years of experience on both the university and the school side.";
     const paragraph2Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph2')?.content ||
-        "Specializing in crafting quality school tours across Central and Northern Vietnam, we focus primarily on state schools (mostly Schools for gifted students).";
+        "Specializing in crafting quality school tours across Vietnam, we focus primarily on state schools (mostly Schools for gifted students).";
     const paragraph3Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph3')?.content ||
         "Join us to build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape.";
     const buttonContent = getItemById('home', 'heroBanner', 'heroBanner-button')?.content ||
@@ -75,6 +79,66 @@ export function HeroBanner() {
             setCurrent(api.selectedScrollSnap() + 1)
         })
     }, [api])
+
+    // Show loading state
+    if (loading) {
+        return (
+            <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 items-center">
+                    <div className="space-y-6 lg:col-span-2 me-5">
+                        <h1 className="text-4xl/10 lg:text-5xl/14 text-content font-medium">
+                            {headingContent}
+                        </h1>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph1Content}
+                        </p>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph2Content}
+                        </p>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph3Content}
+                        </p>
+                    </div>
+                    <div className="relative lg:col-span-4">
+                        <div className="w-full h-[500px] lg:h-[700px] bg-gray-200 rounded-2xl flex items-center justify-center">
+                            <p className="text-gray-500">Loading tours...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    // Show error state or empty state
+    if (error || tours.length === 0) {
+        return (
+            <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 items-center">
+                    <div className="space-y-6 lg:col-span-2 me-5">
+                        <h1 className="text-4xl/10 lg:text-5xl/14 text-content font-medium">
+                            {headingContent}
+                        </h1>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph1Content}
+                        </p>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph2Content}
+                        </p>
+                        <p className="text-sm text-content font-medium">
+                            {paragraph3Content}
+                        </p>
+                    </div>
+                    <div className="relative lg:col-span-4">
+                        <div className="w-full h-[500px] lg:h-[700px] bg-gray-200 rounded-2xl flex items-center justify-center">
+                            <p className="text-gray-500">
+                                {error || "No tours available at the moment"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12 overflow-hidden">
@@ -108,8 +172,8 @@ export function HeroBanner() {
                 <div className="relative lg:col-span-4">
                     <Carousel className="w-full" setApi={setApi} plugins={[Autoplay({ delay: 4000 })]}>
                         <CarouselContent>
-                            {TOURS_DATA.map((tour, index) => (
-                                <CarouselItem key={index}>
+                            {tours.map((tour) => (
+                                <CarouselItem key={tour.id}>
                                     <div className="relative w-full overflow-hidden rounded-2xl"
                                         style={{
                                             height: typeof window !== 'undefined' && window.innerWidth < 1024
@@ -133,7 +197,7 @@ export function HeroBanner() {
 
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
                                                 <p className="text-content text-xs line-clamp-2">
-                                                    {tour.description}
+                                                    {tour.shortDescription}
                                                 </p>
                                                 <a href={tour.detailsUrl}>
                                                     <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">

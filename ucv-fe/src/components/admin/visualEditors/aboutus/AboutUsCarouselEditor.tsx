@@ -1,5 +1,6 @@
 import { PageContent, ContentItem } from '../../../../lib/types';
 import { InlineEditableField } from '../InlineEditableField';
+import { ImageEditor } from '../../ImageEditor';
 
 interface AboutUsCarouselEditorProps {
   pageContent: PageContent;
@@ -44,19 +45,14 @@ export function AboutUsCarouselEditor({ pageContent }: AboutUsCarouselEditorProp
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="font-semibold text-gray-500 text-xs mb-2">Carousel Image 1:</div>
             {image1 && (
-              <div className="text-center">
-                <img 
-                  src={image1.content} 
-                  alt="Carousel 1" 
-                  className="h-40 object-cover mx-auto rounded"
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  Image path: {image1.content}
-                </div>
-                <div className="mt-2 text-xs text-orange-500">
-                  Image editing is currently disabled
-                </div>
-              </div>
+              <ImageEditor
+                item={image1}
+                pageName={pageContent.pageName}
+                sectionId={sectionId}
+                className="w-full"
+                label="Change Image 1"
+                imageClassName="h-40 object-cover mx-auto rounded"
+              />
             )}
           </div>
           
@@ -64,19 +60,14 @@ export function AboutUsCarouselEditor({ pageContent }: AboutUsCarouselEditorProp
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="font-semibold text-gray-500 text-xs mb-2">Carousel Image 2:</div>
             {image2 && (
-              <div className="text-center">
-                <img 
-                  src={image2.content} 
-                  alt="Carousel 2" 
-                  className="h-40 object-cover mx-auto rounded"
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  Image path: {image2.content}
-                </div>
-                <div className="mt-2 text-xs text-orange-500">
-                  Image editing is currently disabled
-                </div>
-              </div>
+              <ImageEditor
+                item={image2}
+                pageName={pageContent.pageName}
+                sectionId={sectionId}
+                className="w-full"
+                label="Change Image 2"
+                imageClassName="h-40 object-cover mx-auto rounded"
+              />
             )}
           </div>
           
@@ -84,19 +75,14 @@ export function AboutUsCarouselEditor({ pageContent }: AboutUsCarouselEditorProp
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="font-semibold text-gray-500 text-xs mb-2">Carousel Image 3:</div>
             {image3 && (
-              <div className="text-center">
-                <img 
-                  src={image3.content} 
-                  alt="Carousel 3" 
-                  className="h-40 object-cover mx-auto rounded"
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  Image path: {image3.content}
-                </div>
-                <div className="mt-2 text-xs text-orange-500">
-                  Image editing is currently disabled
-                </div>
-              </div>
+              <ImageEditor
+                item={image3}
+                pageName={pageContent.pageName}
+                sectionId={sectionId}
+                className="w-full"
+                label="Change Image 3"
+                imageClassName="h-40 object-cover mx-auto rounded"
+              />
             )}
           </div>
         </div>

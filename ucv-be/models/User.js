@@ -46,7 +46,7 @@ class User {
                 'INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)',
                 [newUser.name, newUser.email, newUser.username, newUser.password]
             );
-            return { id: result.insertId, ...newUser };
+            return { id: Number(result.insertId), ...newUser };
         } catch (err) {
             console.error('Error creating user: ', err);
             throw err;

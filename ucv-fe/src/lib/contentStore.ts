@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { ContentItem, PageContent, ContentUpdate } from './types';
+import { contentApi } from './api';
 
 // Initial content for the Home page
 const initialHomeContent: PageContent = {
@@ -22,34 +22,17 @@ const initialHomeContent: PageContent = {
                 {
                     id: 'heroBanner-paragraph2',
                     type: 'paragraph',
-                    content: "Specializing in crafting quality school tours across Central and Northern Vietnam, we focus primarily on state schools (mostly Schools for gifted students).",
+                    content: "Specializing in crafting quality school tours across Vietnam, we focus primarily on state schools (mostly Schools for gifted students).",
                 },
                 {
-                    id: 'heroBanner-tour-title',
-                    type: 'heading',
-                    content: "Tour Spring 2025",
-                },
-                {
-                    id: 'heroBanner-tour-desc',
+                    id: 'heroBanner-paragraph3',
                     type: 'paragraph',
-                    content: "Short Descripton At IUC, we're passionate about bridging the gap between ...",
+                    content: "Join us to build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape.",
                 },
                 {
                     id: 'heroBanner-button',
                     type: 'button',
                     content: "Find out more",
-                },
-                {
-                    id: 'heroBanner-carousel-images',
-                    type: 'image',
-                    content: '',
-                    metadata: {
-                        images: [
-                            "/hero-banner-1.png",
-                            "/hero-banner-2.png",
-                            "/hero-banner-3.png",
-                        ]
-                    }
                 }
             ]
         },
@@ -193,84 +176,6 @@ const initialHomeContent: PageContent = {
                     id: 'discoverTour-button',
                     type: 'button',
                     content: "Explore All Our Tours",
-                },
-                // Tour Card 1
-                {
-                    id: 'discoverTour-card1-date',
-                    type: 'heading',
-                    content: "INCOMING • JULY 4",
-                },
-                {
-                    id: 'discoverTour-card1-title',
-                    type: 'heading',
-                    content: "Tour Spring 2025",
-                },
-                {
-                    id: 'discoverTour-card1-description',
-                    type: 'paragraph',
-                    content: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-                },
-                {
-                    id: 'discoverTour-card1-button',
-                    type: 'button',
-                    content: "Find out more",
-                },
-                {
-                    id: 'discoverTour-card1-price',
-                    type: 'heading',
-                    content: "$2065",
-                },
-                // Tour Card 2
-                {
-                    id: 'discoverTour-card2-date',
-                    type: 'heading',
-                    content: "INCOMING • JULY 4",
-                },
-                {
-                    id: 'discoverTour-card2-title',
-                    type: 'heading',
-                    content: "Tour Spring 2025",
-                },
-                {
-                    id: 'discoverTour-card2-description',
-                    type: 'paragraph',
-                    content: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-                },
-                {
-                    id: 'discoverTour-card2-button',
-                    type: 'button',
-                    content: "Find out more",
-                },
-                {
-                    id: 'discoverTour-card2-price',
-                    type: 'heading',
-                    content: "$2065",
-                },
-                // Tour Card 3
-                {
-                    id: 'discoverTour-card3-date',
-                    type: 'heading',
-                    content: "INCOMING • JULY 4",
-                },
-                {
-                    id: 'discoverTour-card3-title',
-                    type: 'heading',
-                    content: "Tour Spring 2025",
-                },
-                {
-                    id: 'discoverTour-card3-description',
-                    type: 'paragraph',
-                    content: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-                },
-                {
-                    id: 'discoverTour-card3-button',
-                    type: 'button',
-                    content: "Find out more",
-                },
-                {
-                    id: 'discoverTour-card3-price',
-                    type: 'heading',
-                    content: "$2065",
                 }
             ]
         },
@@ -353,7 +258,7 @@ const initialHomeContent: PageContent = {
                 {
                     id: 'footer-email1',
                     type: 'heading',
-                    content: "bernd@iucconsulting.com",
+                    content: "info@ucv.com.vn",
                 },
                 {
                     id: 'footer-email2',
@@ -374,6 +279,91 @@ const initialHomeContent: PageContent = {
                     id: 'footer-contact-title',
                     type: 'heading',
                     content: "Build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape firsthand.",
+                }
+            ]
+        },
+        imageCarousel: {
+            title: 'Image Carousel Section',
+            items: [
+                {
+                    id: 'carousel-image-1',
+                    type: 'image',
+                    content: '/display1.png',
+                    metadata: {
+                        alt: 'Students at an event'
+                    }
+                },
+                {
+                    id: 'carousel-image-2',
+                    type: 'image',
+                    content: '/display2.png',
+                    metadata: {
+                        alt: 'Academic conference'
+                    }
+                },
+                {
+                    id: 'carousel-image-3',
+                    type: 'image',
+                    content: '/display3.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-4',
+                    type: 'image',
+                    content: '/display5.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-5',
+                    type: 'image',
+                    content: '/display6.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-6',
+                    type: 'image',
+                    content: '/display7.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-7',
+                    type: 'image',
+                    content: '/display8.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-8',
+                    type: 'image',
+                    content: '/display9.jpg',
+                    metadata: {
+                        alt: 'Classroom session'
+                    }
+                },
+                {
+                    id: 'carousel-image-9',
+                    type: 'image',
+                    content: '/display4.png',
+                    metadata: {
+                        alt: 'Students collaborating'
+                    }
+                },
+                {
+                    id: 'carousel-image-10',
+                    type: 'image',
+                    content: '/university-event.png',
+                    metadata: {
+                        alt: 'School exhibition'
+                    }
                 }
             ]
         }
@@ -534,7 +524,7 @@ const initialTourDetailsContent: PageContent = {
                 {
                     id: 'tourBanner-description',
                     type: 'paragraph',
-                    content: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.\n\nWe've curated our selection with local experts considering socio-economic demographics to ensure a valuable visit for you.",
+                    content: "Visiting a mix of top public and private high schools in Hanoi, Hai Duong, Hue & Da Nang. The participating schools demonstrate a keen interest in international education. We've curated our selection with local experts considering socio-economic demographics to ensure a valuable visit for you.",
                 },
                 {
                     id: 'tourBanner-location',
@@ -544,12 +534,42 @@ const initialTourDetailsContent: PageContent = {
                 {
                     id: 'tourBanner-duration',
                     type: 'paragraph',
-                    content: "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.",
+                    content: "We are aiming to visit",
                 },
                 {
                     id: 'tourBanner-startDate',
                     type: 'heading',
                     content: "July, 2025",
+                },
+                {
+                    id: 'tourBanner-locationLabel',
+                    type: 'heading',
+                    content: "LOCATION",
+                },
+                {
+                    id: 'tourBanner-durationLabel',
+                    type: 'heading',
+                    content: "DURATION",
+                },
+                {
+                    id: 'tourBanner-customizeLabel',
+                    type: 'heading',
+                    content: "CUSTOMIZE",
+                },
+                {
+                    id: 'tourBanner-tourDatesLabel',
+                    type: 'heading',
+                    content: "Tour dates",
+                },
+                {
+                    id: 'tourBanner-signUpButton',
+                    type: 'button',
+                    content: "Sign Up Now",
+                },
+                {
+                    id: 'tourBanner-shareLabel',
+                    type: 'heading',
+                    content: "Share",
                 },
             ]
         },
@@ -599,12 +619,12 @@ const initialTourDetailsContent: PageContent = {
                 {
                     id: 'locations-heading',
                     type: 'heading',
-                    content: "SPRING TOUR",
+                    content: "TOUR LOCATIONS",
                 },
                 {
                     id: 'locations-title',
                     type: 'heading',
-                    content: "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days.",
+                    content: "We are aiming to visit",
                 },
                 {
                     id: 'locations-hue',
@@ -635,6 +655,21 @@ const initialTourDetailsContent: PageContent = {
                     id: 'pricing-title',
                     type: 'heading',
                     content: "We offer an Early Bird discount as well as an extra discount for returning universities",
+                },
+                {
+                    id: 'pricing-tableHeader1',
+                    type: 'heading',
+                    content: "Registration Deadline",
+                },
+                {
+                    id: 'pricing-tableHeader2',
+                    type: 'heading',
+                    content: "Standard Price",
+                },
+                {
+                    id: 'pricing-tableHeader3',
+                    type: 'heading',
+                    content: "Returning University",
                 },
                 {
                     id: 'pricing-earlybird-deadline',
@@ -676,6 +711,11 @@ const initialTourDetailsContent: PageContent = {
                     type: 'paragraph',
                     content: "Customized school tours connecting top Vietnamese schools with international universities.",
                 },
+                {
+                    id: 'pricing-custom-button',
+                    type: 'button',
+                    content: "Sign Up Now",
+                },
             ]
         },
         packageSection: {
@@ -695,6 +735,16 @@ const initialTourDetailsContent: PageContent = {
                     id: 'package-items2',
                     type: 'paragraph',
                     content: "Refreshments and snacks between sessions.\nLunch, coffee and dinner on all 4 days (no dinner on final day).\nIntra and inter city transport (in Hue, Danang and Tam Ky).\nHotel suggestions & discount.",
+                },
+            ]
+        },
+        otherToursSection: {
+            title: 'Other Tours Section',
+            items: [
+                {
+                    id: 'otherTours-heading',
+                    type: 'heading',
+                    content: "OTHER TOURS",
                 },
             ]
         },
@@ -721,7 +771,7 @@ const initialSpringTourDetailsContent: PageContent = {
                 {
                     id: 'tourBanner-description',
                     type: 'paragraph',
-                    content: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.",
+                    content: "Explore the vibrant educational landscape of Northern, Central & Southern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Phong, Hue, Da Nang & Ho Chi Minh City.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.",
                 },
                 {
                     id: 'tourBanner-location',
@@ -804,9 +854,9 @@ const initialSpringTourDetailsContent: PageContent = {
                     content: "Ha Noi",
                 },
                 {
-                    id: 'locations-haiduong',
+                    id: 'locations-haiphong',
                     type: 'heading',
-                    content: "Hai Duong",
+                    content: "Hai Phong",
                 },
                 {
                     id: 'locations-hue',
@@ -1026,6 +1076,16 @@ const initialSignUpFormContent: PageContent = {
                     content: "9 - 11 school visits in 3 cities.\nSupport throughout the tour and school visits.\nOne stall at each school fair.\nReception dinner.\nRefreshments and snacks between sessions.\nLunch, coffee and dinner on all 4 days (no dinner on final day).\nIntra and inter city transport (in Hue, Danang and Tam Ky).\nHotel suggestions & discount.",
                 },
                 {
+                    id: 'step2-include-list-fall',
+                    type: 'paragraph',
+                    content: "9 - 11 school visits in 3 cities.\nSupport throughout the tour and school visits.\nOne stall at each school fair.\nReception dinner.\nRefreshments and snacks between sessions.\nLunch, coffee and dinner on all 4 days (no dinner on final day).\nIntra and inter city transport (in Hue, Danang and Tam Ky).\nHotel suggestions & discount.",
+                },
+                {
+                    id: 'step2-include-list-spring',
+                    type: 'paragraph',
+                    content: "12 - 15 school visits across 3 regions.\nComprehensive tour support throughout all visits.\nPremium stall location at each school fair.\nWelcome and farewell dinners.\nRefreshments and snacks between sessions.\nAll meals included on tour days.\nIntra and inter city transport in all visited regions.\nPremium hotel arrangements with special rates.",
+                },
+                {
                     id: 'step2-preferences-title',
                     type: 'heading',
                     content: "Adjust everything to fit your preferences!",
@@ -1044,6 +1104,26 @@ const initialSignUpFormContent: PageContent = {
                     id: 'step2-hueDaNang-label',
                     type: 'heading',
                     content: "Hue & Da Nang",
+                },
+                {
+                    id: 'step2-hcmc-label',
+                    type: 'heading',
+                    content: "Ho Chi Minh City",
+                },
+                {
+                    id: 'step2-promotions-title',
+                    type: 'heading',
+                    content: "Promotions",
+                },
+                {
+                    id: 'step2-earlybird-label',
+                    type: 'heading',
+                    content: "Early Bird Discount",
+                },
+                {
+                    id: 'step2-returning-label',
+                    type: 'heading',
+                    content: "Returning Client Discount",
                 },
                 {
                     id: 'step2-transfers-title',
@@ -1079,7 +1159,47 @@ const initialSignUpFormContent: PageContent = {
                     id: 'step2-next-button',
                     type: 'heading',
                     content: "Next Step",
-                }
+                },
+                {
+                    id: 'step2-fall-tour-date',
+                    type: 'heading',
+                    content: "1 - 8 OCTOBER 2025"
+                },
+                {
+                    id: 'step2-spring-tour-date',
+                    type: 'heading',
+                    content: "31 MARCH - 10 APRIL 2026"
+                },
+                {
+                    id: 'step2-fall-location-content',
+                    type: 'paragraph',
+                    content: "Central Vietnam (Hue, Da Nang)"
+                },
+                {
+                    id: 'step2-spring-location-content',
+                    type: 'paragraph',
+                    content: "Northern Vietnam (Hanoi, Hai Duong)"
+                },
+                {
+                    id: 'step2-fall-duration-content',
+                    type: 'paragraph',
+                    content: "We are aiming to visit 10 - 12 schools, in these 3 cities over 4 days."
+                },
+                {
+                    id: 'step2-spring-duration-content',
+                    type: 'paragraph',
+                    content: "10 schools across 3 northern cities over 5 days."
+                },
+                {
+                    id: 'step2-fall-earlybird-title',
+                    type: 'heading',
+                    content: "Early Bird - 24 December 2024"
+                },
+                {
+                    id: 'step2-spring-earlybird-title',
+                    type: 'heading',
+                    content: "Early Bird - 15 August 2025"
+                },
             ]
         },
         step3Section: {
@@ -1169,282 +1289,208 @@ const initialSignUpFormContent: PageContent = {
                     id: 'success-button',
                     type: 'heading',
                     content: "Back to Tours",
+                },
+                {
+                    id: 'success-image',
+                    type: 'image',
+                    content: "/party-popper.png",
                 }
             ]
         }
     }
 };
 
+// Default content array for resets
+const defaultContent = [
+    initialHomeContent,
+    initialAboutUsContent,
+    initialOurToursContent,
+    initialTourDetailsContent,
+    initialSpringTourDetailsContent,
+    initialSignUpFormContent
+];
+
 interface ContentStore {
     pages: PageContent[];
+    isLoading: boolean;
+    error: string | null;
     getPageContent: (pageName: string) => PageContent | undefined;
     getItemById: (pageName: string, sectionId: string, itemId: string) => ContentItem | undefined;
     updateContent: (update: ContentUpdate) => void;
     resetToDefault: () => void;
+    resetPageContent: (pageName: string) => void;
+    fetchContent: () => Promise<void>;
 }
 
-export const useContentStore = create<ContentStore>()(
-    persist(
-        (set, get) => ({
-            pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSpringTourDetailsContent, initialSignUpFormContent],
+export const useContentStore = create<ContentStore>((set, get) => ({
+    pages: defaultContent,
+    isLoading: false,
+    error: null,
+    
+    fetchContent: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            // Use the API to fetch all content
+            const pages = await contentApi.getAll();
             
-            getPageContent: (pageName: string) => {
-                return get().pages.find(page => page.pageName === pageName);
-            },
+            // Check if any pages are missing and add default content
+            const pageNames = pages.map(page => page.pageName);
             
-            getItemById: (pageName: string, sectionId: string, itemId: string) => {
-                const page = get().pages.find(page => page.pageName === pageName);
-                if (!page) return undefined;
-                
-                const section = page.sections[sectionId];
-                if (!section) return undefined;
-                
-                return section.items.find(item => item.id === itemId);
-            },
-            
-            updateContent: (update: ContentUpdate) => {
-                set(state => {
-                    const newPages = [...state.pages];
-                    const pageIndex = newPages.findIndex(page => page.pageName === update.pageName);
-                    
-                    if (pageIndex === -1) return state;
-                    
-                    const page = { ...newPages[pageIndex] }; // Create a shallow copy of the page
-                    newPages[pageIndex] = page; // Replace the page in newPages with the copy
-                    
-                    const section = { ...page.sections[update.sectionId] }; // Create a shallow copy of the section
-                    page.sections = { ...page.sections, [update.sectionId]: section }; // Replace the section in the page copy
-                    
-                    if (!section) return state;
-                    
-                    const itemIndex = section.items.findIndex(item => item.id === update.itemId);
-                    
-                    if (itemIndex === -1) return state;
-                    
-                    // Create a new items array with the updated item
-                    const updatedItems = [...section.items];
-                    const updatedItem = {
-                        ...updatedItems[itemIndex],
-                        content: update.content
-                    };
-                    
-                    if (update.metadata) {
-                        updatedItem.metadata = {
-                            ...updatedItem.metadata,
-                            ...update.metadata
-                        };
-                    }
-                    
-                    updatedItems[itemIndex] = updatedItem;
-                    section.items = updatedItems;
-                    
-                    // Force a re-render by returning a new object
-                    return { pages: newPages };
-                });
-            },
-            
-            // Add a function to reset the content to default values
-            resetToDefault: () => {
-                set({ pages: [initialHomeContent, initialAboutUsContent, initialOurToursContent, initialTourDetailsContent, initialSpringTourDetailsContent, initialSignUpFormContent] });
+            for (const defaultPage of defaultContent) {
+                if (!pageNames.includes(defaultPage.pageName)) {
+                    pages.push(defaultPage);
+                }
             }
-        }),
-        {
-            name: 'content-storage',
-            onRehydrateStorage: () => {
-                return (state, error) => {
-                    if (error || !state) {
-                        console.log('Error rehydrating storage:', error);
-                        return;
-                    }
-                    
-                    // Check if we need to merge in new sections that aren't in the stored state
-                    const homeContent = state.pages.find(page => page.pageName === 'home');
-                    if (homeContent) {
-                        let needsUpdate = false;
-                        const updatedSections = { ...homeContent.sections };
-                        
-                        // Check for new sections in initialHomeContent
-                        Object.entries(initialHomeContent.sections).forEach(([sectionId, section]) => {
-                            if (!homeContent.sections[sectionId]) {
-                                updatedSections[sectionId] = section;
-                                needsUpdate = true;
-                            }
-                        });
-                        
-                        // If we found new sections, update the store
-                        if (needsUpdate) {
-                            const updatedPages = [...state.pages];
-                            const pageIndex = updatedPages.findIndex(page => page.pageName === 'home');
-                            updatedPages[pageIndex] = {
-                                ...updatedPages[pageIndex],
-                                sections: updatedSections
-                            };
-                            
-                            state.pages = updatedPages;
-                        }
-                    }
-                    
-                    // Check if About Us page exists, if not add it
-                    if (!state.pages.find(page => page.pageName === 'about-us')) {
-                        state.pages.push(initialAboutUsContent);
-                    } else {
-                        // Similar to home, check for new sections in the About Us page
-                        const aboutUsContent = state.pages.find(page => page.pageName === 'about-us');
-                        if (aboutUsContent) {
-                            let needsUpdate = false;
-                            const updatedSections = { ...aboutUsContent.sections };
-                            
-                            // Check for new sections in initialAboutUsContent
-                            Object.entries(initialAboutUsContent.sections).forEach(([sectionId, section]) => {
-                                if (!aboutUsContent.sections[sectionId]) {
-                                    updatedSections[sectionId] = section;
-                                    needsUpdate = true;
-                                }
-                            });
-                            
-                            // If we found new sections, update the store
-                            if (needsUpdate) {
-                                const updatedPages = [...state.pages];
-                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'about-us');
-                                updatedPages[pageIndex] = {
-                                    ...updatedPages[pageIndex],
-                                    sections: updatedSections
-                                };
-                                
-                                state.pages = updatedPages;
-                            }
-                        }
-                    }
-                    
-                    // Check if Our Tours page exists, if not add it
-                    if (!state.pages.find(page => page.pageName === 'our-tours')) {
-                        state.pages.push(initialOurToursContent);
-                    } else {
-                        // Similar to home, check for new sections in the Our Tours page
-                        const ourToursContent = state.pages.find(page => page.pageName === 'our-tours');
-                        if (ourToursContent) {
-                            let needsUpdate = false;
-                            const updatedSections = { ...ourToursContent.sections };
-                            
-                            // Check for new sections in initialOurToursContent
-                            Object.entries(initialOurToursContent.sections).forEach(([sectionId, section]) => {
-                                if (!ourToursContent.sections[sectionId]) {
-                                    updatedSections[sectionId] = section;
-                                    needsUpdate = true;
-                                }
-                            });
-                            
-                            // If we found new sections, update the store
-                            if (needsUpdate) {
-                                const updatedPages = [...state.pages];
-                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'our-tours');
-                                updatedPages[pageIndex] = {
-                                    ...updatedPages[pageIndex],
-                                    sections: updatedSections
-                                };
-                                
-                                state.pages = updatedPages;
-                            }
-                        }
-                    }
-                    
-                    // Check if Tour Details page exists, if not add it
-                    if (!state.pages.find(page => page.pageName === 'tour-details')) {
-                        state.pages.push(initialTourDetailsContent);
-                    } else {
-                        // Similar to other pages, check for new sections in the Tour Details page
-                        const tourDetailsContent = state.pages.find(page => page.pageName === 'tour-details');
-                        if (tourDetailsContent) {
-                            let needsUpdate = false;
-                            const updatedSections = { ...tourDetailsContent.sections };
-                            
-                            // Check for new sections in initialTourDetailsContent
-                            Object.entries(initialTourDetailsContent.sections).forEach(([sectionId, section]) => {
-                                if (!tourDetailsContent.sections[sectionId]) {
-                                    updatedSections[sectionId] = section;
-                                    needsUpdate = true;
-                                }
-                            });
-                            
-                            // If we found new sections, update the store
-                            if (needsUpdate) {
-                                const updatedPages = [...state.pages];
-                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'tour-details');
-                                updatedPages[pageIndex] = {
-                                    ...updatedPages[pageIndex],
-                                    sections: updatedSections
-                                };
-                                
-                                state.pages = updatedPages;
-                            }
-                        }
-                    }
-                    
-                    // Check if Spring Tour Details page exists, if not add it
-                    if (!state.pages.find(page => page.pageName === 'spring-tour-details')) {
-                        state.pages.push(initialSpringTourDetailsContent);
-                    } else {
-                        // Similar to other pages, check for new sections in the Spring Tour Details page
-                        const springTourDetailsContent = state.pages.find(page => page.pageName === 'spring-tour-details');
-                        if (springTourDetailsContent) {
-                            let needsUpdate = false;
-                            const updatedSections = { ...springTourDetailsContent.sections };
-                            
-                            // Check for new sections in initialSpringTourDetailsContent
-                            Object.entries(initialSpringTourDetailsContent.sections).forEach(([sectionId, section]) => {
-                                if (!springTourDetailsContent.sections[sectionId]) {
-                                    updatedSections[sectionId] = section;
-                                    needsUpdate = true;
-                                }
-                            });
-                            
-                            // If we found new sections, update the store
-                            if (needsUpdate) {
-                                const updatedPages = [...state.pages];
-                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'spring-tour-details');
-                                updatedPages[pageIndex] = {
-                                    ...updatedPages[pageIndex],
-                                    sections: updatedSections
-                                };
-                                
-                                state.pages = updatedPages;
-                            }
-                        }
-                    }
-                    
-                    // Check if Sign Up Form page exists, if not add it
-                    if (!state.pages.find(page => page.pageName === 'signup-form')) {
-                        state.pages.push(initialSignUpFormContent);
-                    } else {
-                        // Similar to other pages, check for new sections in the Sign Up Form page
-                        const signUpFormContent = state.pages.find(page => page.pageName === 'signup-form');
-                        if (signUpFormContent) {
-                            let needsUpdate = false;
-                            const updatedSections = { ...signUpFormContent.sections };
-                            
-                            // Check for new sections in initialSignUpFormContent
-                            Object.entries(initialSignUpFormContent.sections).forEach(([sectionId, section]) => {
-                                if (!signUpFormContent.sections[sectionId]) {
-                                    updatedSections[sectionId] = section;
-                                    needsUpdate = true;
-                                }
-                            });
-                            
-                            // If we found new sections, update the store
-                            if (needsUpdate) {
-                                const updatedPages = [...state.pages];
-                                const pageIndex = updatedPages.findIndex(page => page.pageName === 'signup-form');
-                                updatedPages[pageIndex] = {
-                                    ...updatedPages[pageIndex],
-                                    sections: updatedSections
-                                };
-                                
-                                state.pages = updatedPages;
-                            }
-                        }
-                    }
-                };
-            }
+            
+            set({ pages, isLoading: false });
+        } catch (error) {
+            console.error('Error fetching content:', error);
+            set({ 
+                error: error instanceof Error ? error.message : 'Failed to fetch content', 
+                isLoading: false,
+                // Fall back to default content on error
+                pages: defaultContent
+            });
         }
-    )
-); 
+    },
+    
+    getPageContent: (pageName: string) => {
+        return get().pages.find(page => page.pageName === pageName);
+    },
+    
+    getItemById: (pageName: string, sectionId: string, itemId: string) => {
+        const page = get().pages.find(page => page.pageName === pageName);
+        if (!page) return undefined;
+        
+        const section = page.sections[sectionId];
+        if (!section) return undefined;
+        
+        return section.items.find(item => item.id === itemId);
+    },
+    
+    updateContent: async (update: ContentUpdate) => {
+        try {
+            // Update locally in state first for immediate feedback
+            set(state => {
+                const newPages = [...state.pages];
+                const pageIndex = newPages.findIndex(page => page.pageName === update.pageName);
+                
+                if (pageIndex === -1) return state;
+                
+                const page = { ...newPages[pageIndex] };
+                newPages[pageIndex] = page;
+                
+                const section = { ...page.sections[update.sectionId] };
+                page.sections = { ...page.sections, [update.sectionId]: section };
+                
+                if (!section) return state;
+                
+                const itemIndex = section.items.findIndex(item => item.id === update.itemId);
+                
+                if (itemIndex === -1) return state;
+                
+                const updatedItems = [...section.items];
+                const updatedItem = {
+                    ...updatedItems[itemIndex],
+                    content: update.content
+                };
+                
+                if (update.metadata) {
+                    updatedItem.metadata = {
+                        ...updatedItem.metadata,
+                        ...update.metadata
+                    };
+                }
+                
+                updatedItems[itemIndex] = updatedItem;
+                section.items = updatedItems;
+                
+                return { pages: newPages };
+            });
+            
+            // Then update on the server using the API
+            await contentApi.updateItem(update);
+            
+        } catch (error) {
+            console.error('Error updating content:', error);
+            // If there's an error, refresh the content from the server to ensure consistency
+            await get().fetchContent();
+        }
+    },
+    
+    resetToDefault: async () => {
+        try {
+            set({ isLoading: true, error: null });
+            
+            // Reset content on server using the API
+            await contentApi.resetAll(defaultContent);
+            
+            // Update local state
+            set({ pages: defaultContent, isLoading: false });
+        } catch (error) {
+            console.error('Error resetting content:', error);
+            set({ 
+                error: error instanceof Error ? error.message : 'Failed to reset content', 
+                isLoading: false 
+            });
+        }
+    },
+    
+    resetPageContent: async (pageName: string) => {
+        try {
+            set({ isLoading: true, error: null });
+            
+            // Find the default content for the specified page
+            let defaultPageContent;
+            switch (pageName) {
+                case 'home':
+                    defaultPageContent = initialHomeContent;
+                    break;
+                case 'about-us':
+                    defaultPageContent = initialAboutUsContent;
+                    break;
+                case 'our-tours':
+                    defaultPageContent = initialOurToursContent;
+                    break;
+                case 'tour-details':
+                    defaultPageContent = initialTourDetailsContent;
+                    break;
+                case 'spring-tour-details':
+                    defaultPageContent = initialSpringTourDetailsContent;
+                    break;
+                case 'signup-form':
+                    defaultPageContent = initialSignUpFormContent;
+                    break;
+                default:
+                    set({ 
+                        error: `No default content found for page: ${pageName}`, 
+                        isLoading: false 
+                    });
+                    return;
+            }
+            
+            // Reset content on server using the API
+            await contentApi.resetPage(pageName, defaultPageContent);
+            
+            // Update local state
+            set(state => {
+                const newPages = [...state.pages];
+                const pageIndex = newPages.findIndex(page => page.pageName === pageName);
+                
+                if (pageIndex !== -1) {
+                    newPages[pageIndex] = defaultPageContent;
+                } else {
+                    newPages.push(defaultPageContent);
+                }
+                
+                return { pages: newPages, isLoading: false };
+            });
+        } catch (error) {
+            console.error(`Error resetting page content for ${pageName}:`, error);
+            set({ 
+                error: error instanceof Error ? error.message : `Failed to reset content for ${pageName}`, 
+                isLoading: false 
+            });
+        }
+    }
+})); 

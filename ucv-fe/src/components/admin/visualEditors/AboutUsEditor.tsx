@@ -1,6 +1,7 @@
 import { PageContent, ContentItem } from '../../../lib/types';
 import { InlineEditableField } from './InlineEditableField';
 import { StatisticsEditor } from './StatisticsEditor';
+import { ImageEditor } from '../ImageEditor';
 
 interface AboutUsEditorProps {
   pageContent: PageContent;
@@ -64,14 +65,14 @@ export function AboutUsEditor({ pageContent }: AboutUsEditorProps) {
             
             <div className="aspect-video bg-white p-1 rounded border border-gray-200 flex items-center justify-center">
               {image && (
-                <div className="text-center">
-                  <img 
-                    src={image.content} 
-                    alt="About Us" 
-                    className="max-h-40 object-contain mx-auto"
-                  />
-                  <div className="mt-2 text-xs text-orange-500">Image editing is currently disabled</div>
-                </div>
+                <ImageEditor
+                  item={image}
+                  pageName={pageContent.pageName}
+                  sectionId={sectionId}
+                  className="w-full"
+                  label="Change About Us Image"
+                  imageClassName="max-h-40 object-contain mx-auto"
+                />
               )}
             </div>
           </div>

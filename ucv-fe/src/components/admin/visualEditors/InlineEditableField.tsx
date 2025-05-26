@@ -8,6 +8,8 @@ interface InlineEditableFieldProps {
   sectionId: string;
   className?: string;
   multiline?: boolean;
+  itemId?: string;
+  defaultContent?: string;
 }
 
 export function InlineEditableField({ 
@@ -15,10 +17,12 @@ export function InlineEditableField({
   pageName, 
   sectionId, 
   className = '', 
-  multiline = false 
+  multiline = false,
+  itemId,
+  defaultContent = 'Click to add content'
 }: InlineEditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(item?.content || '');
+  const [content, setContent] = useState(item?.content || defaultContent);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const updateContent = useContentStore(state => state.updateContent);
@@ -27,8 +31,10 @@ export function InlineEditableField({
   useEffect(() => {
     if (item) {
       setContent(item.content);
+    } else {
+      setContent(defaultContent);
     }
-  }, [item]);
+  }, [item, defaultContent]);
   
   // Focus input when entering edit mode
   useEffect(() => {
@@ -41,17 +47,13 @@ export function InlineEditableField({
     }
   }, [isEditing, multiline]);
   
-  if (!item) {
-    return <div className="text-red-500">Item not found</div>;
-  }
-  
   const handleSave = () => {
     const update: ContentUpdate = {
       pageName,
       sectionId,
-      itemId: item.id,
+      itemId: item?.id || itemId || 'unknown',
       content,
-      metadata: item.metadata
+      metadata: item?.metadata
     };
     
     updateContent(update);
@@ -59,7 +61,7 @@ export function InlineEditableField({
   };
   
   const handleCancel = () => {
-    setContent(item.content);
+    setContent(item?.content || defaultContent);
     setIsEditing(false);
   };
   
@@ -70,6 +72,10 @@ export function InlineEditableField({
       handleCancel();
     }
   };
+
+  // Show a different style for missing items
+  const isMissing = !item;
+  const displayContent = content || defaultContent;
   
   if (isEditing) {
     return (
@@ -115,10 +121,11 @@ export function InlineEditableField({
   return (
     <div 
       onClick={() => setIsEditing(true)}
-      className={`cursor-pointer hover:bg-blue-100 transition-colors px-2 py-1 rounded ${className}`}
+      className={`cursor-pointer hover:bg-blue-100 transition-colors px-2 py-1 rounded ${className} ${isMissing ? 'border border-dashed border-orange-300 bg-orange-50' : ''}`}
     >
-      {content}
-      <span className="ml-2 text-blue-500 opacity-0 group-hover:opacity-100 text-xs">(Click to edit)</span>
+      <span className={isMissing ? 'text-orange-600 italic' : ''}>{displayContent}</span>
+      {isMissing && <span className="ml-2 text-orange-500 text-xs">(Missing - click to create)</span>}
+      {!isMissing && <span className="ml-2 text-blue-500 opacity-0 group-hover:opacity-100 text-xs">(Click to edit)</span>}
     </div>
   );
 } 

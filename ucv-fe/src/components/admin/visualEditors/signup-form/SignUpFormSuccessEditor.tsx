@@ -1,5 +1,6 @@
 import { PageContent } from '../../../../lib/types';
 import { InlineEditableField } from '../InlineEditableField';
+import { ImageEditor } from '../../ImageEditor';
 
 interface SignUpFormSuccessEditorProps {
   pageContent: PageContent;
@@ -42,10 +43,18 @@ export function SignUpFormSuccessEditor({ pageContent }: SignUpFormSuccessEditor
             />
           </div>
 
-          <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="text-sm text-yellow-700">
-              The success image (party popper) upload functionality will be available in a future update.
-            </p>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Success Image (Party Popper)</label>
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <ImageEditor
+                item={pageContent.sections.successSection.items.find(item => item.id === 'success-image')}
+                pageName="signup-form"
+                sectionId="successSection"
+                className="w-full"
+                label="Change Success Image"
+                imageClassName="w-58 h-58 lg:w-68 lg:h-68 mx-auto object-contain"
+              />
+            </div>
           </div>
         </div>
       </div>

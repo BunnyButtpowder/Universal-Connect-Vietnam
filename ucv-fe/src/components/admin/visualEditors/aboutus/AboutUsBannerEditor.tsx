@@ -1,5 +1,6 @@
 import { PageContent, ContentItem } from '../../../../lib/types';
 import { InlineEditableField } from '../InlineEditableField';
+import { ImageEditor } from '../../ImageEditor';
 
 interface AboutUsBannerEditorProps {
   pageContent: PageContent;
@@ -42,19 +43,14 @@ export function AboutUsBannerEditor({ pageContent }: AboutUsBannerEditorProps) {
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="font-semibold text-gray-500 text-xs mb-2">Banner Image:</div>
             {image && (
-              <div className="text-center">
-                <img 
-                  src={image.content} 
-                  alt="About Us Banner" 
-                  className="h-40 object-cover mx-auto rounded"
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  Image path: {image.content}
-                </div>
-                <div className="mt-2 text-xs text-orange-500">
-                  Image editing is currently disabled
-                </div>
-              </div>
+              <ImageEditor
+                item={image}
+                pageName={pageContent.pageName}
+                sectionId={sectionId}
+                className="w-full"
+                label="Change Banner Image"
+                imageClassName="h-40 object-cover mx-auto rounded"
+              />
             )}
           </div>
         </div>

@@ -1,50 +1,68 @@
 import { ArrowUpRight, ArrowRight } from "lucide-react"
 import { useContentStore } from "../lib/contentStore"
+import { useState, useEffect } from "react"
+import { toursApi, TourBasic } from "../lib/api"
 
-// Define Tour type
-interface Tour {
-    id: number;
-    title: string;
-    description: string;
-    imageUrl: string;
-    price: number;
-    date: string;
+// Define Tour type for local use (extending TourBasic with additional properties)
+interface Tour extends TourBasic {
     detailsUrl: string;
+    buttonText: string;
 }
-
-// Tours data matching the OurTours page
-const TOURS_DATA: Tour[] = [
-    {
-        id: 1,
-        title: "Fall Tour 2025",
-        description: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "1 - 8 OCTOBER 2025",
-        detailsUrl: "/tour-details"
-    },
-    {
-        id: 2,
-        title: "Spring Tour 2026",
-        description: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "31 MARCH - 10 APRIL 2026",
-        detailsUrl: "/spring-tour-details"
-    }
-];
 
 export function DiscoverSchoolTourHome() {
     const getItemById = useContentStore(state => state.getItemById);
+    const [tours, setTours] = useState<Tour[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Helper function to format price with commas
+    const formatPrice = (price: number) => {
+        // Convert to number and check if it has meaningful decimal places
+        const numPrice = parseFloat(price.toString());
+        const hasDecimals = numPrice % 1 !== 0;
+        
+        return numPrice.toLocaleString('en-US', {
+            minimumFractionDigits: hasDecimals ? 2 : 0,
+            maximumFractionDigits: 2
+        });
+    };
+
+    // Fetch tours from API
+    useEffect(() => {
+        const fetchTours = async () => {
+            try {
+                setLoading(true);
+                const fetchedTours = await toursApi.getAll();
+                
+                // Transform API tours to include additional properties
+                const transformedTours: Tour[] = fetchedTours.map(tour => ({
+                    ...tour,
+                    detailsUrl: `/tour-details/${tour.id}`, // Generate URL based on tour ID
+                    buttonText: "Find out more" // Default button text
+                }));
+                
+                setTours(transformedTours);
+                setError(null);
+            } catch (err) {
+                console.error('Failed to fetch tours:', err);
+                setError('Failed to load tours');
+                setTours([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTours();
+    }, []);
 
     // Main content
-    const headingContent = getItemById('home', 'discoverTour', 'discoverTour-heading')?.content || 
+    const headingContent = getItemById('home', 'discoverTour', 'discoverTour-heading')?.content ||
         "DISCOVER OUR SCHOOL TOURS";
-    const titleContent = getItemById('home', 'discoverTour', 'discoverTour-title')?.content || 
+    const titleContent = getItemById('home', 'discoverTour', 'discoverTour-title')?.content ||
         "Exclusive access to prestigious state schools, hand-picked for their academic excellence.";
-    const descriptionContent = getItemById('home', 'discoverTour', 'discoverTour-description')?.content || 
+    const descriptionContent = getItemById('home', 'discoverTour', 'discoverTour-description')?.content ||
         "As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.";
-    const buttonContent = getItemById('home', 'discoverTour', 'discoverTour-button')?.content || 
+    const buttonContent = getItemById('home', 'discoverTour', 'discoverTour-button')?.content ||
         "Explore All Our Tours";
 
     return (
@@ -84,48 +102,80 @@ export function DiscoverSchoolTourHome() {
                     </div>
                 </div>
 
-                {/* Tour Cards - 3 columns on desktop, stacked on mobile */}
+                {/* Tour Cards - 2 columns on desktop, stacked on mobile */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Map through the tours data to create cards */}
-                    {TOURS_DATA.map((tour) => (
-                        <div key={tour.id} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
-                            <div className="relative h-90 overflow-hidden rounded-xl">
-                                <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
-                                    <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
-                                </div>
-                                <div className="h-full w-full p-2 lg:p-3">
-                                    <div className="relative h-full w-full overflow-hidden rounded-xl">
-                                        <img
-                                            src={tour.imageUrl}
-                                            alt={`${tour.title} image`}
-                                            className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
-                                        />
-                                    </div>
+                    {loading ? (
+                        // Loading state
+                        <>
+                            <div className="bg-white rounded-xl overflow-hidden">
+                                <div className="h-90 bg-gray-200 animate-pulse rounded-xl"></div>
+                                <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
+                                    <div className="h-4 bg-gray-200 animate-pulse rounded"></div>
+                                    <div className="h-3 bg-gray-200 animate-pulse rounded"></div>
+                                    <div className="h-3 bg-gray-200 animate-pulse rounded w-3/4"></div>
                                 </div>
                             </div>
-                            <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
-                                <h3 className="font-bold text-base text-content">{tour.title}</h3>
-                                <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
-                                    {tour.description}
-                                </p>
-                                <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center pt-2 gap-4">
-                                    <a href={tour.detailsUrl}>
-                                        <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950">
-                                            <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                                                <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
-                                            </div>
-                                            <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">Find out more</span>
-                                        </button>
-                                    </a>
-                                    <div className="flex items-center space-x-1 text-navy-800">
-                                        <span className="text-xs">Start from</span>
-                                        <span className="font-bold text-content">${tour.price}</span>
-                                        <span className="text-xs text-gray-500 font-medium">USD</span>
-                                    </div>
+                            <div className="bg-white rounded-xl overflow-hidden">
+                                <div className="h-90 bg-gray-200 animate-pulse rounded-xl"></div>
+                                <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
+                                    <div className="h-4 bg-gray-200 animate-pulse rounded"></div>
+                                    <div className="h-3 bg-gray-200 animate-pulse rounded"></div>
+                                    <div className="h-3 bg-gray-200 animate-pulse rounded w-3/4"></div>
                                 </div>
                             </div>
+                        </>
+                    ) : error ? (
+                        // Error state
+                        <div className="col-span-1 lg:col-span-2 bg-white rounded-xl p-6 text-center">
+                            <p className="text-gray-500">{error}</p>
                         </div>
-                    ))}
+                    ) : tours.length === 0 ? (
+                        // Empty state
+                        <div className="col-span-1 lg:col-span-2 bg-white rounded-xl p-6 text-center">
+                            <p className="text-gray-500">No tours available at the moment</p>
+                        </div>
+                    ) : (
+                        // Map through the fetched tours data
+                        tours.map((tour) => (
+                            <a key={tour.id} href={tour.detailsUrl}>
+                                <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
+                                    <div className="relative h-90 overflow-hidden rounded-xl">
+                                        <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
+                                            <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
+                                        </div>
+                                        <div className="h-full w-full p-2 lg:p-3">
+                                            <div className="relative h-full w-full overflow-hidden rounded-xl">
+                                                <img
+                                                    src={tour.imageUrl}
+                                                    alt={`${tour.title} image`}
+                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
+                                        <h3 className="font-bold text-base text-content">{tour.title}</h3>
+                                        <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
+                                            {tour.shortDescription}
+                                        </p>
+                                        <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center pt-2 gap-4">
+                                            <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950">
+                                                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                                    <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                                </div>
+                                                <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
+                                            </button>
+                                            <div className="flex items-center space-x-1 text-navy-800">
+                                                <span className="text-xs">Start from</span>
+                                                <span className="font-bold text-content">${formatPrice(tour.price)}</span>
+                                                <span className="text-xs text-gray-500 font-medium">USD</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        ))
+                    )}
                 </div>
             </div>
 

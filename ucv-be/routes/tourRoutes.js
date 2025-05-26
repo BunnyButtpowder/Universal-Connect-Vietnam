@@ -17,4 +17,17 @@ router.put('/:id', tourController.updateTour);
 // Route to delete a tour
 router.delete('/:id', tourController.deleteTour);
 
+// Routes for shared entities
+// Cities
+router.get('/shared/cities', tourController.getAllCities);
+router.post('/shared/cities', tourController.createCity);
+
+// Event Types
+router.get('/shared/event-types', tourController.getAllEventTypes);
+router.post('/shared/event-types', tourController.createEventType);
+
+// Package Items
+router.get('/shared/package-items', tourController.getAllPackageItems);
+router.post('/shared/package-items', tourController.createPackageItem);
+
 module.exports = router; 

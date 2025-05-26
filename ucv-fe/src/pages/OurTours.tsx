@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContentStore } from "@/lib/contentStore";
+import { toursApi, TourBasic } from "@/lib/api";
 
 import {
     Pagination,
@@ -14,47 +15,22 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 
-// Define Tour type
+// Update Tour type to match API response
 interface Tour {
-    id: number;
+    id: string;
     title: string;
     description: string;
     imageUrl: string;
-    price: number;
+    price: string;
     date: string;
+    detailsUrl: string;
+    buttonText: string;
 }
-
-// Tour data
-const TOURS_DATA: Tour[] = [
-    {
-        id: 1,
-        title: "Fall Tour 2025",
-        description: "Visiting a mix of top public and private high schools in Hue, Danang and Tam Ky. We are adding two promising schools in Tam Ky, which is the capital of Quang Nam province - home to the beautiful Hoi An. The participating schools demonstrate a keen interest in international education.",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "1 - 8 OCTOBER 2025",
-    },
-    {
-        id: 2,
-        title: "Spring Tour 2026",
-        description: "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "31 MARCH - 10 APRIL 2026",
-    }
-];
 
 // TourCard component
 function TourCard({ tour }: { tour: Tour }) {
-    // Determine the link based on tour ID
-    const getLink = () => {
-        if (tour.id === 1) return "/tour-details";
-        if (tour.id === 2) return "/spring-tour-details";
-        return "/tour-details"; // Default fallback
-    };
-
     return (
-        <a href={getLink()} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative h-90 overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
@@ -79,11 +55,11 @@ function TourCard({ tour }: { tour: Tour }) {
                         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                             <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                         </div>
-                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">Find out more</span>
+                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
                     </button>
                     <div className="flex items-center space-x-1 text-navy-800">
                         <span className="text-xs">Start from</span>
-                        <span className="font-bold text-content">${tour.price}</span>
+                        <span className="font-bold text-content">{tour.price}</span>
                         <span className="text-xs text-gray-500 font-medium">USD</span>
                     </div>
                 </div>
@@ -95,9 +71,24 @@ function TourCard({ tour }: { tour: Tour }) {
 export default function OurTours() {
     const [currentPage, setCurrentPage] = useState(1);
     const [toursPerPage, setToursPerPage] = useState(9); // 9 cards per page in desktop view
-    const totalPages = Math.ceil(TOURS_DATA.length / toursPerPage);
+    const [tours, setTours] = useState<Tour[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
     const getPageContent = useContentStore(state => state.getPageContent);
     const ourToursContent = getPageContent('our-tours');
+    
+    // Helper function to format price with commas
+    const formatPrice = (price: number) => {
+        // Convert to number and check if it has meaningful decimal places
+        const numPrice = parseFloat(price.toString());
+        const hasDecimals = numPrice % 1 !== 0;
+        
+        return numPrice.toLocaleString('en-US', {
+            minimumFractionDigits: hasDecimals ? 2 : 0,
+            maximumFractionDigits: 2
+        });
+    };
     
     // Header section content
     const headerTitle = ourToursContent?.sections.headerSection?.items.find(
@@ -107,6 +98,40 @@ export default function OurTours() {
     const headerDescription = ourToursContent?.sections.headerSection?.items.find(
         item => item.id === 'headerSection-description'
     )?.content || "As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.";
+
+    // Fetch tours from API
+    useEffect(() => {
+        const fetchTours = async () => {
+            try {
+                setLoading(true);
+                const toursData = await toursApi.getAll();
+                
+                // Map TourBasic to Tour interface
+                const mappedTours: Tour[] = toursData.map((tour: TourBasic) => ({
+                    id: tour.id,
+                    title: tour.title,
+                    description: tour.shortDescription,
+                    imageUrl: tour.imageUrl,
+                    price: `$${formatPrice(tour.price)}`,
+                    date: tour.date,
+                    detailsUrl: `/tour-details/${tour.id}`,
+                    buttonText: "Find out more"
+                }));
+                
+                setTours(mappedTours);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching tours:', err);
+                setError('Failed to load tours. Please try again later.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTours();
+    }, []);
+    
+    const totalPages = Math.ceil(tours.length / toursPerPage);
 
     // Update toursPerPage based on window width
     useEffect(() => {
@@ -129,7 +154,7 @@ export default function OurTours() {
     // Get current page tours
     const indexOfLastTour = currentPage * toursPerPage;
     const indexOfFirstTour = indexOfLastTour - toursPerPage;
-    const currentTours = TOURS_DATA.slice(indexOfFirstTour, indexOfLastTour);
+    const currentTours = tours.slice(indexOfFirstTour, indexOfLastTour);
 
     // Function to handle page change
     const handlePageChange = (page: number) => {
@@ -244,40 +269,64 @@ export default function OurTours() {
 
                 {/* Tours Section */}
                 <section className="relative mx-auto px-4 sm:px-6 lg:px-20 py-12">
-                    <div className="tours-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {currentTours.map(tour => (
-                            <TourCard key={tour.id} tour={tour} />
-                        ))}
-                    </div>
+                    {loading && (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="text-lg text-gray-600">Loading tours...</div>
+                        </div>
+                    )}
 
-                    {/* Shadcn Pagination */}
-                    <div className="mt-10">
-                        <Pagination>
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious 
-                                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))} 
-                                        aria-disabled={currentPage === 1}
-                                        className={`cursor-pointer hover:bg-blue-200/30 transition-colors ${
-                                            currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                                        }`}
-                                    />
-                                </PaginationItem>
-                                
-                                {renderPaginationItems()}
-                                
-                                <PaginationItem>
-                                    <PaginationNext 
-                                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} 
-                                        aria-disabled={currentPage === totalPages}
-                                        className={`cursor-pointer hover:bg-blue-200/30 transition-colors ${
-                                            currentPage === totalPages ? "pointer-events-none opacity-50" : ""
-                                        }`}
-                                    />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    {error && (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="text-lg text-red-600">{error}</div>
+                        </div>
+                    )}
+
+                    {!loading && !error && tours.length === 0 && (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="text-lg text-gray-600">No tours available at the moment.</div>
+                        </div>
+                    )}
+
+                    {!loading && !error && tours.length > 0 && (
+                        <>
+                            <div className="tours-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {currentTours.map(tour => (
+                                    <TourCard key={tour.id} tour={tour} />
+                                ))}
+                            </div>
+
+                            {/* Shadcn Pagination */}
+                            {totalPages > 1 && (
+                                <div className="mt-10">
+                                    <Pagination>
+                                        <PaginationContent>
+                                            <PaginationItem>
+                                                <PaginationPrevious 
+                                                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))} 
+                                                    aria-disabled={currentPage === 1}
+                                                    className={`cursor-pointer hover:bg-blue-200/30 transition-colors ${
+                                                        currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                                                    }`}
+                                                />
+                                            </PaginationItem>
+                                            
+                                            {renderPaginationItems()}
+                                            
+                                            <PaginationItem>
+                                                <PaginationNext 
+                                                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} 
+                                                    aria-disabled={currentPage === totalPages}
+                                                    className={`cursor-pointer hover:bg-blue-200/30 transition-colors ${
+                                                        currentPage === totalPages ? "pointer-events-none opacity-50" : ""
+                                                    }`}
+                                                />
+                                            </PaginationItem>
+                                        </PaginationContent>
+                                    </Pagination>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </section>
             </main>
 

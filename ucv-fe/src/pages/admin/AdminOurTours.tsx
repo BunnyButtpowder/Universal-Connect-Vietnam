@@ -3,6 +3,7 @@ import { AdminNavbar } from '../../components/admin/AdminNavbar';
 import { SectionManager } from '../../components/admin/SectionManager';
 import { useContentStore } from '../../lib/contentStore';
 import { CreateTourModal } from '../../components/admin/CreateTourModal';
+import { EditTourModal } from '../../components/admin/EditTourModal';
 import { toursApi, TourBasic } from '../../lib/api';
 
 export default function AdminOurTours() {
@@ -10,6 +11,8 @@ export default function AdminOurTours() {
   const resetToDefault = useContentStore(state => state.resetToDefault);
   const [ourToursContent, setOurToursContent] = useState(getPageContent('our-tours'));
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTourId, setEditingTourId] = useState<string | null>(null);
   const [tours, setTours] = useState<TourBasic[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +65,18 @@ export default function AdminOurTours() {
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
     // Refresh tours after closing modal to show the newly created one
+    fetchTours();
+  };
+  
+  const openEditModal = (tourId: string) => {
+    setEditingTourId(tourId);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingTourId(null);
+    // Refresh tours after closing modal to show the updated tour
     fetchTours();
   };
   
@@ -182,7 +197,7 @@ export default function AdminOurTours() {
                       <div className="space-x-2">
                         <button 
                           className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                          onClick={() => window.location.href = `/admin/tours/${tour.id}`}
+                          onClick={() => openEditModal(tour.id)}
                         >
                           Edit
                         </button>
@@ -204,6 +219,10 @@ export default function AdminOurTours() {
       
       {isCreateModalOpen && (
         <CreateTourModal onClose={closeCreateModal} />
+      )}
+      
+      {isEditModalOpen && editingTourId && (
+        <EditTourModal tourId={editingTourId} onClose={closeEditModal} />
       )}
     </div>
   );

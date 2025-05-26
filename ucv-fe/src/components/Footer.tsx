@@ -12,9 +12,9 @@ export function Footer() {
     const phoneContent = getItemById('home', 'footer', 'footer-phone')?.content || 
         "+84 (0)34444 8680";
     const email1Content = getItemById('home', 'footer', 'footer-email1')?.content || 
-        "bernd@iucconsulting.com";
-    const email2Content = getItemById('home', 'footer', 'footer-email2')?.content || 
-        "bfwidemann@gmail.com";
+        "info@ucv.com.vn";
+    // const email2Content = getItemById('home', 'footer', 'footer-email2')?.content || 
+    //     "bfwidemann@gmail.com";
     const copyrightContent = getItemById('home', 'footer', 'footer-copyright')?.content || 
         "2025©UCV. All rights reserved.";
     const contactHeadingContent = getItemById('home', 'footer', 'footer-contact-heading')?.content || 
@@ -22,13 +22,22 @@ export function Footer() {
     const contactTitleContent = getItemById('home', 'footer', 'footer-contact-title')?.content || 
         "Build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape firsthand.";
 
+    // Get region label content from store
+    const northernRegionLabel = getItemById('home', 'footer', 'footer-region-northern')?.content || 
+        "Northern Vietnam (Hanoi and surrounding areas)";
+    const centralRegionLabel = getItemById('home', 'footer', 'footer-region-central')?.content || 
+        "Central Vietnam (Da Nang and surrounding areas)";
+    const southernRegionLabel = getItemById('home', 'footer', 'footer-region-southern')?.content || 
+        "Southern Vietnam (HCMC and surrounding areas)";
+
     const [formData, setFormData] = useState({
         fullName: "",
         organization: "",
         email: "",
         tourRegions: {
+            northern: false,
             central: false,
-            northern: false
+            southern: false
         },
         message: ""
     });
@@ -59,8 +68,9 @@ export function Footer() {
         try {
             // Prepare tour regions array for API
             const tourRegions = [];
-            if (formData.tourRegions.central) tourRegions.push("Central Vietnam");
-            if (formData.tourRegions.northern) tourRegions.push("Northern Vietnam");
+            if (formData.tourRegions.northern) tourRegions.push(northernRegionLabel);
+            if (formData.tourRegions.central) tourRegions.push(centralRegionLabel);
+            if (formData.tourRegions.southern) tourRegions.push(southernRegionLabel);
 
             // Prepare request body
             const requestBody = {
@@ -87,8 +97,9 @@ export function Footer() {
                     organization: "",
                     email: "",
                     tourRegions: {
+                        northern: false,
                         central: false,
-                        northern: false
+                        southern: false
                     },
                     message: ""
                 });
@@ -154,9 +165,9 @@ export function Footer() {
                                     <a href={`mailto:${email1Content}`} className="text-white hover:text-white text-xs">
                                         {email1Content}
                                     </a>
-                                    <a href={`mailto:${email2Content}`} className="text-white hover:text-white text-xs">
+                                    {/* <a href={`mailto:${email2Content}`} className="text-white hover:text-white text-xs">
                                         {email2Content}
-                                    </a>
+                                    </a> */}
                                 </div>
                             </div>
                             <div className="h-[1px] bg-white/10" />
@@ -234,24 +245,13 @@ export function Footer() {
                                     </div>
 
                                     {/* Region and Message - Adjust layout for mobile */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 md:gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-y-6">
                                         {/* Preferred Tour Region */}
-                                        <div className="space-y-2 col-span-1">
+                                        <div className="space-y-2 col-span-2">
                                             <label className="block text-blue-400 text-sm">
                                                 Preferred Tour Region
                                             </label>
-                                            <div className="flex flex-row gap-8">
-                                                <div className="flex items-center me-10 lg:me-4">
-                                                    <Checkbox 
-                                                        id="central" 
-                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content"
-                                                        checked={formData.tourRegions.central}
-                                                        onCheckedChange={() => handleCheckboxChange("central")}
-                                                    />
-                                                    <label htmlFor="central" className="ml-2 text-white text-sm cursor-pointer">
-                                                        Central
-                                                    </label>
-                                                </div>
+                                            <div className="flex flex-col gap-2">
                                                 <div className="flex items-center">
                                                     <Checkbox 
                                                         id="northern" 
@@ -260,14 +260,36 @@ export function Footer() {
                                                         onCheckedChange={() => handleCheckboxChange("northern")}
                                                     />
                                                     <label htmlFor="northern" className="ml-2 text-white text-sm cursor-pointer">
-                                                        Northern Vietnam
+                                                        {northernRegionLabel}
+                                                    </label>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Checkbox 
+                                                        id="central" 
+                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content"
+                                                        checked={formData.tourRegions.central}
+                                                        onCheckedChange={() => handleCheckboxChange("central")}
+                                                    />
+                                                    <label htmlFor="central" className="ml-2 text-white text-sm cursor-pointer">
+                                                        {centralRegionLabel}
+                                                    </label>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Checkbox 
+                                                        id="southern" 
+                                                        className="cursor-pointer data-[state=checked]:bg-blue-500 text-content"
+                                                        checked={formData.tourRegions.southern}
+                                                        onCheckedChange={() => handleCheckboxChange("southern")}
+                                                    />
+                                                    <label htmlFor="southern" className="ml-2 text-white text-sm cursor-pointer">
+                                                        {southernRegionLabel}
                                                     </label>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Message */}
-                                        <div className="space-y-2 col-span-1 md:col-span-2">
+                                        <div className="space-y-2 col-span-1 md:col-span-3">
                                             <label htmlFor="message" className="block text-blue-400 text-sm">
                                                 Message
                                             </label>

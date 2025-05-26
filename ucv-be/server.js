@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const tourRoutes = require('./routes/tourRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const contentRoutes = require('./routes/contentRoutes');
 const corsOptions = require('./config/cors');
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.use('/auth', authRoutes);
 app.use('/contact', contactRoutes);
 app.use('/tours', tourRoutes);
 app.use('/upload', uploadRoutes);
+app.use('/content', contentRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

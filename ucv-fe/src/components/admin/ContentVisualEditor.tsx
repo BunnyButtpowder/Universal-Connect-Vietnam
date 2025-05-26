@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { PageContent } from '../../lib/types';
 import { HeroBannerEditor } from './visualEditors/HeroBannerEditor';
 import { AboutUsEditor } from './visualEditors/AboutUsEditor';
-import { DiscoverTourEditor } from './visualEditors/DiscoverTourEditor';
 import { TestimonialsEditor } from './visualEditors/TestimonialsEditor';
 import { FooterEditor } from './visualEditors/FooterEditor';
+import { ImageCarouselEditor } from './visualEditors/ImageCarouselEditor';
 import { AboutUsBannerEditor } from './visualEditors/aboutus/AboutUsBannerEditor';
 import { AboutUsCarouselEditor } from './visualEditors/aboutus/AboutUsCarouselEditor';
 import { AboutUsContentEditor } from './visualEditors/aboutus/AboutUsContentEditor';
@@ -29,8 +29,8 @@ export function ContentVisualEditor({ pageContent }: ContentVisualEditorProps) {
           <>
             <HeroBannerEditor pageContent={pageContent} />
             <AboutUsEditor pageContent={pageContent} />
-            <DiscoverTourEditor pageContent={pageContent} />
             <TestimonialsEditor pageContent={pageContent} />
+            <ImageCarouselEditor pageContent={pageContent} />
             <FooterEditor pageContent={pageContent} />
           </>
         );

@@ -12,41 +12,16 @@ interface Tour {
     title: string;
     description: string;
     imageUrl: string;
-    price: number;
+    price: string;
     date: string;
+    detailsUrl: string;
+    buttonText: string;
 }
-
-// Tour data
-const TOURS_DATA: Tour[] = [
-    {
-        id: 1,
-        title: "Fall Tour 2025",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-1.png",
-        price: 2065,
-        date: "1 - 8 OCTOBER 2025",
-    },
-    {
-        id: 2,
-        title: "Spring Tour 2026",
-        description: "Short Description At IUC, we're passionate about bridging the gap between international universities ...",
-        imageUrl: "/hero-banner-2.png",
-        price: 2065,
-        date: "31 MARCH - 10 APRIL 2026",
-    }
-];
 
 // TourCard component
 function TourCard({ tour }: { tour: Tour }) {
-    // Determine the link based on tour ID
-    const getLink = () => {
-        if (tour.id === 1) return "/tour-details";
-        if (tour.id === 2) return "/spring-tour-details";
-        return "/tour-details"; // Default fallback
-    };
-
     return (
-        <a href={getLink()} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative  overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
@@ -71,11 +46,11 @@ function TourCard({ tour }: { tour: Tour }) {
                         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                             <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                         </div>
-                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">Find out more</span>
+                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
                     </button>
                     <div className="flex items-center space-x-1 text-navy-800">
                         <span className="text-xs">Start from</span>
-                        <span className="font-bold text-content">${tour.price}</span>
+                        <span className="font-bold text-content">{tour.price}</span>
                         <span className="text-xs text-gray-500 font-medium">USD</span>
                     </div>
                 </div>
@@ -97,11 +72,34 @@ export default function SpringTourDetails() {
     // Custom content for Spring Tour 2026
     const tourDate = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-date')?.content || "INCOMING • 31 MARCH - 10 APRIL 2026";
     const tourTitle = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-title')?.content || "Spring Tour 2026";
-    const tourDescription = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-description')?.content || "Explore the vibrant educational landscape of Northern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Duong, and surrounding areas.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.";
+    const tourDescription = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-description')?.content || "Explore the vibrant educational landscape of Northern, Central & Southern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Phong, Hue, Da Nang & Ho Chi Minh City.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.";
     const tourLocation = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-location')?.content || "Northern Vietnam (Hanoi, Hai Duong)";
     const tourDuration = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-duration')?.content || "10 schools across 3 northern cities over 5 days.";
     const tourCustomize = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-customize')?.content || "Select from the full experience or customize to specific regions.";
     const tourStartDate = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-startDate')?.content || "April, 2026";
+
+    // Get tour data from content store for other tours section
+    // Card 1 content (Fall Tour 2025) - using fallback values since tour cards are now API-driven
+    const card1Date = "1 - 8 OCTOBER 2025";
+    const card1Title = "Fall Tour 2025";
+    const card1Description = "Visiting a mix of top public and private high schools in Hanoi, Hai Duong, Hue & Da Nang. The participating schools demonstrate a keen interest in international education. We've curated our selection with local experts considering socio-economic demographics to ensure a valuable visit for you.";
+    const card1Price = "$2065";
+    const card1DetailsUrl = "/tour-details";
+    const card1Button = "Find out more";
+
+    // Create tour cards data from contentStore items
+    const otherTours: Tour[] = [
+        {
+            id: 1,
+            title: card1Title,
+            description: card1Description,
+            imageUrl: "/hero-banner-1.png",
+            price: card1Price,
+            date: card1Date,
+            detailsUrl: card1DetailsUrl,
+            buttonText: card1Button
+        }
+    ];
 
     useEffect(() => {
         if (!api) {
@@ -401,13 +399,13 @@ export default function SpringTourDetails() {
                                         </div>
                                     </CarouselItem>
 
-                                    {/* Hai Duong Location */}
+                                    {/* Hai Phong Location */}
                                     <CarouselItem className="basis-full md:basis-1/3">
                                         <div className="location-card-container rounded-xl overflow-hidden">
                                             <div className="w-full h-50 lg:h-70 rounded-3xl overflow-hidden">
                                                 <img
-                                                    src="/HaiDuong.jpg"
-                                                    alt="HaiDuong"
+                                                    src="/HaiPhong.jpg"
+                                                    alt="HaiPhong"
                                                     className="location-image w-full h-full object-cover"
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).src = "/hero-banner-2.png";
@@ -416,10 +414,10 @@ export default function SpringTourDetails() {
                                             </div>
                                             <div className="location-details p-4 flex items-center gap-4">
                                                 <span className="location-name font-semibold text-content">
-                                                    {getItemById('spring-tour-details', 'locationsSection', 'locations-haiduong')?.content || "Hai Duong"}
+                                                    {getItemById('spring-tour-details', 'locationsSection', 'locations-haiphong')?.content || "Hai Phong"}
                                                 </span>
                                                 <a
-                                                    href="https://en.wikipedia.org/wiki/H%E1%BA%A3i_D%C6%B0%C6%A1ng"
+                                                    href="https://en.wikipedia.org/wiki/Haiphong"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="location-link flex items-center text-sm text-blue-500 cursor-pointer"
@@ -661,9 +659,9 @@ export default function SpringTourDetails() {
                     </div>
 
                     {/* Display Image - 2/4 of grid */}
-                    <div className="lg:col-span-2">
-                        <div className="overflow-hidden rounded-3xl">
-                            <img src="/display1.png" alt="Spring Tour Display" className="w-full h-120 lg:h-80 object-cover" />
+                    <div className="lg:col-span-2 h-full">
+                        <div className="overflow-hidden rounded-3xl h-full">
+                            <img src="/display1.png" alt="Spring Tour Display" className="w-full h-full object-cover" />
                         </div>
                     </div>
                 </div>
@@ -672,7 +670,7 @@ export default function SpringTourDetails() {
             <div className="mx-4 md:mx-6 lg:mx-48 mb-20">
                 <h3 className="text-header font-bold text-lg uppercase mb-5 text-center lg:text-left">OTHER TOURS</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {TOURS_DATA.filter(tour => tour.id !== 2).map(tour => (
+                    {otherTours.map(tour => (
                         <TourCard key={tour.id} tour={tour} />
                     ))}
                 </div>

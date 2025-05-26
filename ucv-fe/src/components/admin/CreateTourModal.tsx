@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
-import { toursApi, TourCreateInput } from '../../lib/api';
+import React, { useState, useEffect } from 'react';
+import { toursApi, TourCreateInput, City, EventType, PackageItem, CustomizeOption } from '../../lib/api';
 import { ImageUploader } from './ImageUploader';
 
 interface CreateTourModalProps {
   onClose: () => void;
-}
-
-interface City {
-  name: string;
-  imageUrl: string;
-  wikiUrl: string;
 }
 
 export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => {
@@ -18,32 +12,82 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
     description: '',
     shortDescription: '',
     imageUrl: '',
-    price: '',
-    standardPrice: '',
-    returningUniversityPrice: '',
+    // Structured pricing
+    earlyBirdPrice: '',
+    earlyBirdUniversityPrice: '',
+    standardRegularPrice: '',
+    standardUniversityPrice: '',
     date: '',
     location: '',
     duration: '',
-    plannedStartDate: '',
+    tourDates: '',
+    customize: '',
     earlyBirdDeadline: '',
     standardDeadline: '',
   });
 
-  // Additional tour data
-  const [cities, setCities] = useState<City[]>([]);
-  const [newCity, setNewCity] = useState<City>({ name: '', imageUrl: '', wikiUrl: '' });
-  
-  const [eventTypes, setEventTypes] = useState<string[]>([]);
+  // Available shared entities from API
+  const [availableCities, setAvailableCities] = useState<City[]>([]);
+  const [availableEventTypes, setAvailableEventTypes] = useState<EventType[]>([]);
+  const [availablePackageItems, setAvailablePackageItems] = useState<PackageItem[]>([]);
+
+  // Selected entities for this tour
+  const [selectedCities, setSelectedCities] = useState<City[]>([]);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<EventType[]>([]);
+  const [selectedPackageItems, setSelectedPackageItems] = useState<PackageItem[]>([]);
+
+  // Customize options
+  const [customizeOptions, setCustomizeOptions] = useState<CustomizeOption[]>([]);
+  const [newCustomizeOption, setNewCustomizeOption] = useState<CustomizeOption>({
+    key: '',
+    name: '',
+    description: '',
+    pricing: {
+      earlyBird: { regular: 0, returningUniversity: 0 },
+      standard: { regular: 0, returningUniversity: 0 }
+    }
+  });
+
+  // New entity creation forms
+  const [newCity, setNewCity] = useState<{ name: string; imageUrl: string; wikiUrl: string }>({ 
+    name: '', 
+    imageUrl: '', 
+    wikiUrl: '' 
+  });
   const [newEventType, setNewEventType] = useState('');
-  
-  const [packageIncludes, setPackageIncludes] = useState<string[]>([]);
   const [newPackageItem, setNewPackageItem] = useState('');
   
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+
+  // Load shared entities on component mount
+  useEffect(() => {
+    loadSharedEntities();
+  }, []);
+
+  const loadSharedEntities = async () => {
+    try {
+      setIsLoadingEntities(true);
+      const [cities, eventTypes, packageItems] = await Promise.all([
+        toursApi.getCities(),
+        toursApi.getEventTypes(),
+        toursApi.getPackageItems()
+      ]);
+      
+      setAvailableCities(cities);
+      setAvailableEventTypes(eventTypes);
+      setAvailablePackageItems(packageItems);
+    } catch (error) {
+      console.error('Error loading shared entities:', error);
+      setError('Failed to load cities, event types, and package items');
+    } finally {
+      setIsLoadingEntities(false);
+    }
+  };
   
   // Handle main form changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -84,51 +128,220 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
     setAdditionalImages(prev => [...prev, imageUrl]);
   };
 
-  // Add city to list
-  const addCity = (e: React.FormEvent) => {
+  // Select existing city
+  const selectCity = (city: City) => {
+    if (!selectedCities.find(c => c.id === city.id)) {
+      setSelectedCities(prev => [...prev, city]);
+    }
+  };
+
+  // Create and select new city
+  const createAndSelectCity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newCity.name && newCity.imageUrl) {
-      setCities(prev => [...prev, { ...newCity }]);
-      setNewCity({ name: '', imageUrl: '', wikiUrl: '' });
+      try {
+        const createdCity = await toursApi.createCity(newCity);
+        setAvailableCities(prev => [...prev, createdCity]);
+        setSelectedCities(prev => [...prev, createdCity]);
+        setNewCity({ name: '', imageUrl: '', wikiUrl: '' });
+      } catch (error) {
+        console.error('Error creating city:', error);
+        setError('Failed to create city');
+      }
     }
   };
 
-  // Remove city from list
-  const removeCity = (index: number) => {
-    setCities(prev => prev.filter((_, i) => i !== index));
+  // Remove selected city
+  const removeSelectedCity = (cityId: number) => {
+    setSelectedCities(prev => prev.filter(c => c.id !== cityId));
   };
 
-  // Add event type
-  const addEventType = (e: React.FormEvent) => {
+  // Select existing event type
+  const selectEventType = (eventType: EventType) => {
+    if (!selectedEventTypes.find(et => et.id === eventType.id)) {
+      setSelectedEventTypes(prev => [...prev, eventType]);
+    }
+  };
+
+  // Create and select new event type
+  const createAndSelectEventType = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEventType.trim()) {
-      setEventTypes(prev => [...prev, newEventType.trim()]);
-      setNewEventType('');
+      try {
+        const createdEventType = await toursApi.createEventType({ name: newEventType.trim() });
+        setAvailableEventTypes(prev => [...prev, createdEventType]);
+        setSelectedEventTypes(prev => [...prev, createdEventType]);
+        setNewEventType('');
+      } catch (error) {
+        console.error('Error creating event type:', error);
+        setError('Failed to create event type');
+      }
     }
   };
 
-  // Remove event type
-  const removeEventType = (index: number) => {
-    setEventTypes(prev => prev.filter((_, i) => i !== index));
+  // Remove selected event type
+  const removeSelectedEventType = (eventTypeId: number) => {
+    setSelectedEventTypes(prev => prev.filter(et => et.id !== eventTypeId));
   };
 
-  // Add package item
-  const addPackageItem = (e: React.FormEvent) => {
+  // Select existing package item
+  const selectPackageItem = (packageItem: PackageItem) => {
+    if (!selectedPackageItems.find(pi => pi.id === packageItem.id)) {
+      setSelectedPackageItems(prev => [...prev, packageItem]);
+    }
+  };
+
+  // Create and select new package item
+  const createAndSelectPackageItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPackageItem.trim()) {
-      setPackageIncludes(prev => [...prev, newPackageItem.trim()]);
-      setNewPackageItem('');
+      try {
+        const createdPackageItem = await toursApi.createPackageItem({ name: newPackageItem.trim() });
+        setAvailablePackageItems(prev => [...prev, createdPackageItem]);
+        setSelectedPackageItems(prev => [...prev, createdPackageItem]);
+        setNewPackageItem('');
+      } catch (error) {
+        console.error('Error creating package item:', error);
+        setError('Failed to create package item');
+      }
     }
   };
 
-  // Remove package item
-  const removePackageItem = (index: number) => {
-    setPackageIncludes(prev => prev.filter((_, i) => i !== index));
+  // Remove selected package item
+  const removeSelectedPackageItem = (packageItemId: number) => {
+    setSelectedPackageItems(prev => prev.filter(pi => pi.id !== packageItemId));
   };
 
   // Remove additional image
   const removeImage = (index: number) => {
     setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Handle customize option form changes
+  const handleCustomizeOptionChange = (field: string, value: string | number) => {
+    if (field.includes('.')) {
+      const [section, subsection, key] = field.split('.');
+      if (section === 'pricing' && (subsection === 'earlyBird' || subsection === 'standard')) {
+        setNewCustomizeOption(prev => ({
+          ...prev,
+          pricing: {
+            ...prev.pricing,
+            [subsection]: {
+              ...prev.pricing[subsection],
+              [key]: typeof value === 'string' ? parseFloat(value) || 0 : value
+            }
+          }
+        }));
+      }
+    } else {
+      setNewCustomizeOption(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  // Add customize option
+  const addCustomizeOption = () => {
+    if (newCustomizeOption.key && newCustomizeOption.name) {
+      // Check if key already exists
+      if (customizeOptions.find(opt => opt.key === newCustomizeOption.key)) {
+        setError('Customize option key already exists');
+        return;
+      }
+      
+      setCustomizeOptions(prev => [...prev, { ...newCustomizeOption }]);
+      setNewCustomizeOption({
+        key: '',
+        name: '',
+        description: '',
+        pricing: {
+          earlyBird: { regular: 0, returningUniversity: 0 },
+          standard: { regular: 0, returningUniversity: 0 }
+        }
+      });
+      setError(null);
+    }
+  };
+
+  // Remove customize option
+  const removeCustomizeOption = (key: string) => {
+    setCustomizeOptions(prev => prev.filter(opt => opt.key !== key));
+  };
+
+  // Quick add preset customize options
+  const addPresetCustomizeOptions = (type: 'fall' | 'spring') => {
+    const fallOptions: CustomizeOption[] = [
+      {
+        key: 'northern',
+        name: 'Northern Vietnam Tour',
+        description: 'Experience the northern regions of Vietnam',
+        pricing: {
+          earlyBird: { regular: 2065, returningUniversity: 1720 },
+          standard: { regular: 2295, returningUniversity: 1950 }
+        }
+      },
+      {
+        key: 'central',
+        name: 'Central Vietnam Tour',
+        description: 'Explore the central regions of Vietnam',
+        pricing: {
+          earlyBird: { regular: 2160, returningUniversity: 1800 },
+          standard: { regular: 2400, returningUniversity: 2040 }
+        }
+      },
+      {
+        key: 'grandTotal',
+        name: 'Full Tour Package',
+        description: 'Complete tour experience covering all regions',
+        pricing: {
+          earlyBird: { regular: 4225, returningUniversity: 3520 },
+          standard: { regular: 4695, returningUniversity: 3990 }
+        }
+      }
+    ];
+
+    const springOptions: CustomizeOption[] = [
+      {
+        key: 'northern',
+        name: 'Northern Vietnam Tour',
+        description: 'Experience the northern regions of Vietnam including Hanoi & Hai Phong',
+        pricing: {
+          earlyBird: { regular: 2635, returningUniversity: 2200 },
+          standard: { regular: 2930, returningUniversity: 2490 }
+        }
+      },
+      {
+        key: 'central',
+        name: 'Central Vietnam Tour',
+        description: 'Explore the central regions of Vietnam including Da Nang & Hue',
+        pricing: {
+          earlyBird: { regular: 2160, returningUniversity: 1800 },
+          standard: { regular: 2400, returningUniversity: 2040 }
+        }
+      },
+      {
+        key: 'southern',
+        name: 'Southern Vietnam Tour',
+        description: 'Discover southern Vietnam including Ho Chi Minh City',
+        pricing: {
+          earlyBird: { regular: 1375, returningUniversity: 1145 },
+          standard: { regular: 1530, returningUniversity: 1300 }
+        }
+      },
+      {
+        key: 'grandTotal',
+        name: 'Full Tour Package',
+        description: 'Complete tour experience covering all three regions',
+        pricing: {
+          earlyBird: { regular: 6170, returningUniversity: 5145 },
+          standard: { regular: 6860, returningUniversity: 5830 }
+        }
+      }
+    ];
+
+    const options = type === 'fall' ? fallOptions : springOptions;
+    setCustomizeOptions(options);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,15 +351,33 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
 
     try {
       // Convert string values to appropriate types
+      const earlyBirdPrice = parseFloat(formState.earlyBirdPrice);
+      const earlyBirdUniversityPrice = parseFloat(formState.earlyBirdUniversityPrice);
+      const standardRegularPrice = parseFloat(formState.standardRegularPrice);
+      const standardUniversityPrice = parseFloat(formState.standardUniversityPrice);
+
       const tourData: TourCreateInput = {
-        ...formState,
-        price: parseFloat(formState.price),
-        standardPrice: formState.standardPrice ? parseFloat(formState.standardPrice) : undefined,
-        returningUniversityPrice: formState.returningUniversityPrice ? parseFloat(formState.returningUniversityPrice) : undefined,
-        cities,
-        eventTypes,
-        packageIncludes,
-        additionalImages
+        title: formState.title,
+        description: formState.description,
+        shortDescription: formState.shortDescription,
+        imageUrl: formState.imageUrl,
+        // Structured pricing
+        earlyBirdPrice,
+        earlyBirdUniversityPrice,
+        standardRegularPrice,
+        standardUniversityPrice,
+        date: formState.date,
+        location: formState.location,
+        duration: formState.duration,
+        tourDates: formState.tourDates,
+        customize: formState.customize,
+        earlyBirdDeadline: formState.earlyBirdDeadline || undefined,
+        standardDeadline: formState.standardDeadline || undefined,
+        cities: selectedCities,
+        eventTypes: selectedEventTypes,
+        packageIncludes: selectedPackageItems,
+        additionalImages,
+        customizeOptions
       };
 
       await toursApi.create(tourData);
@@ -163,9 +394,22 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
     }
   };
 
+  if (isLoadingEntities) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white rounded-lg shadow-xl p-6">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3">Loading tour data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Create New Tour</h2>
           <button 
@@ -262,45 +506,83 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Price (Basic)*</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formState.price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
+            {/* Pricing Section */}
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Pricing Structure</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Set the four different pricing tiers for your tour. Early Bird prices apply before the early bird deadline.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Early Bird Pricing */}
+                <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                  <h4 className="font-medium text-blue-900 mb-3">Early Bird Pricing</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Regular Students*</label>
+                      <input
+                        type="number"
+                        name="earlyBirdPrice"
+                        value={formState.earlyBirdPrice}
+                        onChange={handleChange}
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 1800"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Returning University Students*</label>
+                      <input
+                        type="number"
+                        name="earlyBirdUniversityPrice"
+                        value={formState.earlyBirdUniversityPrice}
+                        onChange={handleChange}
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 1600"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Standard Price</label>
-                <input
-                  type="number"
-                  name="standardPrice"
-                  value={formState.standardPrice}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Returning University Price</label>
-                <input
-                  type="number"
-                  name="returningUniversityPrice"
-                  value={formState.returningUniversityPrice}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
+                {/* Standard Pricing */}
+                <div className="border border-orange-200 rounded-lg p-3 bg-orange-50">
+                  <h4 className="font-medium text-orange-900 mb-3">Standard Pricing</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Regular Students*</label>
+                      <input
+                        type="number"
+                        name="standardRegularPrice"
+                        value={formState.standardRegularPrice}
+                        onChange={handleChange}
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 2000"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Returning University Students*</label>
+                      <input
+                        type="number"
+                        name="standardUniversityPrice"
+                        value={formState.standardUniversityPrice}
+                        onChange={handleChange}
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 1800"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -319,12 +601,13 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Planned Start Date</label>
+                <label className="block text-sm font-medium text-gray-700">Tour Dates</label>
                 <input
-                  type="date"
-                  name="plannedStartDate"
-                  value={formState.plannedStartDate}
+                  type="text"
+                  name="tourDates"
+                  value={formState.tourDates}
                   onChange={handleChange}
+                  placeholder="e.g. JULY 4 - JULY 11"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
@@ -357,6 +640,18 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Customize Options</label>
+              <textarea
+                name="customize"
+                value={formState.customize}
+                onChange={handleChange}
+                placeholder="e.g. You can choose between the full tour, the northern tour or the central tour."
+                rows={2}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Early Bird Deadline</label>
@@ -384,24 +679,25 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
             {/* Cities Section */}
             <div className="border-t pt-4 mt-6">
               <h3 className="text-lg font-medium mb-2">Cities</h3>
+              
+              {/* Selected Cities */}
               <div className="mb-4">
-                {cities.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No cities added yet</p>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Cities ({selectedCities.length})</h4>
+                {selectedCities.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No cities selected yet</p>
                 ) : (
-                  <div className="space-y-2 mb-4">
-                    {cities.map((city, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                    {selectedCities.map((city) => (
+                      <div key={city.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
                         <div className="flex items-center">
-                          {city.imageUrl && (
-                            <img 
-                              src={city.imageUrl} 
-                              alt={city.name}
-                              className="h-10 w-10 object-cover rounded mr-3"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=Error';
-                              }}
-                            />
-                          )}
+                          <img 
+                            src={city.imageUrl} 
+                            alt={city.name}
+                            className="h-10 w-10 object-cover rounded mr-3"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=Error';
+                            }}
+                          />
                           <div>
                             <span className="font-medium">{city.name}</span>
                             {city.wikiUrl && (
@@ -415,8 +711,8 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
                         </div>
                         <button 
                           type="button" 
-                          onClick={() => removeCity(index)}
-                          className="text-red-500 hover:text-red-700"
+                          onClick={() => removeSelectedCity(city.id)}
+                          className="text-red-500 hover:text-red-700 text-sm"
                         >
                           Remove
                         </button>
@@ -424,66 +720,87 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
                     ))}
                   </div>
                 )}
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <div>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newCity.name}
-                      onChange={handleCityChange}
-                      placeholder="City Name"
-                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      {newCity.imageUrl && (
-                        <img 
-                          src={newCity.imageUrl} 
-                          alt="City preview" 
-                          className="h-8 w-8 object-cover rounded"
-                        />
-                      )}
-                      <ImageUploader 
-                        onImageUploaded={handleCityImageUploaded}
-                        label="City Image"
-                        className="flex-1"
-                      />
+              {/* Available Cities */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Available Cities</h4>
+                {availableCities.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No cities available</p>
+                ) : (
+                  <div className="max-h-32 overflow-y-auto border border-gray-200 rounded p-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                      {availableCities
+                        .filter(city => !selectedCities.find(sc => sc.id === city.id))
+                        .map((city) => (
+                        <button
+                          key={city.id}
+                          type="button"
+                          onClick={() => selectCity(city)}
+                          className="flex items-center p-2 text-left hover:bg-gray-50 rounded text-sm"
+                        >
+                          <img 
+                            src={city.imageUrl} 
+                            alt={city.name}
+                            className="h-6 w-6 object-cover rounded mr-2"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/24?text=E';
+                            }}
+                          />
+                          <span>{city.name}</span>
+                        </button>
+                      ))}
                     </div>
-                    {!newCity.imageUrl && (
-                      <input
-                        type="text"
-                        name="imageUrl"
-                        value={newCity.imageUrl}
-                        onChange={handleCityChange}
-                        placeholder="Or enter image URL"
-                        className="mt-1 w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                  </div>
+                )}
+              </div>
+
+              {/* Create New City */}
+              <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Create New City</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <input
+                    type="text"
+                    name="name"
+                    value={newCity.name}
+                    onChange={handleCityChange}
+                    placeholder="City Name"
+                    className="border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                  />
+                  <div className="flex items-center space-x-2">
+                    {newCity.imageUrl && (
+                      <img 
+                        src={newCity.imageUrl} 
+                        alt="City preview" 
+                        className="h-8 w-8 object-cover rounded"
                       />
                     )}
-                  </div>
-                  <div className="flex flex-col">
-                    <input
-                      type="text"
-                      name="wikiUrl"
-                      value={newCity.wikiUrl}
-                      onChange={handleCityChange}
-                      placeholder="Wiki URL (optional)"
-                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm mb-1"
+                    <ImageUploader 
+                      onImageUploaded={handleCityImageUploaded}
+                      label="City Image"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
-                      onClick={addCity}
-                      disabled={!newCity.name || !newCity.imageUrl}
-                      className={`px-3 py-1 rounded-md text-white text-sm ${
-                        !newCity.name || !newCity.imageUrl
-                          ? 'bg-gray-300 cursor-not-allowed'
-                          : 'bg-blue-500 hover:bg-blue-600'
-                      }`}
-                    >
-                      Add City
-                    </button>
                   </div>
+                  <input
+                    type="text"
+                    name="wikiUrl"
+                    value={newCity.wikiUrl}
+                    onChange={handleCityChange}
+                    placeholder="Wiki URL (optional)"
+                    className="border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={createAndSelectCity}
+                    disabled={!newCity.name || !newCity.imageUrl}
+                    className={`px-3 py-2 rounded-md text-white text-sm ${
+                      !newCity.name || !newCity.imageUrl
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                    }`}
+                  >
+                    Create & Add
+                  </button>
                 </div>
               </div>
             </div>
@@ -491,17 +808,20 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
             {/* Event Types Section */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-medium mb-2">Event Types</h3>
+              
+              {/* Selected Event Types */}
               <div className="mb-4">
-                {eventTypes.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No event types added yet</p>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Event Types ({selectedEventTypes.length})</h4>
+                {selectedEventTypes.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No event types selected yet</p>
                 ) : (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {eventTypes.map((type, index) => (
-                      <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded">
-                        <span>{type}</span>
+                    {selectedEventTypes.map((eventType) => (
+                      <div key={eventType.id} className="flex items-center bg-blue-50 px-3 py-1 rounded">
+                        <span>{eventType.name}</span>
                         <button 
                           type="button" 
-                          onClick={() => removeEventType(index)}
+                          onClick={() => removeSelectedEventType(eventType.id)}
                           className="ml-2 text-red-500 hover:text-red-700"
                         >
                           ✕
@@ -510,26 +830,55 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
                     ))}
                   </div>
                 )}
+              </div>
 
-                <div className="flex">
+              {/* Available Event Types */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Available Event Types</h4>
+                {availableEventTypes.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No event types available</p>
+                ) : (
+                  <div className="max-h-32 overflow-y-auto border border-gray-200 rounded p-2">
+                    <div className="flex flex-wrap gap-1">
+                      {availableEventTypes
+                        .filter(eventType => !selectedEventTypes.find(set => set.id === eventType.id))
+                        .map((eventType) => (
+                        <button
+                          key={eventType.id}
+                          type="button"
+                          onClick={() => selectEventType(eventType)}
+                          className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded border"
+                        >
+                          {eventType.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Create New Event Type */}
+              <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Create New Event Type</h4>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={newEventType}
                     onChange={(e) => setNewEventType(e.target.value)}
-                    placeholder="Add an event type"
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    placeholder="Event type name"
+                    className="flex-1 border border-gray-300 rounded-md shadow-sm p-2 text-sm"
                   />
                   <button
                     type="button"
-                    onClick={addEventType}
+                    onClick={createAndSelectEventType}
                     disabled={!newEventType.trim()}
-                    className={`ml-2 px-3 rounded-md text-white ${
+                    className={`px-3 py-2 rounded-md text-white text-sm ${
                       !newEventType.trim() 
                         ? 'bg-gray-300 cursor-not-allowed' 
                         : 'bg-blue-500 hover:bg-blue-600'
                     }`}
                   >
-                    Add
+                    Create & Add
                   </button>
                 </div>
               </div>
@@ -538,18 +887,21 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
             {/* Package Includes Section */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-medium mb-2">Package Includes</h3>
+              
+              {/* Selected Package Items */}
               <div className="mb-4">
-                {packageIncludes.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No package items added yet</p>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Package Items ({selectedPackageItems.length})</h4>
+                {selectedPackageItems.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No package items selected yet</p>
                 ) : (
                   <ul className="list-disc pl-5 mb-4 space-y-1">
-                    {packageIncludes.map((item, index) => (
-                      <li key={index} className="flex items-center justify-between">
-                        <span>{item}</span>
+                    {selectedPackageItems.map((item) => (
+                      <li key={item.id} className="flex items-center justify-between">
+                        <span>{item.name}</span>
                         <button 
                           type="button" 
-                          onClick={() => removePackageItem(index)}
-                          className="text-red-500 hover:text-red-700 text-sm"
+                          onClick={() => removeSelectedPackageItem(item.id)}
+                          className="text-red-500 hover:text-red-700 text-sm ml-4"
                         >
                           Remove
                         </button>
@@ -557,26 +909,55 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
                     ))}
                   </ul>
                 )}
+              </div>
 
-                <div className="flex">
+              {/* Available Package Items */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Available Package Items</h4>
+                {availablePackageItems.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No package items available</p>
+                ) : (
+                  <div className="max-h-32 overflow-y-auto border border-gray-200 rounded p-2">
+                    <div className="space-y-1">
+                      {availablePackageItems
+                        .filter(item => !selectedPackageItems.find(spi => spi.id === item.id))
+                        .map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => selectPackageItem(item)}
+                          className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-50 rounded border-b border-gray-100"
+                        >
+                          {item.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Create New Package Item */}
+              <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Create New Package Item</h4>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={newPackageItem}
                     onChange={(e) => setNewPackageItem(e.target.value)}
-                    placeholder="Add a package item"
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    placeholder="Package item description"
+                    className="flex-1 border border-gray-300 rounded-md shadow-sm p-2 text-sm"
                   />
                   <button
                     type="button"
-                    onClick={addPackageItem}
+                    onClick={createAndSelectPackageItem}
                     disabled={!newPackageItem.trim()}
-                    className={`ml-2 px-3 rounded-md text-white ${
+                    className={`px-3 py-2 rounded-md text-white text-sm ${
                       !newPackageItem.trim() 
                         ? 'bg-gray-300 cursor-not-allowed' 
                         : 'bg-blue-500 hover:bg-blue-600'
                     }`}
                   >
-                    Add
+                    Create & Add
                   </button>
                 </div>
               </div>
@@ -619,6 +1000,200 @@ export const CreateTourModal: React.FC<CreateTourModalProps> = ({ onClose }) => 
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Customize Options Section */}
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium mb-2">Customize Options</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Add different tour segments with their own pricing (e.g., Northern, Central, Southern, Full Tour).
+              </p>
+              
+              {/* Quick Add Presets */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">Quick Add Presets</h4>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => addPresetCustomizeOptions('fall')}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Add Fall Tour Options
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addPresetCustomizeOptions('spring')}
+                    className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                  >
+                    Add Spring Tour Options
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomizeOptions([])}
+                    className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+
+              {/* Current Customize Options */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Current Customize Options ({customizeOptions.length})</h4>
+                {customizeOptions.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No customize options added yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {customizeOptions.map((option) => (
+                      <div key={option.key} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h5 className="font-medium text-gray-900">{option.name}</h5>
+                            <p className="text-sm text-gray-600">Key: {option.key}</p>
+                            {option.description && (
+                              <p className="text-sm text-gray-500 mt-1">{option.description}</p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomizeOption(option.key)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div className="bg-blue-100 p-2 rounded">
+                            <div className="font-medium text-blue-900 mb-1">Early Bird</div>
+                            <div>Regular: ${option.pricing.earlyBird.regular}</div>
+                            <div>University: ${option.pricing.earlyBird.returningUniversity}</div>
+                          </div>
+                          <div className="bg-orange-100 p-2 rounded">
+                            <div className="font-medium text-orange-900 mb-1">Standard</div>
+                            <div>Regular: ${option.pricing.standard.regular}</div>
+                            <div>University: ${option.pricing.standard.returningUniversity}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add New Customize Option */}
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Add New Customize Option</h4>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Option Key*</label>
+                      <input
+                        type="text"
+                        value={newCustomizeOption.key}
+                        onChange={(e) => handleCustomizeOptionChange('key', e.target.value)}
+                        placeholder="e.g. northern, central, grandTotal"
+                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Option Name*</label>
+                      <input
+                        type="text"
+                        value={newCustomizeOption.name}
+                        onChange={(e) => handleCustomizeOptionChange('name', e.target.value)}
+                        placeholder="e.g. Northern Vietnam Tour"
+                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={newCustomizeOption.description}
+                      onChange={(e) => handleCustomizeOptionChange('description', e.target.value)}
+                      placeholder="e.g. Experience the northern regions of Vietnam"
+                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Early Bird Pricing */}
+                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                      <h5 className="font-medium text-blue-900 mb-2 text-sm">Early Bird Pricing</h5>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">Regular Students</label>
+                          <input
+                            type="number"
+                            value={newCustomizeOption.pricing.earlyBird.regular}
+                            onChange={(e) => handleCustomizeOptionChange('pricing.earlyBird.regular', e.target.value)}
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">University Students</label>
+                          <input
+                            type="number"
+                            value={newCustomizeOption.pricing.earlyBird.returningUniversity}
+                            onChange={(e) => handleCustomizeOptionChange('pricing.earlyBird.returningUniversity', e.target.value)}
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Standard Pricing */}
+                    <div className="border border-orange-200 rounded-lg p-3 bg-orange-50">
+                      <h5 className="font-medium text-orange-900 mb-2 text-sm">Standard Pricing</h5>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">Regular Students</label>
+                          <input
+                            type="number"
+                            value={newCustomizeOption.pricing.standard.regular}
+                            onChange={(e) => handleCustomizeOptionChange('pricing.standard.regular', e.target.value)}
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">University Students</label>
+                          <input
+                            type="number"
+                            value={newCustomizeOption.pricing.standard.returningUniversity}
+                            onChange={(e) => handleCustomizeOptionChange('pricing.standard.returningUniversity', e.target.value)}
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={addCustomizeOption}
+                      disabled={!newCustomizeOption.key || !newCustomizeOption.name}
+                      className={`px-4 py-2 rounded-md text-white text-sm ${
+                        !newCustomizeOption.key || !newCustomizeOption.name
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600'
+                      }`}
+                    >
+                      Add Customize Option
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

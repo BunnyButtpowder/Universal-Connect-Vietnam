@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ContentItem, ContentUpdate } from '../../lib/types';
 import { useContentStore } from '../../lib/contentStore';
+import { ImageEditor } from './ImageEditor';
 
 interface ContentEditorProps {
   pageName: string;
@@ -76,16 +77,16 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
           />
         );
       case 'image':
-        // For images, just show a placeholder message since image upload isn't supported yet
+        // For images, use the ImageEditor component
         return (
-          <div className="p-2 bg-yellow-50 border border-yellow-300 rounded-md">
-            <p className="text-sm text-yellow-700">
-              Image editing is currently disabled. Server-side image uploading will be implemented in a future update.
-            </p>
-            <p className="text-sm text-yellow-700 mt-1">
-              Current image path: <span className="font-mono">{displayContent.content}</span>
-            </p>
-          </div>
+          <ImageEditor
+            item={displayContent}
+            pageName={pageName}
+            sectionId={sectionId}
+            className="w-full"
+            label="Change Image"
+            imageClassName="w-full h-auto max-h-64 object-contain"
+          />
         );
       case 'statistic':
         return (
@@ -227,12 +228,19 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
           <div className="font-medium text-gray-700 capitalize">
             {displayContent.type}: {displayContent.id}
           </div>
-          <div className="text-xs text-orange-500 bg-orange-50 p-1 rounded">
-            Image upload not available
+          <div className="text-xs text-green-600 bg-green-50 p-1 rounded">
+            Image editing available
           </div>
         </div>
         <div className="mt-2">
-          {renderContent()}
+          <ImageEditor
+            item={displayContent}
+            pageName={pageName}
+            sectionId={sectionId}
+            className="w-full"
+            label="Change Image"
+            imageClassName="w-full h-auto max-h-64 object-contain"
+          />
         </div>
       </div>
     );
