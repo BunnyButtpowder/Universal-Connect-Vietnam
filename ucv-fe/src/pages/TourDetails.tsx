@@ -511,7 +511,7 @@ export default function TourDetails() {
                                         </p>
                                     </div>
                                     <div className="col-span-2 p-4 flex items-center ">
-                                        <a href={`/sign-up/tour${tour.id}`}>
+                                        <a href={`/sign-up/${tour.id}`}>
                                             <button
                                                 type="submit"
                                                 className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
