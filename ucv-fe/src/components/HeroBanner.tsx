@@ -10,6 +10,7 @@ import { ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
+import { useTranslatedContent } from "../hooks/useTranslatedContent";
 import { toursApi, TourBasic } from "../lib/api";
 
 // Define Tour type for local use (extending TourBasic with detailsUrl)
@@ -19,6 +20,7 @@ interface Tour extends TourBasic {
 
 export function HeroBanner() {
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
     const [tours, setTours] = useState<Tour[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -51,16 +53,21 @@ export function HeroBanner() {
         fetchTours();
     }, []);
 
-    // Get content from store
-    const headingContent = getItemById('home', 'heroBanner', 'heroBanner-heading')?.content ||
+    // Get translated content - using the useTranslatedContent hook for proper translation support
+    const headingContent = getContentItem('heroBanner-heading') ||
+        getItemById('home', 'heroBanner', 'heroBanner-heading')?.content ||
         "Explore Vietnam's Top State Schools with Us";
-    const paragraph1Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph1')?.content ||
+    const paragraph1Content = getContentItem('heroBanner-paragraph1') ||
+        getItemById('home', 'heroBanner', 'heroBanner-paragraph1')?.content ||
         "Welcome to UCV - we aim to bridge top schools in Vietnam and international universities. We're a unique connector - we have years of experience on both the university and the school side.";
-    const paragraph2Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph2')?.content ||
+    const paragraph2Content = getContentItem('heroBanner-paragraph2') ||
+        getItemById('home', 'heroBanner', 'heroBanner-paragraph2')?.content ||
         "Specializing in crafting quality school tours across Vietnam, we focus primarily on state schools (mostly Schools for gifted students).";
-    const paragraph3Content = getItemById('home', 'heroBanner', 'heroBanner-paragraph3')?.content ||
+    const paragraph3Content = getContentItem('heroBanner-paragraph3') ||
+        getItemById('home', 'heroBanner', 'heroBanner-paragraph3')?.content ||
         "Join us to build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape.";
-    const buttonContent = getItemById('home', 'heroBanner', 'heroBanner-button')?.content ||
+    const buttonContent = getContentItem('heroBanner-button') ||
+        getItemById('home', 'heroBanner', 'heroBanner-button')?.content ||
         "Find out more";
 
     const [api, setApi] = useState<any>()

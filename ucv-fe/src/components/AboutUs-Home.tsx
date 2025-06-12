@@ -1,41 +1,59 @@
 import { ArrowUpRight, School } from "lucide-react"
 import { useContentStore } from "../lib/contentStore"
+import { useTranslatedContent } from "../hooks/useTranslatedContent"
 
 export function AboutUsHome() {
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
 
-    // Get content from store
-    const headingContent = getItemById('home', 'aboutUs', 'aboutUs-heading')?.content ||
+    // Get translated content - using the useTranslatedContent hook for proper translation support
+    const headingContent = getContentItem('aboutUs-heading') ||
+        getItemById('home', 'aboutUs', 'aboutUs-heading')?.content ||
         "ABOUT US";
-    const subheadingContent = getItemById('home', 'aboutUs', 'aboutUs-subheading')?.content ||
+    const subheadingContent = getContentItem('aboutUs-subheading') ||
+        getItemById('home', 'aboutUs', 'aboutUs-subheading')?.content ||
         "We're passionate about bridging the gap between international universities and Vietnam's top state schools.";
-    const paragraph1Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph1')?.content ||
+    const paragraph1Content = getContentItem('aboutUs-paragraph1') ||
+        getItemById('home', 'aboutUs', 'aboutUs-paragraph1')?.content ||
         "At UCV, we're passionate about bridging the gap between international universities and Vietnam's top state schools. Based in the heart of Vietnam, we've spent years cultivating relationships with leading educational institutions in Central and Northern regions.";
-    const paragraph2Content = getItemById('home', 'aboutUs', 'aboutUs-paragraph2')?.content ||
+    const paragraph2Content = getContentItem('aboutUs-paragraph2') ||
+        getItemById('home', 'aboutUs', 'aboutUs-paragraph2')?.content ||
         "Our mission? To help university representatives like you unlock access to these schools. With our local expertise and tailored approach, we make your outreach seamless, impactful, and rewarding.";
-    const buttonContent = getItemById('home', 'aboutUs', 'aboutUs-button')?.content ||
+    const buttonContent = getContentItem('aboutUs-button') ||
+        getItemById('home', 'aboutUs', 'aboutUs-button')?.content ||
         "Get to Know Us Better";
-    const imageContent = getItemById('home', 'aboutUs', 'aboutUs-image')?.content ||
+    const imageContent = getContentItem('aboutUs-image') ||
+        getItemById('home', 'aboutUs', 'aboutUs-image')?.content ||
         "/about-us.png";
-    const tourHeadingContent = getItemById('home', 'aboutUs', 'aboutUs-tourHeading')?.content ||
+    const tourHeadingContent = getContentItem('aboutUs-tourHeading') ||
+        getItemById('home', 'aboutUs', 'aboutUs-tourHeading')?.content ||
         "Our tours are your key to Vietnam's top state schools.";
 
     // Location card content
-    const locationTitleContent = getItemById('home', 'aboutUs', 'aboutUs-location-title')?.content || "LOCATIONS";
-    const locationIconContent = getItemById('home', 'aboutUs', 'aboutUs-location-icon')?.content || "/map-pin.svg";
-    const locationTextContent = getItemById('home', 'aboutUs', 'aboutUs-location-content')?.content ||
+    const locationTitleContent = getContentItem('aboutUs-location-title') ||
+        getItemById('home', 'aboutUs', 'aboutUs-location-title')?.content || "LOCATIONS";
+    const locationIconContent = getContentItem('aboutUs-location-icon') ||
+        getItemById('home', 'aboutUs', 'aboutUs-location-icon')?.content || "/map-pin.svg";
+    const locationTextContent = getContentItem('aboutUs-location-content') ||
+        getItemById('home', 'aboutUs', 'aboutUs-location-content')?.content ||
         "Currently we focus on Central (Da Nang & Hue) and Northern (Ha Noi & Hai Duong) Vietnam.\nWe will be expanding to Southern Vietnam in 2026, including HCMC.";
 
     // What We Offer card content
-    const offerTitleContent = getItemById('home', 'aboutUs', 'aboutUs-offer-title')?.content || "WHAT WE OFFER";
-    const offerIconContent = getItemById('home', 'aboutUs', 'aboutUs-offer-icon')?.content || "/edu.svg";
-    const offerTextContent = getItemById('home', 'aboutUs', 'aboutUs-offer-content')?.content ||
+    const offerTitleContent = getContentItem('aboutUs-offer-title') ||
+        getItemById('home', 'aboutUs', 'aboutUs-offer-title')?.content || "WHAT WE OFFER";
+    const offerIconContent = getContentItem('aboutUs-offer-icon') ||
+        getItemById('home', 'aboutUs', 'aboutUs-offer-icon')?.content || "/edu.svg";
+    const offerTextContent = getContentItem('aboutUs-offer-content') ||
+        getItemById('home', 'aboutUs', 'aboutUs-offer-content')?.content ||
         "Guided visits with school administrators and faculty.\nIn-school preparation before the tour through workshops.\nOpportunities to present your university and network with students through a mix of the following:\n- Panel talks\n- Elevator pitches\n- Workshops\n- Mini fairs\nCultural insights to enhance your experience.";
 
     // Our Support card content
-    const supportTitleContent = getItemById('home', 'aboutUs', 'aboutUs-support-title')?.content || "OUR SUPPORT";
-    const supportIconContent = getItemById('home', 'aboutUs', 'aboutUs-support-icon')?.content || "/support.svg";
-    const supportTextContent = getItemById('home', 'aboutUs', 'aboutUs-support-content')?.content ||
+    const supportTitleContent = getContentItem('aboutUs-support-title') ||
+        getItemById('home', 'aboutUs', 'aboutUs-support-title')?.content || "OUR SUPPORT";
+    const supportIconContent = getContentItem('aboutUs-support-icon') ||
+        getItemById('home', 'aboutUs', 'aboutUs-support-icon')?.content || "/support.svg";
+    const supportTextContent = getContentItem('aboutUs-support-content') ||
+        getItemById('home', 'aboutUs', 'aboutUs-support-content')?.content ||
         "2 - 3 school visits per day\nFull logistics (Support throughout the tour and school visits)\nOne stall at each school fair\nIntra and inter city transport (on the ground travel - not including flights)\nReception dinner\nDaily lunches\nCoffee breaks\nGroup dinners (75% of the time)\nHotel suggestions & discounts\n1 - 2 pages in university booklet for schools";
 
     const stat1 = getItemById('home', 'aboutUs', 'aboutUs-stat1');
@@ -93,10 +111,10 @@ export function AboutUsHome() {
                                 {paragraph1Content}
                             </p>
 
-                            <p className="text-sm text-content font-medium">
-                                {paragraph2Content}
-                            </p>
-                        </div>
+                                <p className="text-sm text-content font-medium">
+                                    {paragraph2Content}
+                                </p>
+                            </div>
 
 
                         <div className="mt-5 relative rounded-2xl overflow-hidden"

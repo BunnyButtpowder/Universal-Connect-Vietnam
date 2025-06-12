@@ -3,10 +3,12 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/s
 import { Menu, X, Phone, Mail } from "lucide-react"
 import { LanguageSelector } from "./LanguageSelector"
 import { useState, useEffect } from "react"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export function Navbar() {
   // State to track active navigation item
   const [activeItem, setActiveItem] = useState<string>('')
+  const { t } = useLanguage()
 
   // Check the current pathname on initial load and when it changes
   useEffect(() => {
@@ -64,7 +66,7 @@ export function Navbar() {
                 className={`text-base font-medium ${activeItem === 'our-tours' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
                 onClick={() => setActiveItem('our-tours')}
               >
-                Our Tours
+                {t('nav.ourTours')}
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
@@ -73,7 +75,7 @@ export function Navbar() {
                 className={`text-base font-medium ${activeItem === 'about-us' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
                 onClick={() => setActiveItem('about-us')}
               >
-                About us
+                {t('nav.aboutUs')}
               </a>
             </NavigationMenuItem>
             <NavigationMenuItem>
@@ -82,7 +84,7 @@ export function Navbar() {
                 onClick={scrollToContact}
                 className={`text-base font-medium ${activeItem === 'contact' ? 'text-blue-500 bg-blue-500/10' : 'text-blue-950 hover:text-blue-500 hover:bg-blue-500/10'} transition-all duration-300 px-7 py-3 rounded-md cursor-pointer`}
               >
-                Contact
+                {t('nav.contact')}
               </a>
             </NavigationMenuItem>
           </NavigationMenuList>
@@ -131,7 +133,7 @@ export function Navbar() {
                     className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'our-tours' ? 'text-primary' : ''}`}
                     onClick={() => setActiveItem('our-tours')}
                   >
-                    Our Tours
+                    {t('nav.ourTours')}
                   </a>
                   <div className="h-[1px] bg-white/20 my-3" />
                   <a 
@@ -139,7 +141,7 @@ export function Navbar() {
                     className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'about-us' ? 'text-primary' : ''}`}
                     onClick={() => setActiveItem('about-us')}
                   >
-                    About us
+                    {t('nav.aboutUs')}
                   </a>
                   <div className="h-[1px] bg-white/20 my-3" />
                   <a 
@@ -152,8 +154,13 @@ export function Navbar() {
                     }} 
                     className={`text-3xl font-normal text-white hover:text-primary transition-colors py-4 ${activeItem === 'contact' ? 'text-primary' : ''}`}
                   >
-                    Contact
+                    {t('nav.contact')}
                   </a>
+                </div>
+
+                {/* Language Selector for Mobile */}
+                <div className="flex justify-center mt-8">
+                  <LanguageSelector />
                 </div>
 
                 {/* Contact Information */}

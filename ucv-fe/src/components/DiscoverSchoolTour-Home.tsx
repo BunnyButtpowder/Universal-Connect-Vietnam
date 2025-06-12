@@ -1,5 +1,6 @@
 import { ArrowUpRight, ArrowRight } from "lucide-react"
 import { useContentStore } from "../lib/contentStore"
+import { useTranslatedContent } from "../hooks/useTranslatedContent"
 import { useState, useEffect } from "react"
 import { toursApi, TourBasic } from "../lib/api"
 
@@ -11,6 +12,7 @@ interface Tour extends TourBasic {
 
 export function DiscoverSchoolTourHome() {
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
     const [tours, setTours] = useState<Tour[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -55,14 +57,18 @@ export function DiscoverSchoolTourHome() {
         fetchTours();
     }, []);
 
-    // Main content
-    const headingContent = getItemById('home', 'discoverTour', 'discoverTour-heading')?.content ||
+    // Get translated content - using the useTranslatedContent hook for proper translation support
+    const headingContent = getContentItem('discoverTour-heading') ||
+        getItemById('home', 'discoverTour', 'discoverTour-heading')?.content ||
         "DISCOVER OUR SCHOOL TOURS";
-    const titleContent = getItemById('home', 'discoverTour', 'discoverTour-title')?.content ||
+    const titleContent = getContentItem('discoverTour-title') ||
+        getItemById('home', 'discoverTour', 'discoverTour-title')?.content ||
         "Exclusive access to prestigious state schools, hand-picked for their academic excellence.";
-    const descriptionContent = getItemById('home', 'discoverTour', 'discoverTour-description')?.content ||
+    const descriptionContent = getContentItem('discoverTour-description') ||
+        getItemById('home', 'discoverTour', 'discoverTour-description')?.content ||
         "As we know the intense schedule university reps have, we tailor our tours to be highly productive and fun at the same time. We want you to leave feeling you've experienced new parts of this beautiful country, enjoying the culinary gems along the way. You won't be disappointed.";
-    const buttonContent = getItemById('home', 'discoverTour', 'discoverTour-button')?.content ||
+    const buttonContent = getContentItem('discoverTour-button') ||
+        getItemById('home', 'discoverTour', 'discoverTour-button')?.content ||
         "Explore All Our Tours";
 
     return (

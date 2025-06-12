@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toursApi, TourCreateInput, City, EventType, PackageItem, TourFull, CustomizeOption } from '../../lib/api';
+import { toursApi, TourCreateInput, City, EventType, PackageItem, TourFull, CustomizeOption, TimelineEvent } from '../../lib/api';
 import { TourImageEditor } from './TourImageEditor';
 
 // Base API URL for production
@@ -51,6 +51,15 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
       earlyBird: { regular: 0, returningUniversity: 0 },
       standard: { regular: 0, returningUniversity: 0 }
     }
+  });
+
+  // Timeline events
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  const [newTimelineEvent, setNewTimelineEvent] = useState<TimelineEvent>({
+    dateRange: '',
+    location: '',
+    description: '',
+    sortOrder: 0
   });
 
   // New entity creation forms
@@ -139,6 +148,13 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
 
       // Set additional images
       setAdditionalImages(tourData.additionalImages || []);
+      
+      // Set timeline events
+      if (tourData.timelineEvents && Array.isArray(tourData.timelineEvents)) {
+        setTimelineEvents(tourData.timelineEvents);
+      } else {
+        setTimelineEvents([]);
+      }
       
       // Set customize options - handle the actual API response structure
       if (tourData.customizeOptions && Array.isArray(tourData.customizeOptions)) {
@@ -435,6 +451,51 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
     setCustomizeOptions(prev => prev.filter(opt => opt.key !== key));
   };
 
+  // Handle timeline event form changes
+  const handleTimelineEventChange = (field: string, value: string | number) => {
+    setNewTimelineEvent(prev => ({
+      ...prev,
+      [field]: field === 'sortOrder' ? Number(value) : value
+    }));
+  };
+
+  // Add timeline event
+  const addTimelineEvent = () => {
+    if (newTimelineEvent.dateRange && newTimelineEvent.location) {
+      setTimelineEvents(prev => [...prev, { ...newTimelineEvent }]);
+      setNewTimelineEvent({
+        dateRange: '',
+        location: '',
+        description: '',
+        sortOrder: timelineEvents.length
+      });
+    }
+  };
+
+  // Remove timeline event
+  const removeTimelineEvent = (index: number) => {
+    setTimelineEvents(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add preset timeline events
+  const addPresetTimelineEvents = (tourType: 'fall' | 'spring') => {
+    if (tourType === 'fall') {
+      setTimelineEvents([
+        { dateRange: '01 - 02.10', location: 'HUE', description: 'School visits in Hue', sortOrder: 0 },
+        { dateRange: '03 - 04.10', location: 'DA NANG', description: 'School visits in Da Nang', sortOrder: 1 },
+        { dateRange: '05 - 06.10', location: 'TAM KY', description: 'School visits in Tam Ky', sortOrder: 2 }
+      ]);
+    } else if (tourType === 'spring') {
+      setTimelineEvents([
+        { dateRange: '01 - 02.04', location: 'HANOI', description: 'School visits in Hanoi', sortOrder: 0 },
+        { dateRange: '03 - 04.04', location: 'HAI PHONG', description: 'School visits in Hai Phong', sortOrder: 1 },
+        { dateRange: '06.04', location: 'HUE', description: 'School visits in Hue', sortOrder: 2 },
+        { dateRange: '07 - 08.04', location: 'DA NANG', description: 'School visits in Da Nang', sortOrder: 3 },
+        { dateRange: '09 - 10.04', location: 'HO CHI MINH CITY', description: 'School visits in Ho Chi Minh City', sortOrder: 4 }
+      ]);
+    }
+  };
+
   // Quick add preset customize options
   const addPresetCustomizeOptions = (type: 'fall' | 'spring') => {
     const fallOptions: CustomizeOption[] = [
@@ -543,7 +604,8 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
         eventTypes: selectedEventTypes.filter(et => et.id !== -1), // Only include event types with valid IDs
         packageIncludes: selectedPackageItems.filter(pi => pi.id !== -1), // Only include package items with valid IDs
         additionalImages,
-        customizeOptions
+        customizeOptions,
+        timelineEvents
       };
 
       await toursApi.update(tourId, tourData);
@@ -805,6 +867,19 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Duration*</label>
+              <input
+                type="text"
+                name="duration"
+                value={formState.duration}
+                onChange={handleChange}
+                required
+                placeholder="e.g. 7 Days"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              />
             </div>
 
             <div>
@@ -1192,6 +1267,128 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Timeline Events Section */}
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium mb-2">Timeline Events</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Add events that occur during the tour.
+              </p>
+              
+              {/* Quick Add Presets for Timeline */}
+              <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                <h4 className="text-sm font-medium text-green-900 mb-2">Quick Add Timeline Presets</h4>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => addPresetTimelineEvents('fall')}
+                    className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                  >
+                    Add Fall Timeline
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addPresetTimelineEvents('spring')}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Add Spring Timeline
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimelineEvents([])}
+                    className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                  >
+                    Clear Timeline
+                  </button>
+                </div>
+              </div>
+
+              {/* Selected Timeline Events */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Timeline Events ({timelineEvents.length})</h4>
+                {timelineEvents.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No timeline events added yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {timelineEvents.map((event, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h5 className="font-medium text-gray-900">{event.dateRange}</h5>
+                            <p className="text-sm text-gray-600">{event.location}</p>
+                            {event.description && (
+                              <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeTimelineEvent(index)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add New Timeline Event */}
+              <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Timeline Event</h4>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Date Range*</label>
+                      <input
+                        type="text"
+                        value={newTimelineEvent.dateRange}
+                        onChange={(e) => handleTimelineEventChange('dateRange', e.target.value)}
+                        placeholder="e.g. 01 - 02.10"
+                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Location*</label>
+                      <input
+                        type="text"
+                        value={newTimelineEvent.location}
+                        onChange={(e) => handleTimelineEventChange('location', e.target.value)}
+                        placeholder="e.g. HUE"
+                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={newTimelineEvent.description}
+                      onChange={(e) => handleTimelineEventChange('description', e.target.value)}
+                      placeholder="e.g. School visits in Hue"
+                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={addTimelineEvent}
+                      disabled={!newTimelineEvent.dateRange || !newTimelineEvent.location}
+                      className={`px-4 py-2 rounded-md text-white text-sm ${
+                        !newTimelineEvent.dateRange || !newTimelineEvent.location
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600'
+                      }`}
+                    >
+                      Add Timeline Event
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

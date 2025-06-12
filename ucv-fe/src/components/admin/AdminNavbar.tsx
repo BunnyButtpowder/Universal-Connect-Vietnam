@@ -7,6 +7,7 @@ const pages = [
   { name: 'Our Tours', path: '/admin/our-tours' },
   { name: 'Tour Details', path: '/admin/tour-details' },
   { name: 'Sign Up Form', path: '/admin/signup-form' },
+  { name: 'Translations', path: '/admin/translations' },
 ];
 
 export function AdminNavbar() {

@@ -26,12 +26,12 @@ export interface CustomizeOption {
   description?: string;
   pricing: {
     earlyBird: {
-      regular: number | string;
-      returningUniversity: number | string;
+      regular: number;
+      returningUniversity: number;
     };
     standard: {
-      regular: number | string;
-      returningUniversity: number | string;
+      regular: number;
+      returningUniversity: number;
     };
   };
 }
@@ -67,6 +67,7 @@ export interface TourFull extends TourBasic {
   packageIncludes: string[];
   additionalImages: string[];
   customizeOptions: (CustomizeOption & { id?: number })[];
+  timelineEvents: TimelineEvent[];
   created_at?: string;
 }
 
@@ -86,6 +87,15 @@ export interface EventType {
 export interface PackageItem {
   id: number;
   name: string;
+}
+
+export interface TimelineEvent {
+  id?: number;
+  tourId?: number;
+  dateRange: string;
+  location: string;
+  description?: string;
+  sortOrder?: number;
 }
 
 export interface TourCreateInput {
@@ -109,6 +119,7 @@ export interface TourCreateInput {
   packageIncludes?: (PackageItem | string)[];
   additionalImages?: string[];
   customizeOptions?: CustomizeOption[];
+  timelineEvents?: TimelineEvent[];
 }
 
 // Get the API base URL from environment variable if available
@@ -344,7 +355,92 @@ export const toursApi = {
       console.error('Error creating package item:', error);
       throw error;
     }
-  }
+  },
+
+  // Timeline Events API
+  // Get timeline events for a tour
+  getTimelineEvents: async (tourId: string): Promise<TimelineEvent[]> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/${tourId}/timeline`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch timeline events: ${response.status}`);
+      }
+      
+      const data: ApiResponse<{ timelineEvents: TimelineEvent[] }> = await response.json();
+      return data.data?.timelineEvents || [];
+    } catch (error) {
+      console.error('Error fetching timeline events:', error);
+      throw error;
+    }
+  },
+
+  // Create timeline event for a tour
+  createTimelineEvent: async (tourId: string, eventData: Omit<TimelineEvent, 'id' | 'tourId'>): Promise<TimelineEvent> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/${tourId}/timeline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to create timeline event: ${response.status}`);
+      }
+      
+      const data: ApiResponse<{ timelineEvent: TimelineEvent }> = await response.json();
+      return data.data?.timelineEvent as TimelineEvent;
+    } catch (error) {
+      console.error('Error creating timeline event:', error);
+      throw error;
+    }
+  },
+
+  // Update timeline event
+  updateTimelineEvent: async (tourId: string, eventId: string, eventData: Partial<TimelineEvent>): Promise<TimelineEvent> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/${tourId}/timeline/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to update timeline event: ${response.status}`);
+      }
+      
+      const data: ApiResponse<{ timelineEvent: TimelineEvent }> = await response.json();
+      return data.data?.timelineEvent as TimelineEvent;
+    } catch (error) {
+      console.error('Error updating timeline event:', error);
+      throw error;
+    }
+  },
+
+  // Delete timeline event
+  deleteTimelineEvent: async (tourId: string, eventId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/${tourId}/timeline/${eventId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete timeline event: ${response.status}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting timeline event:', error);
+      throw error;
+    }
+  },
 };
 
 // API utility for contact forms

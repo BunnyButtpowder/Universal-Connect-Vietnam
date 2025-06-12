@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ContentItem, ContentUpdate } from '../../lib/types';
 import { useContentStore } from '../../lib/contentStore';
 import { ImageEditor } from './ImageEditor';
+import { TranslationEditor } from './TranslationEditor';
 
 interface ContentEditorProps {
   pageName: string;
@@ -220,7 +221,7 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
     }
   };
 
-  // For image type items, don't provide any edit functionality
+  // For image type items, provide image editing and translation functionality
   if (displayContent.type === 'image') {
     return (
       <div className="border border-gray-200 rounded-md p-4 mb-4 bg-white">
@@ -228,8 +229,16 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
           <div className="font-medium text-gray-700 capitalize">
             {displayContent.type}: {displayContent.id}
           </div>
-          <div className="text-xs text-green-600 bg-green-50 p-1 rounded">
-            Image editing available
+          <div className="flex space-x-2 items-center">
+            {/* Translation Editor Button */}
+            <TranslationEditor 
+              item={displayContent}
+              pageName={pageName}
+              sectionId={sectionId}
+            />
+            <div className="text-xs text-green-600 bg-green-50 p-1 rounded">
+              Image editing available
+            </div>
           </div>
         </div>
         <div className="mt-2">
@@ -252,7 +261,15 @@ export function ContentEditor({ pageName, sectionId, item }: ContentEditorProps)
         <div className="font-medium text-gray-700 capitalize">
           {displayContent.type}: {displayContent.id}
         </div>
-        <div>
+        <div className="flex space-x-2 items-center">
+          {/* Translation Editor Button */}
+          <TranslationEditor 
+            item={displayContent}
+            pageName={pageName}
+            sectionId={sectionId}
+          />
+          
+          {/* Edit Button */}
           {isEditing ? (
             <div className="flex space-x-2">
               <button

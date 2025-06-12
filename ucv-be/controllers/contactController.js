@@ -117,6 +117,7 @@ exports.submitDocuments = async (req, res) => {
                 <p><strong>Selected Tour:</strong> ${selectedTour}</p>
                 <p><strong>Tour Date:</strong> ${tourDate}</p>
                 <p><strong>Selected Cities:</strong> ${selectedCities}</p>
+                <p><strong>Number of Participants:</strong> ${formData.participantCount || 1} ${(formData.participantCount || 1) === 1 ? 'person' : 'people'}</p>
                 <p><strong>Applied Promotions:</strong> ${selectedPromotions}</p>
                 <p><strong>Want Callback:</strong> ${formData.wantCallback ? 'Yes' : 'No'}</p>
                 <p><strong>Early Bird Expiration:</strong> ${earlyBirdExpiration}</p>

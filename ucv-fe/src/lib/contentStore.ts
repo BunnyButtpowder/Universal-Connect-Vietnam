@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { ContentItem, PageContent, ContentUpdate } from './types';
+import { ContentItem, PageContent, ContentUpdate, Language, ContentTranslation } from './types';
 import { contentApi } from './api';
+import { translationApi } from './translationApi';
 
 // Initial content for the Home page
 const initialHomeContent: PageContent = {
@@ -570,6 +571,21 @@ const initialTourDetailsContent: PageContent = {
                     id: 'tourBanner-shareLabel',
                     type: 'heading',
                     content: "Share",
+                },
+            ]
+        },
+        timelinesSection: {
+            title: 'Timelines Section',
+            items: [
+                {
+                    id: 'timelines-heading',
+                    type: 'heading',
+                    content: "TOUR TIMELINES",
+                },
+                {
+                    id: 'timelines-title',
+                    type: 'heading',
+                    content: "Tentative Schedule for the 2025/26 School Year",
                 },
             ]
         },
@@ -1314,18 +1330,27 @@ interface ContentStore {
     pages: PageContent[];
     isLoading: boolean;
     error: string | null;
+    currentLanguage: Language;
+    translations: Record<string, ContentTranslation[]>; // itemId -> translations array
     getPageContent: (pageName: string) => PageContent | undefined;
     getItemById: (pageName: string, sectionId: string, itemId: string) => ContentItem | undefined;
     updateContent: (update: ContentUpdate) => void;
     resetToDefault: () => void;
     resetPageContent: (pageName: string) => void;
     fetchContent: () => Promise<void>;
+    setLanguage: (language: Language) => void;
+    getTranslatedContent: (itemId: string, language?: Language) => string;
+    getPageContentTranslated: (pageName: string, language?: Language) => PageContent | undefined;
+    fetchTranslations: () => Promise<void>;
+    updateTranslation: (itemId: string, language: Language, content: string) => void;
 }
 
 export const useContentStore = create<ContentStore>((set, get) => ({
     pages: defaultContent,
     isLoading: false,
     error: null,
+    currentLanguage: 'en',
+    translations: {},
     
     fetchContent: async () => {
         set({ isLoading: true, error: null });
@@ -1492,5 +1517,115 @@ export const useContentStore = create<ContentStore>((set, get) => ({
                 isLoading: false 
             });
         }
-    }
+    },
+
+    setLanguage: (language: Language) => {
+        set({ currentLanguage: language });
+    },
+
+    getTranslatedContent: (itemId: string, language?: Language) => {
+        const { translations, currentLanguage } = get();
+        const targetLanguage = language || currentLanguage;
+        
+        const itemTranslations = translations[itemId];
+        if (!itemTranslations) {
+            return '';
+        }
+        
+        const translation = itemTranslations.find(t => t.language === targetLanguage);
+        return translation?.content || '';
+    },
+
+    getPageContentTranslated: (pageName: string, language?: Language) => {
+        const { pages, currentLanguage } = get();
+        const targetLanguage = language || currentLanguage;
+        
+        const originalPage = pages.find(page => page.pageName === pageName);
+        if (!originalPage || targetLanguage === 'en') {
+            return originalPage; // Return original if English or not found
+        }
+        
+        // Create translated version
+        const translatedPage: PageContent = {
+            ...originalPage,
+            sections: {}
+        };
+        
+        Object.entries(originalPage.sections).forEach(([sectionId, section]) => {
+            translatedPage.sections[sectionId] = {
+                ...section,
+                items: section.items.map(item => {
+                    const translatedContent = get().getTranslatedContent(item.id, targetLanguage);
+                    return {
+                        ...item,
+                        content: translatedContent || item.content // Fallback to original
+                    };
+                })
+            };
+        });
+        
+        return translatedPage;
+    },
+
+    fetchTranslations: async () => {
+        try {
+            // Fetch real translations from the API
+            const translations = await translationApi.getAllTranslations();
+            set({ translations });
+        } catch (error) {
+            console.error('Failed to fetch translations:', error);
+            // Fallback to mock data if API fails
+            const mockTranslations: Record<string, ContentTranslation[]> = {
+                'heroBanner-heading': [
+                    {
+                        id: 'heroBanner-heading',
+                        language: 'vi',
+                        content: 'Khám Phá Các Trường Hàng Đầu Việt Nam Cùng Chúng Tôi'
+                    }
+                ],
+                'heroBanner-paragraph1': [
+                    {
+                        id: 'heroBanner-paragraph1',
+                        language: 'vi',
+                        content: 'Chào mừng đến với UCV - chúng tôi hướng đến việc kết nối các trường hàng đầu ở Việt Nam và các trường đại học quốc tế. Chúng tôi là cầu nối độc đáo - có nhiều năm kinh nghiệm ở cả phía trường đại học và trường phổ thông.'
+                    }
+                ]
+                // Add more translations as needed
+            };
+            
+            set({ translations: mockTranslations });
+        }
+    },
+
+    updateTranslation: async (itemId: string, language: Language, content: string) => {
+        const { translations } = get();
+        const newTranslations = { ...translations };
+        
+        if (!newTranslations[itemId]) {
+            newTranslations[itemId] = [];
+        }
+        
+        const existingIndex = newTranslations[itemId].findIndex(t => t.language === language);
+        const translation: ContentTranslation = {
+            id: itemId,
+            language,
+            content
+        };
+        
+        if (existingIndex >= 0) {
+            newTranslations[itemId][existingIndex] = translation;
+        } else {
+            newTranslations[itemId].push(translation);
+        }
+        
+        set({ translations: newTranslations });
+        
+        // Save to API
+        try {
+            await translationApi.updateTranslation(translation);
+        } catch (error) {
+            console.error('Failed to save translation to API:', error);
+            // Could implement retry logic or show user notification
+        }
+    },
 })); 

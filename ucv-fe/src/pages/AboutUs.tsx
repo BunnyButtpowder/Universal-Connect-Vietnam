@@ -6,41 +6,52 @@ import { School } from "lucide-react"
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "@/lib/contentStore";
+import { useTranslatedContent } from "@/hooks/useTranslatedContent";
 
 export default function AboutUs() {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(1);
     const count = 3;
 
-    // Get content from store
+    // Get content from store and translations
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
 
     // Main banner content
-    const mainBannerHeading = getItemById('about-us', 'mainBanner', 'mainBanner-heading')?.content ||
+    const mainBannerHeading = getContentItem('mainBanner-heading') ||
+        getItemById('about-us', 'mainBanner', 'mainBanner-heading')?.content ||
         "We're passionate about bridging the gap between international universities and Vietnam's top state schools.";
-    const mainBannerImage = getItemById('about-us', 'mainBanner', 'mainBanner-image')?.content ||
+    const mainBannerImage = getContentItem('mainBanner-image') ||
+        getItemById('about-us', 'mainBanner', 'mainBanner-image')?.content ||
         "/about-us.png";
 
     // Carousel content
-    const carouselImage1 = getItemById('about-us', 'carouselSection', 'carousel-image1')?.content ||
+    const carouselImage1 = getContentItem('carousel-image1') ||
+        getItemById('about-us', 'carouselSection', 'carousel-image1')?.content ||
         "/classroom.png";
-    const carouselImage2 = getItemById('about-us', 'carouselSection', 'carousel-image2')?.content ||
+    const carouselImage2 = getContentItem('carousel-image2') ||
+        getItemById('about-us', 'carouselSection', 'carousel-image2')?.content ||
         "/display1.png";
-    const carouselImage3 = getItemById('about-us', 'carouselSection', 'carousel-image3')?.content ||
+    const carouselImage3 = getContentItem('carousel-image3') ||
+        getItemById('about-us', 'carouselSection', 'carousel-image3')?.content ||
         "/display2.png";
     // const carouselButton = getItemById('about-us', 'carouselSection', 'carousel-button')?.content ||
     //     "CHECK OUT OUR PORTFOLIO";
 
     // Who We Are content
-    const whoWeAreTitle = getItemById('about-us', 'whoWeAre', 'whoWeAre-title')?.content ||
+    const whoWeAreTitle = getContentItem('whoWeAre-title') ||
+        getItemById('about-us', 'whoWeAre', 'whoWeAre-title')?.content ||
         "WHO WE ARE";
-    const whoWeAreContent = getItemById('about-us', 'whoWeAre', 'whoWeAre-content')?.content ||
+    const whoWeAreContent = getContentItem('whoWeAre-content') ||
+        getItemById('about-us', 'whoWeAre', 'whoWeAre-content')?.content ||
         "At UCV, we're passionate about bridging the gap between international universities and Vietnam's top state schools. Based in the heart of Vietnam, we've spent years cultivating relationships with leading educational institutions in Central and Northern regions.";
 
     // Our Mission content
-    const ourMissionTitle = getItemById('about-us', 'ourMission', 'ourMission-title')?.content ||
+    const ourMissionTitle = getContentItem('ourMission-title') ||
+        getItemById('about-us', 'ourMission', 'ourMission-title')?.content ||
         "OUR MISSION";
-    const ourMissionContent = getItemById('about-us', 'ourMission', 'ourMission-content')?.content ||
+    const ourMissionContent = getContentItem('ourMission-content') ||
+        getItemById('about-us', 'ourMission', 'ourMission-content')?.content ||
         "To help university representatives like you unlock access to these schools. With our local expertise and tailored approach, we make your outreach seamless, impactful, and rewarding.";
 
     // Statistics content

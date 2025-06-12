@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useContentStore } from "../lib/contentStore";
+import { useTranslatedContent } from "../hooks/useTranslatedContent";
 
 // Define the testimonial type
 interface Testimonial {
@@ -22,12 +23,15 @@ interface Testimonial {
 
 export function Testimonials() {
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
 
-    // Get section headings from the store
-    const headingContent = getItemById('home', 'testimonials', 'testimonials-heading')?.content || 
+    // Get translated content
+    const headingContent = getContentItem('testimonials-heading') ||
+        getItemById('home', 'testimonials', 'testimonials-heading')?.content ||
         "TESTIMONIALS";
-    const titleContent = getItemById('home', 'testimonials', 'testimonials-title')?.content || 
-        "What Universities Say About Us";
+    const titleContent = getContentItem('testimonials-title') ||
+        getItemById('home', 'testimonials', 'testimonials-title')?.content ||
+        "What our partners say about working with us";
 
     // Sample testimonials data - replace with your actual data
     const testimonials: Testimonial[] = [

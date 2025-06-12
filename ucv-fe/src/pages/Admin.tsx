@@ -8,6 +8,7 @@ export default function Admin() {
         { name: 'Our Tours', path: '/admin/our-tours', description: 'Manage tour listings, categories, and featured tours' },
         { name: 'Tour Details', path: '/admin/tour-details', description: 'Edit individual tour descriptions, itineraries, and pricing' },
         { name: 'Sign Up Form', path: '/admin/signup-form', description: 'Edit the sign up form content' },
+        { name: 'Translations', path: '/admin/translations', description: 'Manage Vietnamese translations for all website content' },
     ];
 
     return (

@@ -24,6 +24,7 @@ class Tour {
         standardDeadline,
         additionalImages = [],
         customizeOptions = [],
+        timelineEvents = [],
         created_at
     }) {
         // Basic information
@@ -61,6 +62,15 @@ class Tour {
                     returningUniversity: option.standard_university_price
                 }
             }
+        }));
+        
+        // Timeline events for the tour schedule
+        this.timelineEvents = timelineEvents.map(event => ({
+            id: event.id,
+            dateRange: event.date_range || event.dateRange,
+            location: event.location,
+            description: event.description,
+            sortOrder: event.sort_order || event.sortOrder || 0
         }));
         
         // Dates and duration
@@ -216,7 +226,8 @@ class Tour {
                        e.event_types_json,
                        p.package_includes_json,
                        a.additional_images_json,
-                       co.customize_options_json
+                       co.customize_options_json,
+                       tl.timeline_events_json
                 FROM tours t
                 LEFT JOIN (
                     SELECT tc.tour_id, JSON_ARRAYAGG(JSON_OBJECT('id', c.id, 'name', c.name, 'imageUrl', c.image_url, 'wikiUrl', c.wiki_url)) as cities_json
@@ -255,6 +266,17 @@ class Tour {
                     FROM tour_customize_options
                     GROUP BY tour_id
                 ) co ON t.id = co.tour_id
+                LEFT JOIN (
+                    SELECT tour_id, JSON_ARRAYAGG(JSON_OBJECT(
+                        'id', id,
+                        'date_range', date_range,
+                        'location', location,
+                        'description', description,
+                        'sort_order', sort_order
+                    ) ORDER BY sort_order ASC) as timeline_events_json
+                    FROM tour_timeline_events
+                    GROUP BY tour_id
+                ) tl ON t.id = tl.tour_id
             `);
             
             return rows.map(row => {
@@ -278,6 +300,7 @@ class Tour {
                 const packageIncludes = safeJsonParse(row.package_includes_json);
                 const additionalImages = safeJsonParse(row.additional_images_json);
                 const customizeOptions = safeJsonParse(row.customize_options_json);
+                const timelineEvents = safeJsonParse(row.timeline_events_json);
                 
                 return new Tour({
                     // Convert BigInt IDs to numbers and map column names
@@ -307,7 +330,8 @@ class Tour {
                     eventTypes: eventTypes,
                     packageIncludes: packageIncludes,
                     additionalImages: additionalImages,
-                    customizeOptions: customizeOptions
+                    customizeOptions: customizeOptions,
+                    timelineEvents: timelineEvents
                 });
             });
         } catch (err) {
@@ -328,7 +352,8 @@ class Tour {
                        e.event_types_json,
                        p.package_includes_json,
                        a.additional_images_json,
-                       co.customize_options_json
+                       co.customize_options_json,
+                       tl.timeline_events_json
                 FROM tours t
                 LEFT JOIN (
                     SELECT tc.tour_id, JSON_ARRAYAGG(JSON_OBJECT('id', c.id, 'name', c.name, 'imageUrl', c.image_url, 'wikiUrl', c.wiki_url)) as cities_json
@@ -367,6 +392,17 @@ class Tour {
                     FROM tour_customize_options
                     GROUP BY tour_id
                 ) co ON t.id = co.tour_id
+                LEFT JOIN (
+                    SELECT tour_id, JSON_ARRAYAGG(JSON_OBJECT(
+                        'id', id,
+                        'date_range', date_range,
+                        'location', location,
+                        'description', description,
+                        'sort_order', sort_order
+                    ) ORDER BY sort_order ASC) as timeline_events_json
+                    FROM tour_timeline_events
+                    GROUP BY tour_id
+                ) tl ON t.id = tl.tour_id
                 WHERE t.id = ?
             `, [id]);
             
@@ -396,6 +432,7 @@ class Tour {
             const packageIncludes = safeJsonParse(row.package_includes_json);
             const additionalImages = safeJsonParse(row.additional_images_json);
             const customizeOptions = safeJsonParse(row.customize_options_json);
+            const timelineEvents = safeJsonParse(row.timeline_events_json);
             
             return new Tour({
                 // Convert BigInt IDs to numbers and map column names
@@ -425,7 +462,8 @@ class Tour {
                 eventTypes: eventTypes,
                 packageIncludes: packageIncludes,
                 additionalImages: additionalImages,
-                customizeOptions: customizeOptions
+                customizeOptions: customizeOptions,
+                timelineEvents: timelineEvents
             });
         } catch (err) {
             console.error('Error getting tour by id: ', err);
@@ -562,6 +600,16 @@ class Tour {
                 }
             }
             
+            // Insert timeline events
+            if (newTour.timelineEvents && Array.isArray(newTour.timelineEvents) && newTour.timelineEvents.length > 0) {
+                for (const event of newTour.timelineEvents) {
+                    await conn.query(
+                        'INSERT INTO tour_timeline_events (tour_id, date_range, location, description, sort_order) VALUES (?, ?, ?, ?, ?)',
+                        [tourId, event.dateRange, event.location, event.description, event.sortOrder || 0]
+                    );
+                }
+            }
+            
             await conn.commit();
             
             // Get the newly created tour
@@ -604,6 +652,7 @@ class Tour {
             await conn.query('DELETE FROM tour_package_includes WHERE tour_id = ?', [id]);
             await conn.query('DELETE FROM tour_additional_images WHERE tour_id = ?', [id]);
             await conn.query('DELETE FROM tour_customize_options WHERE tour_id = ?', [id]);
+            await conn.query('DELETE FROM tour_timeline_events WHERE tour_id = ?', [id]);
             
             // Insert cities
             if (tourData.cities && tourData.cities.length > 0) {
@@ -663,6 +712,16 @@ class Tour {
                 }
             }
             
+            // Insert timeline events
+            if (tourData.timelineEvents && tourData.timelineEvents.length > 0) {
+                for (const event of tourData.timelineEvents) {
+                    await conn.query(
+                        'INSERT INTO tour_timeline_events (tour_id, date_range, location, description, sort_order) VALUES (?, ?, ?, ?, ?)',
+                        [id, event.dateRange, event.location, event.description, event.sortOrder || 0]
+                    );
+                }
+            }
+            
             await conn.commit();
             
             // Get the updated tour
@@ -688,6 +747,7 @@ class Tour {
             await conn.query('DELETE FROM tour_package_includes WHERE tour_id = ?', [id]);
             await conn.query('DELETE FROM tour_additional_images WHERE tour_id = ?', [id]);
             await conn.query('DELETE FROM tour_customize_options WHERE tour_id = ?', [id]);
+            await conn.query('DELETE FROM tour_timeline_events WHERE tour_id = ?', [id]);
             
             // Delete main tour record
             await conn.query('DELETE FROM tours WHERE id = ?', [id]);

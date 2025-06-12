@@ -17,6 +17,12 @@ router.put('/:id', tourController.updateTour);
 // Route to delete a tour
 router.delete('/:id', tourController.deleteTour);
 
+// Timeline event routes for tours
+router.get('/:tourId/timeline', tourController.getTourTimelineEvents);
+router.post('/:tourId/timeline', tourController.createTourTimelineEvent);
+router.put('/:tourId/timeline/:eventId', tourController.updateTourTimelineEvent);
+router.delete('/:tourId/timeline/:eventId', tourController.deleteTourTimelineEvent);
+
 // Routes for shared entities
 // Cities
 router.get('/shared/cities', tourController.getAllCities);

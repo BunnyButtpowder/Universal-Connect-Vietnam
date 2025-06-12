@@ -2,32 +2,35 @@ import { Phone, Mail } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, FormEvent } from "react"
 import { useContentStore } from "../lib/contentStore"
+import { useTranslatedContent } from "../hooks/useTranslatedContent"
 
 export function Footer() {
+    // Content store and translation hooks
     const getItemById = useContentStore(state => state.getItemById);
+    const { getContentItem } = useTranslatedContent();
 
     // Get footer content from store
-    const descriptionContent = getItemById('home', 'footer', 'footer-description')?.content || 
+    const descriptionContent = getContentItem('footer-description') || getItemById('home', 'footer', 'footer-description')?.content || 
         "Help university representatives like you unlock access to these schools through expertly curated tours.";
-    const phoneContent = getItemById('home', 'footer', 'footer-phone')?.content || 
+    const phoneContent = getContentItem('footer-phone') || getItemById('home', 'footer', 'footer-phone')?.content || 
         "+84 (0)34444 8680";
-    const email1Content = getItemById('home', 'footer', 'footer-email1')?.content || 
+    const email1Content = getContentItem('footer-email1') || getItemById('home', 'footer', 'footer-email1')?.content || 
         "info@ucv.com.vn";
     // const email2Content = getItemById('home', 'footer', 'footer-email2')?.content || 
     //     "bfwidemann@gmail.com";
-    const copyrightContent = getItemById('home', 'footer', 'footer-copyright')?.content || 
+    const copyrightContent = getContentItem('footer-copyright') || getItemById('home', 'footer', 'footer-copyright')?.content || 
         "2025©UCV. All rights reserved.";
-    const contactHeadingContent = getItemById('home', 'footer', 'footer-contact-heading')?.content || 
+    const contactHeadingContent = getContentItem('footer-contact-heading') || getItemById('home', 'footer', 'footer-contact-heading')?.content || 
         "GET IN TOUCH";
-    const contactTitleContent = getItemById('home', 'footer', 'footer-contact-title')?.content || 
+    const contactTitleContent = getContentItem('footer-contact-title') || getItemById('home', 'footer', 'footer-contact-title')?.content || 
         "Build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape firsthand.";
 
     // Get region label content from store
-    const northernRegionLabel = getItemById('home', 'footer', 'footer-region-northern')?.content || 
+    const northernRegionLabel = getContentItem('footer-region-northern') || getItemById('home', 'footer', 'footer-region-northern')?.content || 
         "Northern Vietnam (Hanoi and surrounding areas)";
-    const centralRegionLabel = getItemById('home', 'footer', 'footer-region-central')?.content || 
+    const centralRegionLabel = getContentItem('footer-region-central') || getItemById('home', 'footer', 'footer-region-central')?.content || 
         "Central Vietnam (Da Nang and surrounding areas)";
-    const southernRegionLabel = getItemById('home', 'footer', 'footer-region-southern')?.content || 
+    const southernRegionLabel = getContentItem('footer-region-southern') || getItemById('home', 'footer', 'footer-region-southern')?.content || 
         "Southern Vietnam (HCMC and surrounding areas)";
 
     const [formData, setFormData] = useState({

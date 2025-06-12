@@ -24,6 +24,7 @@ interface FormData {
         earlyBird: boolean;
         returningClient: boolean;
     };
+    participantCount: number; // New field for participant count (1-3)
     // Step 3 fields
     headOffice: string;
     businessRegistration: string;
@@ -102,7 +103,7 @@ export default function SignUpForm() {
                 const initialPrice = calculatePrice(tourData, initialCities, {
                     earlyBird: true,
                     returningClient: false
-                });
+                }, 1);
                 setCalculatedPrice(initialPrice);
 
             } catch (error) {
@@ -133,6 +134,7 @@ export default function SignUpForm() {
             earlyBird: true,
             returningClient: false
         },
+        participantCount: 1,
         // Step 3 fields initialized with empty values
         headOffice: "",
         businessRegistration: "",
@@ -157,10 +159,10 @@ export default function SignUpForm() {
     // Update initial price calculation when tour data is loaded
     useEffect(() => {
         if (currentTour) {
-            const price = calculatePrice(currentTour, formData.cities, formData.promotions);
+            const price = calculatePrice(currentTour, formData.cities, formData.promotions, formData.participantCount);
             setCalculatedPrice(price);
         }
-    }, [currentTour, formData.cities, formData.promotions]);
+    }, [currentTour, formData.cities, formData.promotions, formData.participantCount]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -204,7 +206,7 @@ export default function SignUpForm() {
 
         // Update price calculation
         if (currentTour) {
-            const newPrice = calculatePrice(currentTour, newCities, formData.promotions);
+            const newPrice = calculatePrice(currentTour, newCities, formData.promotions, formData.participantCount);
             setCalculatedPrice(newPrice);
         }
     };
@@ -222,7 +224,20 @@ export default function SignUpForm() {
 
         // Update price calculation
         if (currentTour) {
-            const newPrice = calculatePrice(currentTour, formData.cities, newPromotions);
+            const newPrice = calculatePrice(currentTour, formData.cities, newPromotions, formData.participantCount);
+            setCalculatedPrice(newPrice);
+        }
+    };
+
+    const handleParticipantCountChange = (count: number) => {
+        setFormData(prev => ({
+            ...prev,
+            participantCount: count
+        }));
+
+        // Update price calculation
+        if (currentTour) {
+            const newPrice = calculatePrice(currentTour, formData.cities, formData.promotions, count);
             setCalculatedPrice(newPrice);
         }
     };
@@ -379,7 +394,7 @@ export default function SignUpForm() {
     };
 
     // Function to calculate price based on tour data and selections
-    const calculatePrice = (tour: TourFull, cities: { [key: string]: boolean }, promotions: FormData['promotions']): number => {
+    const calculatePrice = (tour: TourFull, cities: { [key: string]: boolean }, promotions: FormData['promotions'], participantCount: number): number => {
         if (!tour.customizeOptions || tour.customizeOptions.length === 0) {
             return 0;
         }
@@ -391,6 +406,9 @@ export default function SignUpForm() {
         // Get selected regions
         const selectedRegions = Object.keys(cities).filter(key => cities[key]);
 
+        // Calculate base price (for the first participant)
+        let basePrice = 0;
+
         // If no regions selected or all regions selected, use grandTotal
         const grandTotalOption = tour.customizeOptions.find(opt => opt.key === 'grandTotal');
         const totalRegions = tour.customizeOptions.filter(opt => opt.key !== 'grandTotal').length;
@@ -398,35 +416,85 @@ export default function SignUpForm() {
         if (selectedRegions.length === 0 || selectedRegions.length === totalRegions) {
             if (grandTotalOption) {
                 if (isEarlyBird && isReturningClient) {
-                    return Number(grandTotalOption.pricing.earlyBird.returningUniversity);
+                    basePrice = Number(grandTotalOption.pricing.earlyBird.returningUniversity);
                 } else if (isEarlyBird) {
-                    return Number(grandTotalOption.pricing.earlyBird.regular);
+                    basePrice = Number(grandTotalOption.pricing.earlyBird.regular);
                 } else if (isReturningClient) {
-                    return Number(grandTotalOption.pricing.standard.returningUniversity);
+                    basePrice = Number(grandTotalOption.pricing.standard.returningUniversity);
                 } else {
-                    return Number(grandTotalOption.pricing.standard.regular);
+                    basePrice = Number(grandTotalOption.pricing.standard.regular);
                 }
             }
+        } else {
+            // Calculate price based on selected regions
+            selectedRegions.forEach(regionKey => {
+                const option = tour.customizeOptions.find(opt => opt.key === regionKey);
+                if (option) {
+                    if (isEarlyBird && isReturningClient) {
+                        basePrice += Number(option.pricing.earlyBird.returningUniversity);
+                    } else if (isEarlyBird) {
+                        basePrice += Number(option.pricing.earlyBird.regular);
+                    } else if (isReturningClient) {
+                        basePrice += Number(option.pricing.standard.returningUniversity);
+                    } else {
+                        basePrice += Number(option.pricing.standard.regular);
+                    }
+                }
+            });
         }
 
-        // Calculate price based on selected regions
-        let totalPrice = 0;
-        selectedRegions.forEach(regionKey => {
-            const option = tour.customizeOptions.find(opt => opt.key === regionKey);
-            if (option) {
-                if (isEarlyBird && isReturningClient) {
-                    totalPrice += Number(option.pricing.earlyBird.returningUniversity);
-                } else if (isEarlyBird) {
-                    totalPrice += Number(option.pricing.earlyBird.regular);
-                } else if (isReturningClient) {
-                    totalPrice += Number(option.pricing.standard.returningUniversity);
-                } else {
-                    totalPrice += Number(option.pricing.standard.regular);
-                }
-            }
-        });
+        // Calculate total price with participant count
+        // First participant pays full price, additional participants pay 25% extra each
+        const totalPrice = basePrice + (basePrice * 0.25 * (participantCount - 1));
 
         return totalPrice;
+    };
+
+    // Helper function to calculate base price (for display purposes)
+    const calculateBasePrice = (tour: TourFull, cities: { [key: string]: boolean }, promotions: FormData['promotions']): number => {
+        if (!tour.customizeOptions || tour.customizeOptions.length === 0) {
+            return 0;
+        }
+
+        const isEarlyBird = promotions.earlyBird;
+        const isReturningClient = promotions.returningClient;
+        const selectedRegions = Object.keys(cities).filter(key => cities[key]);
+
+        let basePrice = 0;
+
+        const grandTotalOption = tour.customizeOptions.find(opt => opt.key === 'grandTotal');
+        const totalRegions = tour.customizeOptions.filter(opt => opt.key !== 'grandTotal').length;
+
+        if (selectedRegions.length === 0 || selectedRegions.length === totalRegions) {
+            if (grandTotalOption) {
+                if (isEarlyBird && isReturningClient) {
+                    basePrice = Number(grandTotalOption.pricing.earlyBird.returningUniversity);
+                } else if (isEarlyBird) {
+                    basePrice = Number(grandTotalOption.pricing.earlyBird.regular);
+                } else if (isReturningClient) {
+                    basePrice = Number(grandTotalOption.pricing.standard.returningUniversity);
+                } else {
+                    basePrice = Number(grandTotalOption.pricing.standard.regular);
+                }
+            }
+        } else {
+            selectedRegions.forEach(regionKey => {
+                const option = tour.customizeOptions.find(opt => opt.key === regionKey);
+                if (option) {
+                    if (isEarlyBird && isReturningClient) {
+                        basePrice += Number(option.pricing.earlyBird.returningUniversity);
+                    } else if (isEarlyBird) {
+                        basePrice += Number(option.pricing.earlyBird.regular);
+                    } else if (isReturningClient) {
+                        basePrice += Number(option.pricing.standard.returningUniversity);
+                    } else {
+                        basePrice += Number(option.pricing.standard.regular);
+                    }
+                }
+            });
+        }
+
+        return basePrice;
     };
 
     if (isSubmitted) {
@@ -496,6 +564,20 @@ export default function SignUpForm() {
             </div>
         );
     }
+
+    // Helper function to format date
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch {
+            return dateString;
+        }
+    };
 
     return (
         <div>
@@ -778,15 +860,20 @@ export default function SignUpForm() {
                                                             </p>
                                                             <div className="space-y-2">
                                                                 {currentTour?.customizeOptions?.filter(opt => opt.key !== 'grandTotal').map((option) => (
-                                                                    <div key={option.key} className="flex items-center">
+                                                                    <div key={option.key} className="flex items-start">
                                                                         <Checkbox
                                                                             id={option.key}
-                                                                            className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                            className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
                                                                             checked={formData.cities[option.key] || false}
                                                                             onCheckedChange={(checked) => handleCityChange(option.key, checked)}
                                                                         />
                                                                         <label htmlFor={option.key} className="text-sm text-content font-medium cursor-pointer">
-                                                                            {option.name}
+                                                                            <div>
+                                                                                <div>{option.name}:</div>
+                                                                                {option.description && (
+                                                                                    <div className="text-gray-500">{option.description}</div>
+                                                                                )}
+                                                                            </div>
                                                                         </label>
                                                                     </div>
                                                                 ))}
@@ -798,27 +885,67 @@ export default function SignUpForm() {
                                                                 {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-promotions-title') || "Promotion"}
                                                             </p>
                                                             <div className="space-y-2">
-                                                                <div className="flex items-center">
+                                                                <div className="flex items-start">
                                                                     <Checkbox
                                                                         id="earlyBird"
-                                                                        className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                        className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
                                                                         checked={formData.promotions.earlyBird}
                                                                         onCheckedChange={(checked) => handlePromotionChange('earlyBird', checked)}
                                                                     />
                                                                     <label htmlFor="earlyBird" className="text-sm text-content font-medium cursor-pointer">
-                                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-earlybird-label') || "Early Bird 10%"}
+                                                                        <div>
+                                                                            {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-earlybird-label') || "Early Bird 10%"}
+                                                                        </div>
+                                                                        <span className="text-gray-500">(by {formatDate(currentTour?.earlyBirdDeadline || '')})</span>
                                                                     </label>
                                                                 </div>
-                                                                <div className="flex items-center">
+                                                                <div className="flex items-start">
                                                                     <Checkbox
                                                                         id="returningClient"
-                                                                        className="mr-2 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                        className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
                                                                         checked={formData.promotions.returningClient}
                                                                         onCheckedChange={(checked) => handlePromotionChange('returningClient', checked)}
                                                                     />
                                                                     <label htmlFor="returningClient" className="text-sm text-content font-medium cursor-pointer">
-                                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-label') || "Returning Client 15%"}
+                                                                        {getContentById(signUpFormContent?.sections.step2Section?.items, 'step2-returning-label') || "Returning Client 15%"} <span className="text-gray-500">(previously joined a UCV tour)</span>
                                                                     </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-5">
+                                                        <p className="font-bold text-content text-sm mb-2">
+                                                            Number of Participants
+                                                        </p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                {[1, 2, 3].map((count) => (
+                                                                    <div key={count} className="flex items-center">
+                                                                        <input
+                                                                            type="radio"
+                                                                            id={`participant-${count}`}
+                                                                            name="participantCount"
+                                                                            value={count}
+                                                                            checked={formData.participantCount === count}
+                                                                            onChange={() => handleParticipantCountChange(count)}
+                                                                            className="mr-2 cursor-pointer"
+                                                                        />
+                                                                        <label htmlFor={`participant-${count}`} className="text-sm text-content font-medium cursor-pointer">
+                                                                            {count === 1 ? '1 Person' : `${count} People`}
+                                                                            {count > 1 && (
+                                                                                <span className="text-xs text-gray-500 ml-1">
+                                                                                    (+25% per extra person)
+                                                                                </span>
+                                                                            )}
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <div className="flex flex-col justify-end">
+                                                                <div className="text-xs text-gray-600">
+                                                                    <p>• First representative pays full price</p>
+                                                                    <p>• Each additional person: +25% of base price</p>
+                                                                    <p>• Maximum 3 people per university</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -826,10 +953,37 @@ export default function SignUpForm() {
                                                 </div>
                                             </div>
                                             <div className="lg:col-span-1 signup-form-bg hidden lg:block">
-                                                <div className="h-full flex items-center justify-center" style={{ minHeight: "400px" }}>
-                                                    <div className="text-lg font-bold text-content text-center">
-                                                        {`$${calculatedPrice.toLocaleString()}`}
-                                                    </div>
+                                                <div className="h-full flex flex-col justify-center p-4" style={{ minHeight: "400px" }}>
+                                                    {(() => {
+                                                        const basePrice = calculateBasePrice(currentTour, formData.cities, formData.promotions);
+                                                        const extraParticipants = formData.participantCount - 1;
+                                                        const extraCost = basePrice * 0.25 * extraParticipants;
+                                                        const totalPrice = basePrice + extraCost;
+
+                                                        return (
+                                                            <div className="text-center space-y-3">
+                                                                <div className="text-lg font-bold text-content">
+                                                                    Final Price
+                                                                </div>
+                                                                <div className="border-t border-gray-200 pt-3 space-y-2">
+                                                                    <div className="flex justify-between items-center text-sm">
+                                                                        <span className="text-content">Base Price:</span>
+                                                                        <span className="font-semibold text-content">${basePrice.toLocaleString()}</span>
+                                                                    </div>
+                                                                    {extraParticipants > 0 && (
+                                                                        <div className="flex justify-between items-center text-sm">
+                                                                            <span className="text-content text-start">Extra participants:</span>
+                                                                            <span className="font-semibold text-content">+${extraCost.toLocaleString()}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                                                                        <span className="font-bold text-content">Total:</span>
+                                                                        <span className="text-xl font-bold text-content">${totalPrice.toLocaleString()}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </div>
                                         </div>
@@ -840,10 +994,32 @@ export default function SignUpForm() {
                                         <div className="p-3 bg-content text-white text-center font-semibold text-sm">
                                             Final Price
                                         </div>
-                                        <div className="px-3 py-4 signup-form-bg flex items-center justify-center min-h-[80px]">
-                                            <div className="text-lg font-bold text-content text-center">
-                                                {`$${calculatedPrice.toLocaleString()}`}
-                                            </div>
+                                        <div className="px-3 py-4 signup-form-bg">
+                                            {(() => {
+                                                const basePrice = calculateBasePrice(currentTour, formData.cities, formData.promotions);
+                                                const extraParticipants = formData.participantCount - 1;
+                                                const extraCost = basePrice * 0.25 * extraParticipants;
+                                                const totalPrice = basePrice + extraCost;
+
+                                                return (
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-content">Base Price (1 person):</span>
+                                                            <span className="font-semibold text-content">${basePrice.toLocaleString()}</span>
+                                                        </div>
+                                                        {extraParticipants > 0 && (
+                                                            <div className="flex justify-between items-center text-sm">
+                                                                <span className="text-content">Extra participants:</span>
+                                                                <span className="font-semibold text-content">+${extraCost.toLocaleString()}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                                                            <span className="font-bold text-content">Total:</span>
+                                                            <span className="text-lg font-bold text-content">${totalPrice.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 

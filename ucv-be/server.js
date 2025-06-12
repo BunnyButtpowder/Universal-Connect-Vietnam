@@ -11,6 +11,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const tourRoutes = require('./routes/tourRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const contentRoutes = require('./routes/contentRoutes');
+const translationRoutes = require('./routes/translationRoutes');
 const corsOptions = require('./config/cors');
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/contact', contactRoutes);
 app.use('/tours', tourRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/content', contentRoutes);
+app.use('/translations', translationRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -60,6 +62,7 @@ const startServer = async () => {
                 console.log(`Server is running on port ${process.env.PORT}`);
                 console.log(`CORS enabled for: http://localhost:5173, https://ucv.com.vn`);
                 console.log(`Static files are served from: ${uploadsDir}`);
+                console.log(`Translation API available at: http://localhost:${process.env.PORT}/translations`);
             });
         } else {
             console.error('Failed to connect to the database. Server not started.');

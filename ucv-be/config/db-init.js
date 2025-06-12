@@ -147,6 +147,22 @@ async function initializeDatabase() {
             )
         `);
         
+        // Tour timeline events table - for tour schedule timeline
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS tour_timeline_events (
+                id INT NOT NULL AUTO_INCREMENT,
+                tour_id INT NOT NULL,
+                date_range VARCHAR(100) NOT NULL,
+                location VARCHAR(255) NOT NULL,
+                description TEXT,
+                sort_order INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                FOREIGN KEY (tour_id) REFERENCES tours(id) ON DELETE CASCADE,
+                INDEX idx_tour_timeline_sort (tour_id, sort_order)
+            )
+        `);
+        
         // Create images table
         await conn.query(`
             CREATE TABLE IF NOT EXISTS images (
@@ -172,8 +188,85 @@ async function initializeDatabase() {
                 updated_at DATETIME NOT NULL
             )
         `);
+
+        // Create content items table for granular content management
+        console.log('Creating content items table for internationalization...');
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS content_items (
+                id VARCHAR(255) PRIMARY KEY,
+                type ENUM('heading', 'paragraph', 'button', 'image', 'statistic') NOT NULL,
+                content TEXT NOT NULL,
+                metadata JSON,
+                page_name VARCHAR(100),
+                section_id VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_page_section (page_name, section_id),
+                INDEX idx_type (type)
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        `);
+
+        // Create content translations table for internationalization
+        console.log('Creating content translations table...');
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS content_translations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                content_item_id VARCHAR(255) NOT NULL,
+                language ENUM('en', 'vi') NOT NULL,
+                content TEXT NOT NULL,
+                metadata JSON,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (content_item_id) REFERENCES content_items(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_item_language (content_item_id, language),
+                INDEX idx_language (language),
+                INDEX idx_content_item (content_item_id)
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        `);
+
+        // Create static translations table for UI elements
+        console.log('Creating static translations table...');
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS static_translations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                translation_key VARCHAR(255) NOT NULL UNIQUE,
+                en TEXT NOT NULL,
+                vi TEXT NOT NULL,
+                category VARCHAR(100),
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_category (category),
+                INDEX idx_key (translation_key)
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        `);
         
         console.log('Database tables initialized successfully!');
+        
+        // Initialize default internationalization data
+        console.log('Initializing default internationalization data...');
+        try {
+            const ContentItem = require('../models/ContentItem');
+            const Translation = require('../models/Translation');
+            
+            // Check if content items already exist
+            const existingItems = await conn.query('SELECT COUNT(*) as count FROM content_items');
+            if (existingItems[0].count === 0) {
+                await ContentItem.initializeDefaultContentItems();
+            }
+            
+            // Check if static translations already exist
+            const existingTranslations = await conn.query('SELECT COUNT(*) as count FROM static_translations');
+            if (existingTranslations[0].count === 0) {
+                await Translation.initializeDefaultStaticTranslations();
+            }
+            
+            console.log('Default internationalization data initialized successfully!');
+        } catch (initError) {
+            console.warn('Could not initialize default internationalization data:', initError.message);
+            console.log('You can manually initialize data using POST /translations/initialize');
+        }
+        
         return true;
     } catch (err) {
         console.error('Error initializing database: ', err);
