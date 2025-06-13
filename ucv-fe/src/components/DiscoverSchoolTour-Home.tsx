@@ -3,6 +3,7 @@ import { useContentStore } from "../lib/contentStore"
 import { useTranslatedContent } from "../hooks/useTranslatedContent"
 import { useState, useEffect } from "react"
 import { toursApi, TourBasic } from "../lib/api"
+import { generateTourDetailsUrl } from "../lib/utils"
 
 // Define Tour type for local use (extending TourBasic with additional properties)
 interface Tour extends TourBasic {
@@ -39,7 +40,7 @@ export function DiscoverSchoolTourHome() {
                 // Transform API tours to include additional properties
                 const transformedTours: Tour[] = fetchedTours.map(tour => ({
                     ...tour,
-                    detailsUrl: `/tour-details/${tour.id}`, // Generate URL based on tour ID
+                    detailsUrl: generateTourDetailsUrl(tour.title), // Generate URL based on tour title slug
                     buttonText: "Find out more" // Default button text
                 }));
                 

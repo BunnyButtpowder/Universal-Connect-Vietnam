@@ -66,6 +66,7 @@ export default function AdminTourDetails() {
       { section: 'bannerSection', items: ['tourBanner-locationLabel', 'tourBanner-durationLabel', 'tourBanner-customizeLabel', 'tourBanner-tourDatesLabel', 'tourBanner-signUpButton', 'tourBanner-shareLabel'] },
       { section: 'eventsSection', items: ['events-heading', 'events-title'] },
       { section: 'locationsSection', items: ['locations-heading', 'locations-title'] },
+      { section: 'timelinesSection', items: ['timelines-heading', 'timelines-title'] },
       { section: 'pricingSection', items: ['pricing-heading', 'pricing-title', 'pricing-tableHeader1', 'pricing-tableHeader2', 'pricing-tableHeader3', 'pricing-custom-title', 'pricing-custom-description', 'pricing-custom-button'] },
       { section: 'packageSection', items: ['package-heading'] },
       { section: 'otherToursSection', items: ['otherTours-heading'] }
@@ -213,7 +214,7 @@ export default function AdminTourDetails() {
                   item={findItem('bannerSection', 'tourBanner-customizeLabel')}
                   itemId="tourBanner-customizeLabel"
                   defaultContent="CUSTOMIZE"
-                  className="text-sm font-bold uppercase"
+                  className="text-sm font-bold"
                 />
               </div>
               <div>
@@ -282,7 +283,7 @@ export default function AdminTourDetails() {
             </div>
           </div>
 
-          {/* Locations Section */}
+          {/* Tour Locations Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-bold mb-4 border-b pb-2">Tour Locations Section</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -308,6 +309,35 @@ export default function AdminTourDetails() {
                   className="text-xl font-medium"
                 />
                 <p className="text-xs text-gray-500 mt-1">Note: This text appears before the tour duration from the database</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tour Timelines Section */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-bold mb-4 border-b pb-2">Tour Timelines Section</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Section Heading</label>
+                <InlineEditableField
+                  pageName="tour-details"
+                  sectionId="timelinesSection"
+                  item={findItem('timelinesSection', 'timelines-heading')}
+                  itemId="timelines-heading"
+                  defaultContent="TOUR TIMELINES"
+                  className="text-lg font-bold uppercase"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Section Title</label>
+                <InlineEditableField
+                  pageName="tour-details"
+                  sectionId="timelinesSection"
+                  item={findItem('timelinesSection', 'timelines-title')}
+                  itemId="timelines-title"
+                  defaultContent="Tentative Schedule for the 2025/26 School Year"
+                  className="text-xl font-medium"
+                />
               </div>
             </div>
           </div>

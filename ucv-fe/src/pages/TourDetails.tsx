@@ -8,11 +8,12 @@ import Autoplay from "embla-carousel-autoplay";
 import { toursApi, TourFull, TourBasic } from "@/lib/api";
 import { useContentStore } from "@/lib/contentStore";
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
+import { generateTourDetailsUrl } from "@/lib/utils";
 
 // TourCard component - updated to use TourBasic from API
 function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price: string | number) => string }) {
     return (
-        <a href={`/tour-details/${tour.id}`} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={generateTourDetailsUrl(tour.title)} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative  overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
@@ -54,7 +55,7 @@ function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price:
 }
 
 export default function TourDetails() {
-    const { id } = useParams<{ id: string }>();
+    const { slug } = useParams<{ slug: string }>();
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(1);
     const [tour, setTour] = useState<TourFull | null>(null);
@@ -70,8 +71,8 @@ export default function TourDetails() {
     // Fetch tour data and other tours
     useEffect(() => {
         const fetchData = async () => {
-            if (!id) {
-                setError("Tour ID not provided");
+            if (!slug) {
+                setError("Tour slug not provided");
                 setLoading(false);
                 return;
             }
@@ -81,7 +82,7 @@ export default function TourDetails() {
 
                 // Fetch current tour and all tours in parallel
                 const [tourData, allToursData] = await Promise.all([
-                    toursApi.getById(id),
+                    toursApi.getBySlug(slug),
                     toursApi.getAll()
                 ]);
 
@@ -101,7 +102,7 @@ export default function TourDetails() {
         };
 
         fetchData();
-    }, [id]);
+    }, [slug]);
 
     // Helper function to format date
     const formatDate = (dateString: string) => {
@@ -296,7 +297,7 @@ export default function TourDetails() {
                 </div>
 
                 {/* Tour Timelines Section */}
-                <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 px-8 lg:px-16 rounded-3xl mt-20 lg:mt-0">
+                <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 px-8 lg:px-16 mt-20 lg:mt-0">
                     <div className="grid grid-cols-1 lg:grid-cols-9 gap-10 mt-5">
                         {/* Header and description - 3/9 of grid */}
                         <div className="flex flex-col space-y-6 lg:col-span-3">
@@ -526,7 +527,7 @@ export default function TourDetails() {
                 </div>
 
                 {/* Tour Locations Section */}
-                <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 px-8 lg:px-16 rounded-3xl mt-20 lg:mt-0">
+                <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 px-8 lg:px-16 mt-20 lg:mt-0">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 mt-5">
                         {/* Header and description - 1/4 of grid */}
                         <div className="flex flex-col space-y-6">

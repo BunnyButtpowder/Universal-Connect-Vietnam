@@ -74,7 +74,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/our-tours" element={<OurTours />} />
-        <Route path="/tour-details/:id" element={<TourDetails />} />
+        <Route path="/tour-details/:slug" element={<TourDetails />} />
         <Route path="/spring-tour-details" element={<SpringTourDetails />} />
         <Route path="/sign-up/:tourId" element={<SignUpForm />} />
         <Route path="/login" element={<Login />} />

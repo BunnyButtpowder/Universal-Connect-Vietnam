@@ -12,6 +12,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
 import { useTranslatedContent } from "../hooks/useTranslatedContent";
 import { toursApi, TourBasic } from "../lib/api";
+import { generateTourDetailsUrl } from "../lib/utils";
 
 // Define Tour type for local use (extending TourBasic with detailsUrl)
 interface Tour extends TourBasic {
@@ -35,7 +36,7 @@ export function HeroBanner() {
                 // Transform API tours to include detailsUrl
                 const transformedTours: Tour[] = fetchedTours.map(tour => ({
                     ...tour,
-                    detailsUrl: `/tour-details/${tour.id}` // Generate URL based on tour ID
+                    detailsUrl: generateTourDetailsUrl(tour.title) // Generate URL based on tour title slug
                 }));
                 
                 setTours(transformedTours);

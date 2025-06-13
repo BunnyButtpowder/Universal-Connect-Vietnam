@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { toursApi, TourBasic } from "@/lib/api";
+import { generateTourDetailsUrl } from "@/lib/utils";
 
 import {
     Pagination,
@@ -114,7 +115,7 @@ export default function OurTours() {
                     imageUrl: tour.imageUrl,
                     price: `$${formatPrice(tour.price)}`,
                     date: tour.date,
-                    detailsUrl: `/tour-details/${tour.id}`,
+                    detailsUrl: generateTourDetailsUrl(tour.title),
                     buttonText: "Find out more"
                 }));
                 

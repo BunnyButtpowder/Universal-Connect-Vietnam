@@ -462,12 +462,16 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
   // Add timeline event
   const addTimelineEvent = () => {
     if (newTimelineEvent.dateRange && newTimelineEvent.location) {
-      setTimelineEvents(prev => [...prev, { ...newTimelineEvent }]);
+      const eventWithSortOrder = {
+        ...newTimelineEvent,
+        sortOrder: timelineEvents.length
+      };
+      setTimelineEvents(prev => [...prev, eventWithSortOrder]);
       setNewTimelineEvent({
         dateRange: '',
         location: '',
         description: '',
-        sortOrder: timelineEvents.length
+        sortOrder: timelineEvents.length + 1
       });
     }
   };
@@ -475,6 +479,36 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
   // Remove timeline event
   const removeTimelineEvent = (index: number) => {
     setTimelineEvents(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Drag and drop handlers for timeline events
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    
+    if (dragIndex === dropIndex) return;
+    
+    const updatedEvents = [...timelineEvents];
+    const [draggedEvent] = updatedEvents.splice(dragIndex, 1);
+    updatedEvents.splice(dropIndex, 0, draggedEvent);
+    
+    // Update sortOrder for all events
+    const reorderedEvents = updatedEvents.map((event, index) => ({
+      ...event,
+      sortOrder: index
+    }));
+    
+    setTimelineEvents(reorderedEvents);
   };
 
   // Add preset timeline events
@@ -867,19 +901,6 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Duration*</label>
-              <input
-                type="text"
-                name="duration"
-                value={formState.duration}
-                onChange={handleChange}
-                required
-                placeholder="e.g. 7 Days"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              />
             </div>
 
             <div>
@@ -1312,20 +1333,38 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                   <p className="text-gray-500 text-sm">No timeline events added yet</p>
                 ) : (
                   <div className="space-y-3">
+                    <p className="text-xs text-blue-600 mb-2">💡 Tip: Drag and drop events to reorder them</p>
                     {timelineEvents.map((event, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                      <div 
+                        key={index} 
+                        className="border border-gray-200 rounded-lg p-3 cursor-move hover:border-blue-300 hover:shadow-sm transition-all duration-150"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, index)}
+                      >
                         <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{event.dateRange}</h5>
-                            <p className="text-sm text-gray-600">{event.location}</p>
-                            {event.description && (
-                              <p className="text-sm text-gray-500 mt-1">{event.description}</p>
-                            )}
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 mt-1">
+                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M7 2a1 1 0 00-1 1v1H4a1 1 0 000 2h1v1a1 1 0 002 0V6h1a1 1 0 100-2H7V3a1 1 0 00-1-1zM7 8a1 1 0 00-1 1v1H4a1 1 0 100 2h1v1a1 1 0 002 0v-1h1a1 1 0 100-2H7V9a1 1 0 00-1-1zM7 14a1 1 0 00-1 1v1H4a1 1 0 100 2h1v1a1 1 0 002 0v-1h1a1 1 0 100-2H7v-1a1 1 0 00-1-1z"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">#{index + 1}</span>
+                                <h5 className="font-medium text-gray-900">{event.dateRange}</h5>
+                              </div>
+                              <p className="text-sm text-gray-600">{event.location}</p>
+                              {event.description && (
+                                <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+                              )}
+                            </div>
                           </div>
                           <button
                             type="button"
                             onClick={() => removeTimelineEvent(index)}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm flex-shrink-0"
                           >
                             Remove
                           </button>

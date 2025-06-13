@@ -166,6 +166,33 @@ export const toursApi = {
       throw error;
     }
   },
+
+  // Get a single tour by slug (generated from title)
+  getBySlug: async (slug: string): Promise<TourFull> => {
+    try {
+      // Import generateSlug at the top of the function to avoid circular imports
+      const { generateSlug } = await import('./utils');
+      
+      // First get all tours
+      const allTours = await toursApi.getAll();
+      
+      // Find the tour that matches the slug
+      const matchingTour = allTours.find(tour => {
+        const tourSlug = generateSlug(tour.title);
+        return tourSlug === slug;
+      });
+      
+      if (!matchingTour) {
+        throw new Error('Tour not found');
+      }
+      
+      // Now get the full tour details using the ID
+      return await toursApi.getById(matchingTour.id);
+    } catch (error) {
+      console.error(`Error fetching tour by slug ${slug}:`, error);
+      throw error;
+    }
+  },
   
   // Create a new tour
   create: async (tourData: TourCreateInput): Promise<TourFull> => {
