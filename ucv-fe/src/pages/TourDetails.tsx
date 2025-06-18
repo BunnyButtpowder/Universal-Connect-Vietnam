@@ -8,7 +8,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { toursApi, TourFull, TourBasic } from "@/lib/api";
 import { useContentStore } from "@/lib/contentStore";
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
-import { generateTourDetailsUrl } from "@/lib/utils";
+import { generateTourDetailsUrl, generateSignUpUrl } from "@/lib/utils";
 
 // TourCard component - updated to use TourBasic from API
 function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price: string | number) => string }) {
@@ -247,7 +247,7 @@ export default function TourDetails() {
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-7 gap-2 md:gap-0">
                                     <div className="md:col-span-2 flex items-center">
-                                        <a href={`/sign-up/${tour.id}`} className="w-full md:mr-5">
+                                        <a href={generateSignUpUrl(tour.title)} className="w-full md:mr-5">
                                             <button
                                                 type="submit"
                                                 className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
@@ -686,7 +686,7 @@ export default function TourDetails() {
                                         </div>
                                     </div>
                                     <div className="col-span-2 flex items-center mx-4 md:mx-0 my-2 pb-5 md:pb-0 md:mr-2">
-                                        <a href={`/sign-up/${tour.id}`} className="w-full">
+                                        <a href={generateSignUpUrl(tour.title)} className="w-full">
                                             <button
                                                 type="submit"
                                                 className="w-full bg-blue-950 text-white text-sm font-medium px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 cursor-pointer space-x-2 "

@@ -76,9 +76,8 @@ function AppContent() {
         <Route path="/our-tours" element={<OurTours />} />
         <Route path="/tour-details/:slug" element={<TourDetails />} />
         <Route path="/spring-tour-details" element={<SpringTourDetails />} />
-        <Route path="/sign-up/:tourId" element={<SignUpForm />} />
+        <Route path="/sign-up/:slug" element={<SignUpForm />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/sign-up" element={<Navigate to="/sign-up/fallTour2025" />} />
         
         {/* Protected Admin Routes */}
         <Route element={<AdminGuard />}>

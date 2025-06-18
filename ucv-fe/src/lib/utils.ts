@@ -33,3 +33,13 @@ export function generateTourDetailsUrl(tourTitle: string): string {
   const slug = generateSlug(tourTitle);
   return `/tour-details/${slug}`;
 }
+
+/**
+ * Generates a sign-up URL using the tour's slug
+ * @param tourTitle - The tour title to convert to a slug
+ * @returns The sign-up URL with slug
+ */
+export function generateSignUpUrl(tourTitle: string): string {
+  const slug = generateSlug(tourTitle);
+  return `/sign-up/${slug}`;
+}

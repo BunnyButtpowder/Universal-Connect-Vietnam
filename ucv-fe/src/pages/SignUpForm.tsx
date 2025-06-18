@@ -8,6 +8,7 @@ import { useContentStore } from "@/lib/contentStore";
 import { ContentItem } from "@/lib/types";
 import { processAllTemplates } from "@/utils/documentProcessor";
 import { toursApi, TourFull } from "@/lib/api";
+import { generateTourDetailsUrl } from "@/lib/utils";
 
 // Define types for form data
 interface FormData {
@@ -58,7 +59,7 @@ const getContentById = (items: ContentItem[] | undefined, id: string): string =>
 };
 
 export default function SignUpForm() {
-    const { tourId } = useParams<{ tourId: string }>();
+    const { slug } = useParams<{ slug: string }>();
     const getPageContent = useContentStore(state => state.getPageContent);
     // const getItemById = useContentStore(state => state.getItemById);
     const [signUpFormContent, setSignUpFormContent] = useState(getPageContent('signup-form'));
@@ -72,8 +73,8 @@ export default function SignUpForm() {
     // Load tour data from API
     useEffect(() => {
         const loadTourData = async () => {
-            if (!tourId) {
-                setTourError("No tour ID provided");
+            if (!slug) {
+                setTourError("No tour slug provided");
                 setIsLoadingTour(false);
                 return;
             }
@@ -82,7 +83,7 @@ export default function SignUpForm() {
                 setIsLoadingTour(true);
                 setTourError(null);
 
-                const tourData = await toursApi.getById(tourId);
+                const tourData = await toursApi.getBySlug(slug);
                 setCurrentTour(tourData);
 
                 // Initialize form data with dynamic cities based on customize options
@@ -115,7 +116,7 @@ export default function SignUpForm() {
         };
 
         loadTourData();
-    }, [tourId]);
+    }, [slug]);
 
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -143,7 +144,7 @@ export default function SignUpForm() {
         accountNumber: "",
         bank: "",
         swift: "",
-        tourId: tourId || ""
+        tourId: ""
     });
     const [errors, setErrors] = useState<ValidationErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -623,7 +624,7 @@ export default function SignUpForm() {
                     {!isLoadingTour && !tourError && currentTour && (
                         <div className="relative w-full h-auto mt-16 lg:mt-0 mb-30 lg:mb-40">
                             <div className="flex justify-center mb-4">
-                                <Link to={`/tour-details/${currentTour.id}`} className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                                <Link to={generateTourDetailsUrl(currentTour.title)} className="flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm">
                                     <ArrowLeft className="h-4 w-4 mr-2" />
                                     View Tour Information Again
                                 </Link>

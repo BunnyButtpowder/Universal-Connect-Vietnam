@@ -184,7 +184,7 @@ export default function SpringTourDetails() {
                                 <p className="text-content font-medium text-sm mb-4 whitespace-pre-line line-clamp-11 lg:line-clamp-6 overflow-hidden">
                                     {tourDescription}
                                 </p>
-                                <a href="/sign-up/springTour2026">
+                                <a href="/sign-up/spring-tour-2026">
                                     <button
                                         type="submit"
                                         className="lg:absolute lg:bottom-6 w-full md:w-auto bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
@@ -613,7 +613,7 @@ export default function SpringTourDetails() {
                                     </p>
                                 </div>
                                 <div className="col-span-2 p-4 flex items-center ">
-                                    <a href="/sign-up/springTour2026">
+                                    <a href="/sign-up/spring-tour-2026">
                                         <button
                                             type="submit"
                                             className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2"
