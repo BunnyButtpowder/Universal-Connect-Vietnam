@@ -25,7 +25,7 @@ interface FormData {
         earlyBird: boolean;
         returningClient: boolean;
     };
-    participantCount: number; // New field for participant count (1-3)
+    participantCount: number;
     // Step 3 fields
     headOffice: string;
     businessRegistration: string;
@@ -366,8 +366,14 @@ export default function SignUpForm() {
         try {
             console.log('Beginning document processing with processed data:', processedFormData);
             console.log('Current calculated price:', calculatedPrice);
-            // Process document templates with processed form data
-            await processAllTemplates(processedFormData, calculatedPrice);
+            console.log('Current tour:', currentTour);
+            
+            // Get the tour name from the current tour object
+            const tourName = currentTour?.title || undefined;
+            console.log('Using tour name:', tourName);
+            
+            // Process document templates with processed form data and tour name
+            await processAllTemplates(processedFormData, calculatedPrice, tourName);
             console.log("Document templates processed successfully");
 
             // Log form submission for debugging

@@ -159,7 +159,7 @@ export function Navbar() {
                 </div>
 
                 {/* Language Selector for Mobile */}
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-8 text-white">
                   <LanguageSelector />
                 </div>
 
@@ -184,11 +184,8 @@ export function Navbar() {
                       </div>
                       <div className="flex flex-col">
                         <h3 className="text-white font-medium">EMAIL</h3>
-                        <a href="mailto:bernd@iucconsulting.com" className="text-white hover:text-white text-sm">
-                          bernd@iucconsulting.com
-                        </a>
-                        <a href="mailto:bfwidemann@gmail.com" className="text-white hover:text-white text-sm">
-                          bfwidemann@gmail.com
+                        <a href="mailto:info@ucv.com.vn" className="text-white hover:text-white text-sm">
+                          info@ucv.com.vn
                         </a>
                       </div>
                     </div>

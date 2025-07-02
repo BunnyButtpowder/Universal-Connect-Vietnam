@@ -149,13 +149,26 @@ export async function replaceTextInWordDocument(
                 continue;
             }
             
-            // Replace [PLACEHOLDER]
-            const bracketPattern = new RegExp(`\\[${placeholder}\\]`, 'gi');
+            // Replace [PLACEHOLDER] - handle the specific user-requested tags
+            const bracketPattern = new RegExp(`\\[${placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'gi');
             content = content.replace(bracketPattern, value);
             
             // Replace {PLACEHOLDER}
-            const bracePattern = new RegExp(`\\{${placeholder}\\}`, 'gi');
+            const bracePattern = new RegExp(`\\{${placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'gi');
             content = content.replace(bracePattern, value);
+            
+            // Handle specific patterns for [TOUR NAME] and [CITY NAMES]
+            if (placeholder === 'TOUR NAME' || placeholder === '[TOUR NAME]') {
+                content = content.replace(/\[TOUR NAME\]/gi, value);
+                content = content.replace(/\[Tour Name\]/gi, value);
+                content = content.replace(/\[tour name\]/gi, value);
+            }
+            
+            if (placeholder === 'CITY NAMES' || placeholder === '[CITY NAMES]') {
+                content = content.replace(/\[CITY NAMES\]/gi, value);
+                content = content.replace(/\[City Names\]/gi, value);
+                content = content.replace(/\[city names\]/gi, value);
+            }
             
             // Replace PLACEHOLDER without brackets (direct text replacement)
             // Only do this for specific placeholders that wouldn't cause issues

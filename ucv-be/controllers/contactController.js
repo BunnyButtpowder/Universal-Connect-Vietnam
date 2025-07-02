@@ -50,6 +50,8 @@ exports.submitContactForm = async (req, res) => {
 };
 
 // Submit document attachments
+const Tour = require('../models/Tour');
+
 exports.submitDocuments = async (req, res) => {
     // Check for required data
     if (!req.body.formData || !req.files || req.files.length === 0) {
@@ -64,38 +66,76 @@ exports.submitDocuments = async (req, res) => {
             return res.status(400).json({ message: 'Name, email, and organization are required' });
         }
 
+        let tourData = null;
+        let selectedTour = 'Unknown Tour';
+        let tourDate = 'TBD';
+        let earlyBirdExpiration = 'TBD';
+        
+        if (formData.tourId) {
+            try {
+                tourData = await Tour.findById(formData.tourId);
+                if (tourData) {
+                    selectedTour = tourData.title;
+                    tourDate = tourData.tourDates || tourData.date || 'TBD';
+                    earlyBirdExpiration = tourData.earlyBirdDeadline ? 
+                        new Date(tourData.earlyBirdDeadline).toLocaleDateString('en-GB') : 'TBD';
+                }
+            } catch (tourError) {
+                console.error('Error fetching tour data:', tourError);
+                // Continue with fallback values if tour fetch fails
+            }
+        }
+
         // Get file attachments
         const attachments = req.files.map(file => ({
             filename: file.originalname,
             content: file.buffer
         }));
 
-        // Build email content with tour and form information
-        const selectedTour = formData.tourId === 'fallTour2025' 
-            ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
-            : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)';
-        
-        const tourDate = formData.tourId === 'fallTour2025'
-            ? '1 - 8 OCTOBER 2025'
-            : '31 MARCH - 10 APRIL 2026';
+        // Build selected cities list using actual tour data
+        let selectedCities = 'None selected';
+        if (tourData && tourData.customizeOptions && formData.cities) {
+            const selectedCityNames = [];
             
-        // Selected cities as text
-        const selectedCities = [
-            formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
-            formData.cities.hcmc ? 'Ho Chi Minh City (HCMC)' : ''
-        ].filter(Boolean).join(', ') || 'None selected';
+            // Process each selected customize option
+            Object.keys(formData.cities).forEach(cityKey => {
+                if (formData.cities[cityKey]) {
+                    // Find the corresponding customize option
+                    const customizeOption = tourData.customizeOptions.find(opt => opt.key === cityKey);
+                    
+                    if (customizeOption) {
+                        // Use the customize option name directly
+                        selectedCityNames.push(customizeOption.name);
+                    } else {
+                        // Fallback for legacy keys if customize option not found
+                        const fallbackNames = {
+                            'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                            'hueDaNang': 'Hue & Da Nang', 
+                            'hcmc': 'Ho Chi Minh City',
+                            'northern': 'Northern Vietnam',
+                            'central': 'Central Vietnam',
+                            'southern': 'Southern Vietnam'
+                        };
+                        if (fallbackNames[cityKey]) {
+                            selectedCityNames.push(fallbackNames[cityKey]);
+                        } else {
+                            // If no fallback, use the key itself (formatted)
+                            const formattedKey = cityKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                            selectedCityNames.push(formattedKey);
+                        }
+                    }
+                }
+            });
+            
+            selectedCities = selectedCityNames.length > 0 ? 
+                [...new Set(selectedCityNames)].join(', ') : 'None selected';
+        }
         
         // Selected promotions as text
         const selectedPromotions = [
             formData.promotions.earlyBird ? 'Early Bird 10%' : '',
             formData.promotions.returningClient ? 'Returning Client 15%' : ''
         ].filter(Boolean).join(', ') || 'None selected';
-
-        // Early bird expiration date based on tour
-        const earlyBirdExpiration = formData.tourId === 'fallTour2025' 
-            ? '10 July 2025'
-            : '10 December 2025';
 
         // Create email content
         const mailOptions = {

@@ -12,9 +12,7 @@ interface FormData {
     wantCallback: boolean;
     selectedPackage: string;
     cities: {
-        hanoiHaiDuong: boolean;
-        hueDaNang: boolean;
-        hcmc: boolean;
+        [key: string]: boolean;
     };
     promotions: {
         earlyBird: boolean;
@@ -28,6 +26,7 @@ interface FormData {
     bank: string;
     swift: string;
     tourId: string;
+    tourName?: string; // Add optional tour name
 }
 
 /**
@@ -39,9 +38,11 @@ interface FormData {
  */
 function createTemplateData(formData: FormData, calculatedPrice: number = 0): Record<string, string | boolean | number> {
     console.log("Creating template data from form data:", formData);
-    const selectedTour = formData.tourId === 'fallTour2025' 
+    
+    // Use the actual tour name if provided, otherwise fall back to the previous logic
+    const selectedTour = formData.tourName || (formData.tourId === 'fallTour2025' 
         ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
-        : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)';
+        : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)');
         
     const tourDate = formData.tourId === 'fallTour2025'
         ? '1 - 8 OCTOBER 2025'
@@ -130,17 +131,76 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0): Re
         "Tour Date": tourDate,
         "TOUR DATE": tourDate,
         
-        // Selected cities (comma-separated list of selected cities)
-        selectedCities: [
-            formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
-            formData.cities.hcmc ? 'Ho Chi Minh City' : ''
-        ].filter(Boolean).join(', ') || 'None selected',
-        "Selected Cities": [
-            formData.cities.hanoiHaiDuong ? 'Hanoi & Hai Duong' : '',
-            formData.cities.hueDaNang ? 'Hue & Da Nang' : '',
-            formData.cities.hcmc ? 'Ho Chi Minh City' : ''
-        ].filter(Boolean).join(', ') || 'None selected',
+        // Selected cities (comma-separated list of selected cities) - Dynamic approach
+        selectedCities: (() => {
+            const selectedCityNames = Object.keys(formData.cities)
+                .filter(key => formData.cities[key])
+                .map(key => {
+                    // Convert camelCase keys to readable names
+                    const fallbackNames: { [key: string]: string } = {
+                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                        'hueDaNang': 'Hue & Da Nang',
+                        'hcmc': 'Ho Chi Minh City',
+                        'northern': 'Northern Vietnam',
+                        'central': 'Central Vietnam',
+                        'southern': 'Southern Vietnam'
+                    };
+                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                });
+            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
+        })(),
+        "Selected Cities": (() => {
+            const selectedCityNames = Object.keys(formData.cities)
+                .filter(key => formData.cities[key])
+                .map(key => {
+                    const fallbackNames: { [key: string]: string } = {
+                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                        'hueDaNang': 'Hue & Da Nang',
+                        'hcmc': 'Ho Chi Minh City',
+                        'northern': 'Northern Vietnam',
+                        'central': 'Central Vietnam',
+                        'southern': 'Southern Vietnam'
+                    };
+                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                });
+            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
+        })(),
+        
+        // Add support for the specific tags requested by the user
+        "TOUR NAME": selectedTour,
+        "[TOUR NAME]": selectedTour,
+        "CITY NAMES": (() => {
+            const selectedCityNames = Object.keys(formData.cities)
+                .filter(key => formData.cities[key])
+                .map(key => {
+                    const fallbackNames: { [key: string]: string } = {
+                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                        'hueDaNang': 'Hue & Da Nang',
+                        'hcmc': 'Ho Chi Minh City',
+                        'northern': 'Northern Vietnam',
+                        'central': 'Central Vietnam',
+                        'southern': 'Southern Vietnam'
+                    };
+                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                });
+            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
+        })(),
+        "[CITY NAMES]": (() => {
+            const selectedCityNames = Object.keys(formData.cities)
+                .filter(key => formData.cities[key])
+                .map(key => {
+                    const fallbackNames: { [key: string]: string } = {
+                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                        'hueDaNang': 'Hue & Da Nang',
+                        'hcmc': 'Ho Chi Minh City',
+                        'northern': 'Northern Vietnam',
+                        'central': 'Central Vietnam',
+                        'southern': 'Southern Vietnam'
+                    };
+                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                });
+            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
+        })(),
             
         // Selected promotions (comma-separated list of selected promotions)
         selectedPromotions: [
@@ -156,13 +216,13 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0): Re
         wantCallback: formData.wantCallback ? 'Yes' : 'No',
         "Want Callback": formData.wantCallback ? 'Yes' : 'No',
         
-        // Individual city preferences
-        hanoiHaiDuong: formData.cities.hanoiHaiDuong ? 'Yes' : 'No',  
-        "Hanoi Hai Duong": formData.cities.hanoiHaiDuong ? 'Yes' : 'No',  
-        hueDaNang: formData.cities.hueDaNang ? 'Yes' : 'No',
-        "Hue Da Nang": formData.cities.hueDaNang ? 'Yes' : 'No',
-        hcmc: formData.cities.hcmc ? 'Yes' : 'No',
-        "HCMC": formData.cities.hcmc ? 'Yes' : 'No',
+        // Individual city preferences - Dynamic approach
+        ...Object.keys(formData.cities).reduce((acc, key) => {
+            const readableName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            acc[key] = formData.cities[key] ? 'Yes' : 'No';
+            acc[readableName] = formData.cities[key] ? 'Yes' : 'No';
+            return acc;
+        }, {} as Record<string, string>),
         
         // Individual promotion preferences
         earlyBird: formData.promotions.earlyBird ? 'Yes' : 'No',
@@ -344,12 +404,18 @@ export async function processDocumentTemplate(
  * Process all document templates with the given form data
  * @param formData The form data to fill in the templates
  * @param calculatedPrice The calculated price based on user selections
+ * @param tourName Optional tour name to override the default tour name logic
  */
-export async function processAllTemplates(formData: FormData, calculatedPrice: number = 0): Promise<void> {
+export async function processAllTemplates(formData: FormData, calculatedPrice: number = 0, tourName?: string): Promise<void> {
     console.log("Starting to process all templates with form data", formData);
     try {
         // Make a copy of formData to ensure we don't modify the original
         const processedFormData = { ...formData };
+        
+        // Add tour name if provided
+        if (tourName) {
+            processedFormData.tourName = tourName;
+        }
         
         // Ensure phone and email are properly formatted and non-empty
         const phoneValue = formData.phone && formData.phone.trim() ? formData.phone.trim() : "N/A";
@@ -362,6 +428,29 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
         console.log("Processing with phone:", phoneValue);
         console.log("Processing with email:", emailValue);
         console.log("Processing with calculated price:", calculatedPrice);
+        
+        // Get the tour name for replacements
+        const tourNameForReplacements = tourName || (formData.tourId === 'fallTour2025' 
+            ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
+            : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)');
+            
+        // Get the selected cities string - Dynamic approach
+        const selectedCitiesString = (() => {
+            const selectedCityNames = Object.keys(processedFormData.cities)
+                .filter(key => processedFormData.cities[key])
+                .map(key => {
+                    const fallbackNames: { [key: string]: string } = {
+                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
+                        'hueDaNang': 'Hue & Da Nang',
+                        'hcmc': 'Ho Chi Minh City',
+                        'northern': 'Northern Vietnam',
+                        'central': 'Central Vietnam',
+                        'southern': 'Southern Vietnam'
+                    };
+                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                });
+            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
+        })();
         
         // Create replacement mapping for direct text replacement if needed
         const replacements: Record<string, string> = {
@@ -378,6 +467,12 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             'POSITION': formData.position,
             'Position': formData.position,
             'position': formData.position,
+            
+            // User requested tags
+            'TOUR NAME': tourNameForReplacements,
+            '[TOUR NAME]': tourNameForReplacements,
+            'CITY NAMES': selectedCitiesString,
+            '[CITY NAMES]': selectedCitiesString,
             
             // Dynamic pricing
             'FINAL PRICE': `$${calculatedPrice.toLocaleString()}`,
