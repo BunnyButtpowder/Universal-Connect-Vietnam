@@ -24,7 +24,7 @@ exports.submitContactForm = async (req, res) => {
 
         // Create email content
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"${req.body.email}" <${process.env.EMAIL_USER}>`,
             to: 'info@ucv.com.vn',
             replyTo: req.body.email,
             subject: 'New Contact Form Submission - Universal Connect Vietnam',
@@ -139,7 +139,7 @@ exports.submitDocuments = async (req, res) => {
 
         // Create email content
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"${formData.email}" <${process.env.EMAIL_USER}>`,
             to: 'info@ucv.com.vn',
             // to: 'ngominhvu2003@gmail.com',
             replyTo: formData.email,

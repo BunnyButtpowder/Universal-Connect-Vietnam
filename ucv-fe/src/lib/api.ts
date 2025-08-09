@@ -123,8 +123,8 @@ export interface TourCreateInput {
 }
 
 // Get the API base URL from environment variable if available
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.ucv.com.vn';
-// const API_BASE = 'http://localhost:3000';
+// const API_BASE = import.meta.env.VITE_API_URL || 'https://api.ucv.com.vn';
+const API_BASE = 'http://localhost:3000';
 
 // API utility for tours
 export const toursApi = {
