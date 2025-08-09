@@ -141,6 +141,7 @@ exports.submitDocuments = async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: 'info@ucv.com.vn',
+            // to: 'ngominhvu2003@gmail.com',
             replyTo: formData.email,
             subject: `New Tour Registration - ${formData.organization} - Universal Connect Vietnam`,
             html: `

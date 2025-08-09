@@ -4,23 +4,27 @@ import { Menu, X, Phone, Mail } from "lucide-react"
 import { LanguageSelector } from "./LanguageSelector"
 import { useState, useEffect } from "react"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useLocation } from "react-router-dom"
 
 export function Navbar() {
   // State to track active navigation item
   const [activeItem, setActiveItem] = useState<string>('')
   const { t } = useLanguage()
+  const location = useLocation()
 
   // Check the current pathname on initial load and when it changes
   useEffect(() => {
-    const pathname = window.location.pathname
+    const pathname = location.pathname
     if (pathname === '/our-tours') {
       setActiveItem('our-tours')
     } else if (pathname === '/about-us') {
       setActiveItem('about-us')
     } else if (pathname === '/') {
       setActiveItem('home')
+    } else {
+      setActiveItem('')
     }
-  }, [])
+  }, [location.pathname])
 
   // Add scroll function
   const scrollToContact = (e: React.MouseEvent) => {

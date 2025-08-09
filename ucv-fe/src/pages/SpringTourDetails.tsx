@@ -322,7 +322,7 @@ export default function SpringTourDetails() {
                             </CarouselContent>
 
                             {/* Pagination Indicator - Visible on all screens */}
-                            <div className="absolute bottom-4 -right-5 lg:left-1/2 transform -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:right-4 px-4 py-2 font-medium text-lg items-center gap-2 flex">
+                            <div className="absolute bottom-4 -right-5 lg:left-1/2 transform -translate-x-1/2 lg:translate-x-0 lg:right-4 px-4 py-2 font-medium text-lg items-center gap-2 flex">
                                 <div className="flex space-x-1 items-center">
                                     {Array.from({ length: count }).map((_, i) => (
                                         <span
@@ -344,7 +344,7 @@ export default function SpringTourDetails() {
             </div>
 
             {/* Tour Locations Section */}
-            <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 px-8 lg:px-16 rounded-3xl mt-20 lg:mt-0">
+            <div className="px-4 md:px-6 lg:px-48 bg-blue-50 py-16 rounded-3xl mt-20 lg:mt-0">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 mt-5">
                     {/* Header and description - 1/4 of grid */}
                     <div className="flex flex-col space-y-6">

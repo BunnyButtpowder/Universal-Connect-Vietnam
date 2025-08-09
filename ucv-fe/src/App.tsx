@@ -20,6 +20,7 @@ import { useContentStore } from "./lib/contentStore";
 import { AdminGuard } from "./components/AdminGuard";
 import { Toaster } from "sonner";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
+import { AjaxRouter } from "./components/AjaxRouter";
 
 function AppContent() {
   const fetchContent = useContentStore(state => state.fetchContent);
@@ -69,31 +70,33 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Toaster position="top-center" richColors />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/about-us" element={<AboutUs />} />
-        <Route path="/our-tours" element={<OurTours />} />
-        <Route path="/tour-details/:slug" element={<TourDetails />} />
-        <Route path="/spring-tour-details" element={<SpringTourDetails />} />
-        <Route path="/sign-up/:slug" element={<SignUpForm />} />
-        <Route path="/login" element={<Login />} />
-        
-        {/* Protected Admin Routes */}
-        <Route element={<AdminGuard />}>
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/home" element={<AdminHome />} />
-          <Route path="/admin/about-us" element={<AdminAboutUs />} />
-          <Route path="/admin/our-tours" element={<AdminOurTours />} />
-          <Route path="/admin/tour-details" element={<AdminTourDetails />} />
-          <Route path="/admin/spring-tour-details" element={<AdminSpringTourDetails />} />
-          <Route path="/admin/signup-form" element={<AdminSignUpForm />} />
-          <Route path="/admin/translations" element={<AdminTranslations />} />
-        </Route>
+      <AjaxRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/our-tours" element={<OurTours />} />
+          <Route path="/tour-details/:slug" element={<TourDetails />} />
+          <Route path="/spring-tour-details" element={<SpringTourDetails />} />
+          <Route path="/sign-up/:slug" element={<SignUpForm />} />
+          <Route path="/login" element={<Login />} />
+          
+          {/* Protected Admin Routes */}
+          <Route element={<AdminGuard />}>
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/home" element={<AdminHome />} />
+            <Route path="/admin/about-us" element={<AdminAboutUs />} />
+            <Route path="/admin/our-tours" element={<AdminOurTours />} />
+            <Route path="/admin/tour-details" element={<AdminTourDetails />} />
+            <Route path="/admin/spring-tour-details" element={<AdminSpringTourDetails />} />
+            <Route path="/admin/signup-form" element={<AdminSignUpForm />} />
+            <Route path="/admin/translations" element={<AdminTranslations />} />
+          </Route>
 
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </AjaxRouter>
     </BrowserRouter>
   )
 }
