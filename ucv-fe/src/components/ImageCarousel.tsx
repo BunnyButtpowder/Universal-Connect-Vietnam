@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useContentStore } from '../lib/contentStore';
+import { ScrollReveal } from './ScrollReveal';
 
 interface Image {
   src: string;
@@ -122,7 +123,8 @@ const ImageCarousel: React.FC = () => {
     <section className="image-carousel-section bg-white px-2 sm:px-6 lg:px-17 mb-20">
       <div className="container mx-auto">
         {/* Desktop Carousel */}
-        <div className="hidden md:block overflow-hidden">
+        <ScrollReveal direction="up" duration={0.8} delay={0.1}>
+          <div className="hidden md:block overflow-hidden">
           <div 
             ref={carouselRef}
             className="flex"
@@ -139,15 +141,18 @@ const ImageCarousel: React.FC = () => {
                     src={image.src} 
                     alt={image.alt}
                     className="w-full h-full object-cover object-center"
+                    loading="lazy"
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </div>
+        </ScrollReveal>
         
         {/* Mobile Carousel */}
-        <div className="md:hidden overflow-hidden">
+        <ScrollReveal direction="up" duration={0.8} delay={0.1}>
+          <div className="md:hidden overflow-hidden">
           <div 
             className="flex"
             style={{ 
@@ -163,12 +168,14 @@ const ImageCarousel: React.FC = () => {
                     src={image.src} 
                     alt={image.alt}
                     className="w-full h-full object-cover object-center"
+                    loading="lazy"
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

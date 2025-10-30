@@ -42,6 +42,7 @@ function TourCard({ tour }: { tour: Tour }) {
                             src={tour.imageUrl}
                             alt="Tour image"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
+                            loading="lazy"
                         />
                     </div>
                 </div>
@@ -249,6 +250,7 @@ export default function OurTours() {
                     src="/vector.svg"
                     alt="Decorative element"
                     className="absolute top-28 lg:top-28 left-0 lg:-left-20 max-w-none w-full lg:w-300 lg:h-70 pointer-events-none -z-1  sm:w-[200%]"
+                    loading="lazy"
                 />
                 {/* Header Section */}
                 <section className="relative mx-auto px-4 sm:px-6 lg:px-20 pt-12 overflow-hidden">

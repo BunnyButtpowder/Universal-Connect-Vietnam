@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useContentStore } from "../lib/contentStore";
 import { useTranslatedContent } from "../hooks/useTranslatedContent";
+import { ScrollReveal } from "./ScrollReveal";
 
 // Define the testimonial type
 interface Testimonial {
@@ -82,7 +83,7 @@ export function Testimonials() {
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-8 items-center">
                     {/* Left column - Title and navigation arrows */}
-                    <div className="lg:col-span-3 space-y-6">
+                    <ScrollReveal direction="left" duration={0.7} delay={0.1} className="lg:col-span-3 space-y-6">
                         <div className="space-y-2">
                             <h4 className="text-header text-base font-bold">{headingContent}</h4>
                             <h2 className="text-4xl font-medium text-content">{titleContent}</h2>
@@ -107,10 +108,10 @@ export function Testimonials() {
                                 <ChevronRight className="h-4 w-4 text-blue-950 group-hover:text-white" />
                             </Button>
                         </div>
-                    </div>
+                    </ScrollReveal>
 
                     {/* Right column - Carousel items */}
-                    <div className="lg:col-span-9">
+                    <ScrollReveal direction="right" duration={0.7} delay={0.3} className="lg:col-span-9">
                         <Carousel
                             setApi={setApi}
                             className="w-full"
@@ -141,13 +142,14 @@ export function Testimonials() {
                                                 width={500}
                                                 height={300}
                                                 className="w-full h-full object-cover"
+                                                loading="lazy"
                                             />
                                         </div>
                                     </div>
                                 </CarouselItem>
                             </CarouselContent>
                         </Carousel>
-                    </div>
+                    </ScrollReveal>
                 </div>
             </div>
         </section>

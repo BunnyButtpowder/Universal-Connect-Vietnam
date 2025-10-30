@@ -4,6 +4,7 @@ import { useTranslatedContent } from "../hooks/useTranslatedContent"
 import { useState, useEffect } from "react"
 import { toursApi, TourBasic } from "../lib/api"
 import { generateTourDetailsUrl } from "../lib/utils"
+import { ScrollReveal } from "./ScrollReveal"
 
 // Define Tour type for local use (extending TourBasic with additional properties)
 interface Tour extends TourBasic {
@@ -36,14 +37,14 @@ export function DiscoverSchoolTourHome() {
             try {
                 setLoading(true);
                 const fetchedTours = await toursApi.getAll();
-                
+
                 // Transform API tours to include additional properties
                 const transformedTours: Tour[] = fetchedTours.map(tour => ({
                     ...tour,
                     detailsUrl: generateTourDetailsUrl(tour.title), // Generate URL based on tour title slug
                     buttonText: "Find out more" // Default button text
                 }));
-                
+
                 setTours(transformedTours);
                 setError(null);
             } catch (err) {
@@ -79,35 +80,38 @@ export function DiscoverSchoolTourHome() {
                 src="/vector.svg"
                 alt="Decorative element"
                 className="absolute -top-3 lg:-top-15 left-0 max-w-none w-[200%] lg:w-240 h-[180px] lg:h-70 pointer-events-none -z-1"
+                loading="lazy"
             />
 
             {/* Content Container */}
             <div className="relative z-10 bg-blue-100 rounded-xl mt-3 p-7">
                 {/* Content Layout - 2 columns on desktop, stacked on mobile */}
-                <div className="grid grid-cols-1 lg:grid-cols-6 mb-10">
-                    <div className="space-y-6 lg:col-span-1 me-10">
-                        <h3 className="text-header font-bold text-lg">{headingContent}</h3>
+                <ScrollReveal direction="up" duration={0.7} delay={0.1}>
+                    <div className="grid grid-cols-1 lg:grid-cols-6 mb-10">
+                        <div className="space-y-6 lg:col-span-1 me-10">
+                            <h3 className="text-header font-bold text-lg">{headingContent}</h3>
+                        </div>
+
+                        <div className="lg:col-span-1"></div>
+
+                        <div className="space-y-6 lg:col-span-4">
+                            <h2 className="text-3xl lg:text-4xl font-medium text-content">
+                                {titleContent}
+                            </h2>
+
+                            <p className="text-sm text-content">
+                                {descriptionContent}
+                            </p>
+
+                            <a href="/our-tours">
+                                <button className="flex items-center space-x-2 bg-content hover:bg-blue-500 text-white text-xs font-medium px-5 py-3 rounded-full group hover:translate-x-2 hover:min-w-[140px] transition-all duration-300 cursor-pointer">
+                                    <span>{buttonContent}</span>
+                                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                                </button>
+                            </a>
+                        </div>
                     </div>
-
-                    <div className="lg:col-span-1"></div>
-
-                    <div className="space-y-6 lg:col-span-4">
-                        <h2 className="text-3xl lg:text-4xl font-medium text-content">
-                            {titleContent}
-                        </h2>
-
-                        <p className="text-sm text-content">
-                            {descriptionContent}
-                        </p>
-
-                        <a href="/our-tours">
-                            <button className="flex items-center space-x-2 bg-content hover:bg-blue-500 text-white text-xs font-medium px-5 py-3 rounded-full group hover:translate-x-2 hover:min-w-[140px] transition-all duration-300 cursor-pointer">
-                                <span>{buttonContent}</span>
-                                <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                            </button>
-                        </a>
-                    </div>
-                </div>
+                </ScrollReveal>
 
                 {/* Tour Cards - 2 columns on desktop, stacked on mobile */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -156,6 +160,7 @@ export function DiscoverSchoolTourHome() {
                                                     src={tour.imageUrl}
                                                     alt={`${tour.title} image`}
                                                     className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
+                                                    loading="lazy"
                                                 />
                                             </div>
                                         </div>
@@ -191,6 +196,7 @@ export function DiscoverSchoolTourHome() {
                 src="/vector-1.svg"
                 alt="Decorative element"
                 className="absolute bottom-0 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
+                loading="lazy"
             />
         </section>
     )

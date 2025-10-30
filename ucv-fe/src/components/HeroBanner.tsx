@@ -155,6 +155,7 @@ export function HeroBanner() {
                 src="/vector.svg"
                 alt="Decorative element"
                 className="absolute -top-3 lg:top-0 left-0 lg:-left-15 max-w-none w-[200%] lg:w-240 h-[180px] lg:h-70 pointer-events-none -z-1"
+                loading="lazy"
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 items-center">
@@ -192,6 +193,7 @@ export function HeroBanner() {
                                             src={tour.imageUrl}
                                             alt={`${tour.title} image`}
                                             className="w-full h-full object-cover"
+                                            loading="lazy"
                                         />
                                         {/* Tour Info Card Overlay */}
                                         <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3 max-w-xs lg:max-w-md bg-white rounded-2xl shadow-lg px-4 lg:px-6 pb-4 lg:pb-6">
@@ -259,6 +261,7 @@ export function HeroBanner() {
                 src="/vector-1.svg"
                 alt="Decorative element"
                 className="absolute bottom-0 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
+                loading="lazy"
             />
         </section>
     )

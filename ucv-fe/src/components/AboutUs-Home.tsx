@@ -1,6 +1,7 @@
 import { ArrowUpRight, School } from "lucide-react"
 import { useContentStore } from "../lib/contentStore"
 import { useTranslatedContent } from "../hooks/useTranslatedContent"
+import { ScrollReveal } from "./ScrollReveal"
 
 export function AboutUsHome() {
     const getItemById = useContentStore(state => state.getItemById);
@@ -97,6 +98,7 @@ export function AboutUsHome() {
                             src="/about-us-vector.svg"
                             alt="Decorative element"
                             className="object-cover absolute -left-8 lg:-left-20 w-[110%] max-w-none lg:bottom-0 top-5 lg:top-auto"
+                            loading="lazy"
                         />
                     </div>
 
@@ -127,6 +129,7 @@ export function AboutUsHome() {
                                 src={imageContent}
                                 alt="Group photo at Vietnamese school"
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                             />
                             <a href="/about-us">
                                 <button
@@ -153,14 +156,16 @@ export function AboutUsHome() {
                         </div>
                     ))}
                 </div>
-
-                {/* Tour Information Section */}
+            </div>
+            {/* Tour Information Section */}
+            <ScrollReveal direction="up" duration={0.8} delay={0.2}>
                 <div className="relative mt-7 -mx-4 sm:-mx-6 lg:-mx-20 px-4 sm:px-6 lg:px-20 pt-10 pb-16 bg-sky-50 overflow-hidden">
                     <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
                         <img
                             src="/Frame-9.png"
                             alt="Background"
                             className="w-full h-full object-cover"
+                            loading="lazy"
                         />
                     </div>
 
@@ -241,7 +246,7 @@ export function AboutUsHome() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </ScrollReveal>
         </section>
     )
 }

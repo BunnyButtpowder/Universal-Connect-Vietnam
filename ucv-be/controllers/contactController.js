@@ -26,6 +26,7 @@ exports.submitContactForm = async (req, res) => {
         const mailOptions = {
             from: `"${req.body.email}" <${process.env.EMAIL_USER}>`,
             to: 'info@ucv.com.vn',
+            // to: 'ngominhvu2003@gmail.com',
             replyTo: req.body.email,
             subject: 'New Contact Form Submission - Universal Connect Vietnam',
             html: `

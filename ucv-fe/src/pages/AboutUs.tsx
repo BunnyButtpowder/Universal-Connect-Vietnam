@@ -109,6 +109,7 @@ export default function AboutUs() {
                         src="/vector.svg"
                         alt="Decorative element"
                         className="absolute -top-3 lg:top-10 left-0 lg:-left-20 max-w-none w-[200%] lg:w-300 h-[180px] lg:h-70 pointer-events-none -z-1"
+                        loading="lazy"
                     />
                     <div className="relative w-full h-auto mt-16 lg:mt-0">
                         <img
@@ -120,6 +121,7 @@ export default function AboutUs() {
                                     ? "480px"
                                     : "700px"
                             }}
+                            loading="lazy"
                         />
                     </div>
                     {/* Decorative Image - Lower Right */}
@@ -127,6 +129,7 @@ export default function AboutUs() {
                         src="/vector-1.svg"
                         alt="Decorative element"
                         className="absolute -bottom-3 -right-50 lg:right-0 w-140 h-25 pointer-events-none -z-1"
+                        loading="lazy"
                     />
                 </div>
 
@@ -152,6 +155,7 @@ export default function AboutUs() {
                                                     src={carouselImage1}
                                                     alt="University presentation"
                                                     className="w-full h-full object-cover"
+                                                    loading="lazy"
                                                 />
                                             </div>
                                         </CarouselItem>
@@ -161,6 +165,7 @@ export default function AboutUs() {
                                                     src={carouselImage2}
                                                     alt="Classroom session"
                                                     className="w-full h-full object-cover"
+                                                    loading="lazy"
                                                 />
                                             </div>
                                         </CarouselItem>
@@ -170,6 +175,7 @@ export default function AboutUs() {
                                                     src={carouselImage3}
                                                     alt="School collaboration"
                                                     className="w-full h-full object-cover"
+                                                    loading="lazy"
                                                 />
                                             </div>
                                         </CarouselItem>
