@@ -3,6 +3,7 @@ import { AdminNavbar } from '../../components/admin/AdminNavbar';
 import { SectionManager } from '../../components/admin/SectionManager';
 import { useContentStore } from '../../lib/contentStore';
 import { CreateTourModal } from '../../components/admin/CreateTourModal';
+import { CreateTemplateTourModal } from '../../components/admin/CreateTemplateTourModal';
 import { EditTourModal } from '../../components/admin/EditTourModal';
 import { toursApi, TourBasic } from '../../lib/api';
 
@@ -11,6 +12,7 @@ export default function AdminOurTours() {
   const resetToDefault = useContentStore(state => state.resetToDefault);
   const [ourToursContent, setOurToursContent] = useState(getPageContent('our-tours'));
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTourId, setEditingTourId] = useState<string | null>(null);
   const [tours, setTours] = useState<TourBasic[]>([]);
@@ -67,6 +69,16 @@ export default function AdminOurTours() {
     // Refresh tours after closing modal to show the newly created one
     fetchTours();
   };
+
+  const openCreateTemplateModal = () => {
+    setIsCreateTemplateModalOpen(true);
+  };
+  
+  const closeCreateTemplateModal = () => {
+    setIsCreateTemplateModalOpen(false);
+    // Refresh tours after closing modal to show the newly created one
+    fetchTours();
+  };
   
   const openEditModal = (tourId: string) => {
     setEditingTourId(tourId);
@@ -120,20 +132,26 @@ export default function AdminOurTours() {
           <h1 className="text-2xl font-bold">Our Tours Page Content Management</h1>
           <div className="space-x-2">
             <button 
-              onClick={openCreateModal}
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              onClick={openCreateTemplateModal}
+              className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 create-template-tour-button cursor-pointer"
             >
-              Create New Tour
+              📋 Create Template Tour
+            </button>
+            <button 
+              onClick={openCreateModal}
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 create-full-tour-button cursor-pointer"
+            >
+              ➕ Create Full Tour
             </button>
             <button 
               onClick={handleRefresh}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 refresh-button cursor-pointer"
             >
               Refresh
             </button>
             <button 
               onClick={handleReset}
-              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 reset-button cursor-pointer"
             >
               Reset to Defaults
             </button>
@@ -173,36 +191,52 @@ export default function AdminOurTours() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tours.map(tour => (
-                <div key={tour.id} className="border rounded-lg overflow-hidden shadow-md">
+                <div key={tour.id} className="border rounded-lg overflow-hidden shadow-md tour-card">
                   <div className="h-48 bg-gray-200 relative">
                     {tour.imageUrl ? (
                       <img 
                         src={tour.imageUrl} 
                         alt={tour.title} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover tour-image"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full text-gray-500">No image</div>
                     )}
+                    {tour.isComingSoon && (
+                      <div className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold coming-soon-badge">
+                        COMING SOON
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-bold text-lg mb-1">{tour.title}</h3>
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <div className="flex items-start justify-between mb-1">
+                      <h3 className="font-bold text-lg tour-title">{tour.title}</h3>
+                      {tour.isComingSoon && (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded template-badge">
+                          Template
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600 mb-2 tour-info">
                       <span className="mr-3">{tour.date}</span>
                       <span>{tour.location}</span>
                     </div>
-                    <p className="text-gray-700 text-sm line-clamp-2 mb-3">{tour.shortDescription}</p>
+                    <p className="text-gray-700 text-sm line-clamp-2 mb-3 tour-description">{tour.shortDescription}</p>
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-lg">${tour.price}</span>
+                      {tour.isComingSoon ? (
+                        <span className="text-sm text-yellow-600 font-medium">Registration TBA</span>
+                      ) : (
+                        <span className="font-bold text-lg tour-price">${tour.price}</span>
+                      )}
                       <div className="space-x-2">
                         <button 
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 edit-tour-button cursor-pointer"
                           onClick={() => openEditModal(tour.id)}
                         >
                           Edit
                         </button>
                         <button 
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 delete-tour-button cursor-pointer"
                           onClick={() => handleDeleteTour(tour.id, tour.title)}
                         >
                           Delete
@@ -219,6 +253,10 @@ export default function AdminOurTours() {
       
       {isCreateModalOpen && (
         <CreateTourModal onClose={closeCreateModal} />
+      )}
+      
+      {isCreateTemplateModalOpen && (
+        <CreateTemplateTourModal onClose={closeCreateTemplateModal} />
       )}
       
       {isEditModalOpen && editingTourId && (

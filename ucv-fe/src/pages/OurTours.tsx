@@ -26,44 +26,61 @@ interface Tour {
     date: string;
     detailsUrl: string;
     buttonText: string;
+    isComingSoon?: boolean;
 }
 
-// TourCard component
-function TourCard({ tour }: { tour: Tour }) {
+// TourCard component - Updated to handle coming soon tours
+interface TourCardProps {
+    tour: Tour;
+    isComingSoon?: boolean;
+}
+
+function TourCard({ tour, isComingSoon }: TourCardProps) {
     return (
-        <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
+        <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50 tour-card">
             <div className="relative h-90 overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
                 </div>
+                {isComingSoon && (
+                    <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
+                        <span className="font-bold text-xs">COMING SOON</span>
+                    </div>
+                )}
                 <div className="h-full w-full p-3">
                     <div className="relative h-full w-full overflow-hidden rounded-xl">
                         <img
                             src={tour.imageUrl}
                             alt="Tour image"
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110 tour-card-image"
                             loading="lazy"
                         />
                     </div>
                 </div>
             </div>
             <div className="px-6 mb-10 mt-2 space-y-3">
-                <h3 className="font-bold text-base text-content">{tour.title}</h3>
-                <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
+                <h3 className="font-bold text-base text-content tour-card-title">{tour.title}</h3>
+                <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300 tour-card-description">
                     {tour.description}
                 </p>
                 <div className="flex justify-between items-center pt-2">
-                    <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950">
+                    <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button">
                         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                             <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                         </div>
                         <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
                     </button>
-                    <div className="flex items-center space-x-1 text-navy-800">
-                        <span className="text-xs">Start from</span>
-                        <span className="font-bold text-content">{tour.price}</span>
-                        <span className="text-xs text-gray-500 font-medium">USD</span>
-                    </div>
+                    {isComingSoon ? (
+                        <div className="flex items-center space-x-1 text-yellow-600">
+                            <span className="text-xs font-semibold">Registration TBA</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-1 text-navy-800 tour-price-display">
+                            <span className="text-xs">Start from</span>
+                            <span className="font-bold text-content">{tour.price}</span>
+                            <span className="text-xs text-gray-500 font-medium">USD</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </a>
@@ -117,7 +134,8 @@ export default function OurTours() {
                     price: `$${formatPrice(tour.price)}`,
                     date: tour.date,
                     detailsUrl: generateTourDetailsUrl(tour.title),
-                    buttonText: "Find out more"
+                    buttonText: "Find out more",
+                    isComingSoon: tour.isComingSoon
                 }));
                 
                 setTours(mappedTours);
@@ -294,7 +312,7 @@ export default function OurTours() {
                         <>
                             <div className="tours-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {currentTours.map(tour => (
-                                    <TourCard key={tour.id} tour={tour} />
+                                    <TourCard key={tour.id} tour={tour} isComingSoon={tour.isComingSoon} />
                                 ))}
                             </div>
 

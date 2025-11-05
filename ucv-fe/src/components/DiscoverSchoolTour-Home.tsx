@@ -154,6 +154,11 @@ export function DiscoverSchoolTourHome() {
                                         <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                                             <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
                                         </div>
+                                        {tour.isComingSoon && (
+                                            <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
+                                                <span className="font-bold text-xs">COMING SOON</span>
+                                            </div>
+                                        )}
                                         <div className="h-full w-full p-2 lg:p-3">
                                             <div className="relative h-full w-full overflow-hidden rounded-xl">
                                                 <img
@@ -171,17 +176,23 @@ export function DiscoverSchoolTourHome() {
                                             {tour.shortDescription}
                                         </p>
                                         <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center pt-2 gap-4">
-                                            <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950">
+                                            <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button">
                                                 <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                                                     <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                                                 </div>
                                                 <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
                                             </button>
-                                            <div className="flex items-center space-x-1 text-navy-800">
-                                                <span className="text-xs">Start from</span>
-                                                <span className="font-bold text-content">${formatPrice(tour.price)}</span>
-                                                <span className="text-xs text-gray-500 font-medium">USD</span>
-                                            </div>
+                                            {tour.isComingSoon ? (
+                                                <div className="flex items-center space-x-1 text-yellow-600">
+                                                    <span className="text-xs font-semibold">Registration TBA</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center space-x-1 text-navy-800 tour-price-display">
+                                                    <span className="text-xs">Start from</span>
+                                                    <span className="font-bold text-content">${formatPrice(tour.price)}</span>
+                                                    <span className="text-xs text-gray-500 font-medium">USD</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -25,6 +25,7 @@ class Tour {
         additionalImages = [],
         customizeOptions = [],
         timelineEvents = [],
+        isComingSoon,
         created_at
     }) {
         // Basic information
@@ -33,6 +34,7 @@ class Tour {
         this.description = description;
         this.shortDescription = shortDescription;
         this.imageUrl = imageUrl;
+        this.isComingSoon = isComingSoon;
         
         // Structured pricing (these will be used for grandTotal/full tour pricing)
         this.pricing = {
@@ -212,7 +214,8 @@ class Tour {
             date: this.date,
             location: this.location,
             duration: this.duration,
-            customizeOptions: this.getAllCustomizeOptions()
+            customizeOptions: this.getAllCustomizeOptions(),
+            isComingSoon: this.isComingSoon
         };
     }
 
@@ -320,6 +323,7 @@ class Tour {
                     customize: row.customize,
                     earlyBirdDeadline: row.early_bird_deadline,
                     standardDeadline: row.standard_deadline,
+                    isComingSoon: row.is_coming_soon || false,
                     created_at: row.created_at,
                     cities: cities.map(city => ({
                         id: Number(city.id),
@@ -452,6 +456,7 @@ class Tour {
                 customize: row.customize,
                 earlyBirdDeadline: row.early_bird_deadline,
                 standardDeadline: row.standard_deadline,
+                isComingSoon: row.is_coming_soon || false,
                 created_at: row.created_at,
                 cities: cities.map(city => ({
                     id: Number(city.id),
@@ -484,15 +489,15 @@ class Tour {
                 `INSERT INTO tours (
                     title, description, image_url, early_bird_price, early_bird_university_price,
                     standard_regular_price, standard_university_price, date, short_description, location,
-                    duration, tour_dates, customize, early_bird_deadline, standard_deadline
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    duration, tour_dates, customize, early_bird_deadline, standard_deadline, is_coming_soon
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     newTour.title, newTour.description, newTour.imageUrl, 
-                    newTour.earlyBirdPrice, newTour.earlyBirdUniversityPrice,
-                    newTour.standardRegularPrice, newTour.standardUniversityPrice,
+                    newTour.earlyBirdPrice || 0, newTour.earlyBirdUniversityPrice || 0,
+                    newTour.standardRegularPrice || 0, newTour.standardUniversityPrice || 0,
                     newTour.date, newTour.shortDescription, newTour.location,
                     newTour.duration, newTour.tourDates, newTour.customize, 
-                    newTour.earlyBirdDeadline, newTour.standardDeadline
+                    newTour.earlyBirdDeadline, newTour.standardDeadline, newTour.isComingSoon || false
                 ]
             );
             
@@ -634,15 +639,15 @@ class Tour {
                 `UPDATE tours SET
                     title = ?, description = ?, image_url = ?, early_bird_price = ?, early_bird_university_price = ?,
                     standard_regular_price = ?, standard_university_price = ?, date = ?, short_description = ?, location = ?,
-                    duration = ?, tour_dates = ?, customize = ?, early_bird_deadline = ?, standard_deadline = ?
+                    duration = ?, tour_dates = ?, customize = ?, early_bird_deadline = ?, standard_deadline = ?, is_coming_soon = ?
                 WHERE id = ?`,
                 [
                     tourData.title, tourData.description, tourData.imageUrl, 
-                    tourData.earlyBirdPrice, tourData.earlyBirdUniversityPrice,
-                    tourData.standardRegularPrice, tourData.standardUniversityPrice,
+                    tourData.earlyBirdPrice || 0, tourData.earlyBirdUniversityPrice || 0,
+                    tourData.standardRegularPrice || 0, tourData.standardUniversityPrice || 0,
                     tourData.date, tourData.shortDescription, tourData.location,
                     tourData.duration, tourData.tourDates, tourData.customize, 
-                    tourData.earlyBirdDeadline, tourData.standardDeadline, id
+                    tourData.earlyBirdDeadline, tourData.standardDeadline, tourData.isComingSoon || false, id
                 ]
             );
             

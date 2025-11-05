@@ -18,6 +18,7 @@ export interface TourBasic {
   date: string;
   location: string;
   duration: string;
+  isComingSoon?: boolean;
 }
 
 export interface CustomizeOption {
@@ -57,6 +58,7 @@ export interface TourFull extends TourBasic {
   customize?: string;
   earlyBirdDeadline?: string;
   standardDeadline?: string;
+  isComingSoon?: boolean;
   cities: {
     id?: number;
     name: string;
@@ -120,6 +122,7 @@ export interface TourCreateInput {
   additionalImages?: string[];
   customizeOptions?: CustomizeOption[];
   timelineEvents?: TimelineEvent[];
+  isComingSoon?: boolean;
 }
 
 // Get the API base URL from environment variable if available

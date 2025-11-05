@@ -133,7 +133,7 @@ export function AboutUsHome() {
                             />
                             <a href="/about-us">
                                 <button
-                                    className="absolute bottom-5 right-5 md:right-5 left-5 md:left-auto w-[calc(100%-40px)] md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-xs font-medium min-w-[130px] px-4 py-3 rounded-full group flex items-center justify-between transition-all duration-300 md:hover:-translate-x-2 md:hover:min-w-[140px] cursor-pointer space-x-2 justify-center"
+                                    className="absolute bottom-5 right-5 md:right-5 left-5 md:left-auto w-[calc(100%-40px)] md:w-auto bg-blue-500 hover:bg-blue-950 text-white text-xs font-medium min-w-[130px] px-4 py-3 rounded-full group flex items-center transition-all duration-300 md:hover:-translate-x-2 md:hover:min-w-[140px] cursor-pointer space-x-2 justify-center"
                                 >
                                     <span>{buttonContent}</span>
                                     <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
