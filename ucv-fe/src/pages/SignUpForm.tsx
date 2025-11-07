@@ -65,7 +65,7 @@ export default function SignUpForm() {
     const [signUpFormContent, setSignUpFormContent] = useState(getPageContent('signup-form'));
 
     // State for tour data from API
-    const [currentTour, setCurrentTour] = useState<TourFull | null>(null);
+    const [currentTour, setCurrentTour] = useState<TourFull | undefined>(undefined);
     const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
     const [isLoadingTour, setIsLoadingTour] = useState(true);
     const [tourError, setTourError] = useState<string | null>(null);
@@ -87,12 +87,24 @@ export default function SignUpForm() {
                 setCurrentTour(tourData);
 
                 // Initialize form data with dynamic cities based on customize options
+                // By default, only select grandTotal if it exists
                 const initialCities: { [key: string]: boolean } = {};
+                const hasGrandTotal = tourData.customizeOptions?.some(option => option.key === 'grandTotal');
+                
                 tourData.customizeOptions?.forEach(option => {
-                    if (option.key !== 'grandTotal') {
+                    if (option.key === 'grandTotal') {
                         initialCities[option.key] = true;
+                    } else {
+                        initialCities[option.key] = false;
                     }
                 });
+
+                // If no grandTotal exists, select all other options by default
+                if (!hasGrandTotal) {
+                    tourData.customizeOptions?.forEach(option => {
+                        initialCities[option.key] = true;
+                    });
+                }
 
                 setFormData(prev => ({
                     ...prev,
@@ -195,10 +207,24 @@ export default function SignUpForm() {
     };
 
     const handleCityChange = (city: string, checked: boolean | string) => {
-        const newCities = {
-            ...formData.cities,
-            [city]: checked === "indeterminate" ? false : !!checked
-        };
+        const isChecked = checked === "indeterminate" ? false : !!checked;
+        let newCities = { ...formData.cities };
+
+        // Mutual exclusivity logic between grandTotal and other segments
+        if (city === 'grandTotal' && isChecked) {
+            // If grandTotal is being checked, uncheck all other options
+            newCities = {};
+            currentTour?.customizeOptions?.forEach(option => {
+                newCities[option.key] = option.key === 'grandTotal';
+            });
+        } else if (city !== 'grandTotal' && isChecked) {
+            // If any other segment is being checked, uncheck grandTotal
+            newCities[city] = true;
+            newCities['grandTotal'] = false;
+        } else {
+            // Handle unchecking
+            newCities[city] = isChecked;
+        }
 
         setFormData(prev => ({
             ...prev,
@@ -373,7 +399,7 @@ export default function SignUpForm() {
             console.log('Using tour name:', tourName);
             
             // Process document templates with processed form data and tour name
-            await processAllTemplates(processedFormData, calculatedPrice, tourName);
+            await processAllTemplates(processedFormData, calculatedPrice, tourName, currentTour);
             console.log("Document templates processed successfully");
 
             // Log form submission for debugging
@@ -552,7 +578,7 @@ export default function SignUpForm() {
 
                                 <Link
                                     to="/our-tours"
-                                    className="inline-flex w-full md:w-auto items-center justify-center bg-blue-500 hover:bg-blue-950 text-white px-8 py-3 rounded-full font-semibold group flex items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
+                                    className="inline-flex w-full md:w-auto bg-blue-500 hover:bg-blue-950 text-white px-8 py-3 rounded-full font-semibold group items-center justify-center transition-all duration-300 hover:translate-x-2 hover:min-w-[140px] cursor-pointer space-x-2"
                                 >
                                     {getContentById(signUpFormContent?.sections.successSection?.items, 'success-button')}
                                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
@@ -651,7 +677,7 @@ export default function SignUpForm() {
                                     <div className={`text-content font-medium lg:block ${currentStep === 1 ? '' : 'hidden'}`}>Basic <br />Information</div>
                                 </div>
 
-                                <div className="flex items-center hidden lg:flex">
+                                <div className="items-center hidden lg:flex">
                                     <ArrowRight className="h-6 w-6 text-content" />
                                 </div>
 
@@ -660,7 +686,7 @@ export default function SignUpForm() {
                                     <div className={`text-content font-medium lg:block ${currentStep === 2 ? 'transform-all duration-300 -translate-x-10 lg:translate-x-0' : 'hidden'}`}>Tour <br />Package</div>
                                 </div>
 
-                                <div className={`flex items-center hidden lg:flex ${currentStep < 3 ? 'opacity-50' : ''}`}>
+                                <div className={` items-center hidden lg:flex ${currentStep < 3 ? 'opacity-50' : ''}`}>
                                     <ArrowRight className="h-6 w-6 text-content" />
                                 </div>
 
@@ -866,7 +892,7 @@ export default function SignUpForm() {
                                                                 Tour Segments
                                                             </p>
                                                             <div className="space-y-2">
-                                                                {currentTour?.customizeOptions?.filter(opt => opt.key !== 'grandTotal').map((option) => (
+                                                                {currentTour?.customizeOptions?.map((option) => (
                                                                     <div key={option.key} className="flex items-start">
                                                                         <Checkbox
                                                                             id={option.key}

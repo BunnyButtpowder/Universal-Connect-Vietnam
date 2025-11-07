@@ -1,7 +1,7 @@
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
-import { contactApi } from '@/lib/api';
+import { contactApi, TourFull } from '@/lib/api';
 
 // Types for our form data based on the form interface
 interface FormData {
@@ -26,7 +26,7 @@ interface FormData {
     bank: string;
     swift: string;
     tourId: string;
-    tourName?: string; // Add optional tour name
+    tourName?: string;
 }
 
 /**
@@ -36,7 +36,7 @@ interface FormData {
  * @param calculatedPrice The calculated price based on selected options
  * @returns An object with key-value pairs matching the document template fields
  */
-function createTemplateData(formData: FormData, calculatedPrice: number = 0): Record<string, string | boolean | number> {
+function createTemplateData(formData: FormData, calculatedPrice: number = 0, currentTour?: TourFull): Record<string, string | boolean | number> {
     console.log("Creating template data from form data:", formData);
     
     // Use the actual tour name if provided, otherwise fall back to the previous logic
@@ -51,18 +51,13 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0): Re
     // Get current date in DD/MM/YYYY format for TODAY placeholder
     const today = new Date();
     const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-    
-    // Define early bird expiration date based on tour
-    const earlyBirdExpirationDate = formData.tourId === 'fallTour2025' 
-        ? '10/07/2025'  // 10 July 2025 for Fall Tour
-        : '10/12/2025'; // 10 December 2025 for Spring Tour
         
     // Generate an invoice number (in a real app, this would come from a database or sequence)
     // For demo purposes, we'll use a timestamp-based number
     const invoiceNumber = `${(new Date().getTime() % 1000).toString().padStart(3, '0')}`;
     
     // Calculate prices with VAT
-    const priceWithVAT = Math.round(calculatedPrice * 1.1).toLocaleString();
+    const priceWithVAT = Math.round(calculatedPrice * 1.08).toLocaleString();
     
     // Create a comprehensive mapping that covers all possible template placeholders
     return {
@@ -73,7 +68,7 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0): Re
         phone: formData.phone,
         email: formData.email,
         
-        // Add direct support for bracketed placeholders
+        // Add direct support for phone and email placeholders (for Docxtemplater)
         "PHONE": formData.phone,
         "EMAIL": formData.email,
         "[PHONE]": formData.phone, // Explicitly add bracketed versions
@@ -82,21 +77,31 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0): Re
         "[Email]": formData.email,
         
         // New special placeholders for price, dates, etc.
+        // Keys without brackets for Docxtemplater (when using bracket delimiters)
+        "PRICE": currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
+        "DATE": currentTour?.earlyBirdDeadline ? new Date(currentTour.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
+        "STANDARDDATE": currentTour?.standardDeadline ? new Date(currentTour.standardDeadline).toLocaleDateString('en-GB') : '',
+        "ADDRESS": formData.headOffice,
+        "NO": invoiceNumber,
+        "TODAY": formattedToday,
+        
+        // Keys with brackets for direct text replacement (fallback method)
+        "[PRICE]": currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
+        "[DATE]": currentTour?.earlyBirdDeadline ? new Date(currentTour.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
+        "[STANDARDDATE]": currentTour?.standardDeadline ? new Date(currentTour.standardDeadline).toLocaleDateString('en-GB') : '',
+        "[ADDRESS]": formData.headOffice,
+        "[NO]": invoiceNumber,
+        "[TODAY]": formattedToday,
+        
+        // Other price formats
         "FINAL PRICE": calculatedPrice.toLocaleString(),
         "[FINAL PRICE]": calculatedPrice.toLocaleString(),
-        "FINAL PRICE * 110%": priceWithVAT,
-        "[FINAL PRICE * 110%]": priceWithVAT,
-        "NO": invoiceNumber,
-        "[NO]": invoiceNumber,
-        "TODAY": formattedToday,
-        "[TODAY]": formattedToday,
-        "DATE": earlyBirdExpirationDate,
-        "[DATE]": earlyBirdExpirationDate,
+        "FINAL PRICE * 108%": priceWithVAT,
+        "[FINAL PRICE * 108%]": priceWithVAT,
         
         // Business information with variations
         headOffice: formData.headOffice,
         "Head office address": formData.headOffice, // Common format in templates
-        "HEAD OFFICE ADDRESS": formData.headOffice, // Alternative format
         
         businessRegistration: formData.businessRegistration || 'N/A',  // Optional field
         "Business Registration": formData.businessRegistration || 'N/A',
@@ -269,7 +274,8 @@ export async function processDocumentTemplate(
     templateUrl: string,
     formData: FormData,
     outputFilename: string,
-    calculatedPrice: number = 0
+    calculatedPrice: number = 0,
+    currentTour?: TourFull
 ): Promise<void> {
     console.log(`Starting to process document template: ${templateUrl}`);
     try {
@@ -345,7 +351,7 @@ export async function processDocumentTemplate(
         }
         
         // Get data for template
-        const templateData = createTemplateData(formData, calculatedPrice);
+        const templateData = createTemplateData(formData, calculatedPrice, currentTour);
         console.log('Template data prepared:', templateData);
         
         // Set the template data
@@ -406,8 +412,9 @@ export async function processDocumentTemplate(
  * @param calculatedPrice The calculated price based on user selections
  * @param tourName Optional tour name to override the default tour name logic
  */
-export async function processAllTemplates(formData: FormData, calculatedPrice: number = 0, tourName?: string): Promise<void> {
+export async function processAllTemplates(formData: FormData, calculatedPrice: number = 0, tourName?: string, currentTour?: TourFull): Promise<void> {
     console.log("Starting to process all templates with form data", formData);
+    console.log("Values:", currentTour?.pricing.standard.regular, currentTour?.standardDeadline, formData.headOffice)
     try {
         // Make a copy of formData to ensure we don't modify the original
         const processedFormData = { ...formData };
@@ -458,9 +465,8 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             'UNIVERSITY NAME': formData.organization,
             'University name': formData.organization,
             'university name': formData.organization,
-            'Head office address': formData.headOffice,
-            'HEAD OFFICE ADDRESS': formData.headOffice,
-            'head office address': formData.headOffice,
+            'ADDRESS': formData.headOffice,
+            '[ADDRESS]': formData.headOffice,
             'LEGAL REPRESENTATIVE': formData.legalRepresentative,
             'Legal representative': formData.legalRepresentative,
             'legal representative': formData.legalRepresentative,
@@ -475,14 +481,19 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             '[CITY NAMES]': selectedCitiesString,
             
             // Dynamic pricing
+            'PRICE': currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
+            '[PRICE]': currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
             'FINAL PRICE': `$${calculatedPrice.toLocaleString()}`,
             '[FINAL PRICE]': `$${calculatedPrice.toLocaleString()}`,
-            'FINAL PRICE * 110%': `$${Math.round(calculatedPrice * 1.1).toLocaleString()}`,
-            '[FINAL PRICE * 110%]': `$${Math.round(calculatedPrice * 1.1).toLocaleString()}`,
+            'FINAL PRICE * 108%': `$${Math.round(calculatedPrice * 1.08).toLocaleString()}`,
+            '[FINAL PRICE * 108%]': `$${Math.round(calculatedPrice * 1.08).toLocaleString()}`,
             
             // Date placeholders
-            'DATE': formData.tourId === 'fallTour2025' ? '10/07/2025' : '10/12/2025',
-            '[DATE]': formData.tourId === 'fallTour2025' ? '10/07/2025' : '10/12/2025',
+            'DATE': currentTour?.earlyBirdDeadline ? new Date(currentTour.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
+            '[DATE]': currentTour?.earlyBirdDeadline ? new Date(currentTour.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
+            'STANDARDDATE': currentTour?.standardDeadline ? new Date(currentTour.standardDeadline).toLocaleDateString('en-GB') : '',
+            '[STANDARDDATE]': currentTour?.standardDeadline ? new Date(currentTour.standardDeadline).toLocaleDateString('en-GB') : '',
+            'STANDARD DATE': currentTour?.standardDeadline ? new Date(currentTour.standardDeadline).toLocaleDateString('en-GB') : '',
             'TODAY': new Date().toLocaleDateString('en-GB'),
             '[TODAY]': new Date().toLocaleDateString('en-GB'),
             
@@ -548,7 +559,8 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
                 '/VN_template.docx',
                 processedFormData,
                 `Registration_Form_${formData.organization.replace(/\s+/g, '_')}.docx`,
-                calculatedPrice
+                calculatedPrice,
+                currentTour
             );
             
             if (vnDoc) {
@@ -560,7 +572,6 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             // Special handling for VN template with additional specific mappings
             const vnReplacements = {
                 ...replacements,
-                // Direct exact placeholder matches and variations as before
                 'PHONE': phoneValue,
                 'Phone': phoneValue,
                 'phone': phoneValue,
@@ -606,7 +617,8 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
                 '/IUC_Invoice VAT_UNIVERSITY_template.docx',
                 processedFormData,
                 `Invoice_${formData.organization.replace(/\s+/g, '_')}.docx`,
-                calculatedPrice
+                calculatedPrice,
+                currentTour
             );
             
             if (invoiceDoc) {
@@ -637,7 +649,6 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
                 'INVOICE TO': formData.organization,
                 'UNIVERSITY': formData.organization,
                 'Organization': formData.organization,
-                'ADDRESS': formData.headOffice,
                 'Address': formData.headOffice,
                 'CONTACT': formData.legalRepresentative,
                 'Contact person': formData.legalRepresentative,
@@ -712,7 +723,8 @@ async function processDocumentTemplateForEmail(
     templateUrl: string,
     formData: FormData,
     outputFilename: string,
-    calculatedPrice: number = 0
+    calculatedPrice: number = 0,
+    currentTour?: TourFull
 ): Promise<File | null> {
     console.log(`Starting to process document template for email: ${templateUrl}`);
     try {
@@ -745,7 +757,7 @@ async function processDocumentTemplateForEmail(
             });
         
         // Set template data
-        const templateData = createTemplateData(formData, calculatedPrice);
+        const templateData = createTemplateData(formData, calculatedPrice, currentTour);
         doc.setData(templateData);
         
         // Render document

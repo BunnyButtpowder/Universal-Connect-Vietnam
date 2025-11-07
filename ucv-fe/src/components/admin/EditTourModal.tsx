@@ -52,6 +52,7 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
       standard: { regular: 0, returningUniversity: 0 }
     }
   });
+  const [editingCustomizeOptionKey, setEditingCustomizeOptionKey] = useState<string | null>(null);
 
   // Timeline events
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
@@ -449,6 +450,70 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
   // Remove customize option
   const removeCustomizeOption = (key: string) => {
     setCustomizeOptions(prev => prev.filter(opt => opt.key !== key));
+  };
+
+  // Start editing customize option
+  const startEditingCustomizeOption = (option: CustomizeOption) => {
+    setEditingCustomizeOptionKey(option.key);
+    setNewCustomizeOption({ ...option });
+  };
+
+  // Update customize option
+  const updateCustomizeOption = () => {
+    if (editingCustomizeOptionKey && newCustomizeOption.key && newCustomizeOption.name) {
+      setCustomizeOptions(prev => 
+        prev.map(opt => opt.key === editingCustomizeOptionKey ? { ...newCustomizeOption } : opt)
+      );
+      setEditingCustomizeOptionKey(null);
+      setNewCustomizeOption({
+        key: '',
+        name: '',
+        description: '',
+        pricing: {
+          earlyBird: { regular: 0, returningUniversity: 0 },
+          standard: { regular: 0, returningUniversity: 0 }
+        }
+      });
+      setError(null);
+    }
+  };
+
+  // Cancel editing customize option
+  const cancelEditingCustomizeOption = () => {
+    setEditingCustomizeOptionKey(null);
+    setNewCustomizeOption({
+      key: '',
+      name: '',
+      description: '',
+      pricing: {
+        earlyBird: { regular: 0, returningUniversity: 0 },
+        standard: { regular: 0, returningUniversity: 0 }
+      }
+    });
+  };
+
+  // Drag and drop handlers for customize options
+  const handleCustomizeOptionDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleCustomizeOptionDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleCustomizeOptionDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    
+    if (dragIndex === dropIndex) return;
+    
+    const updatedOptions = [...customizeOptions];
+    const [draggedOption] = updatedOptions.splice(dragIndex, 1);
+    updatedOptions.splice(dropIndex, 0, draggedOption);
+    
+    setCustomizeOptions(updatedOptions);
   };
 
   // Handle timeline event form changes
@@ -1473,23 +1538,50 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                   <p className="text-gray-500 text-sm">No customize options added yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {customizeOptions.map((option) => (
-                      <div key={option.key} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs text-blue-600 mb-2">💡 Tip: Drag and drop options to reorder them</p>
+                    {customizeOptions.map((option, index) => (
+                      <div 
+                        key={option.key} 
+                        className="border border-gray-200 rounded-lg p-3 bg-gray-50 cursor-move hover:border-blue-300 hover:shadow-sm transition-all duration-150"
+                        draggable
+                        onDragStart={(e) => handleCustomizeOptionDragStart(e, index)}
+                        onDragOver={handleCustomizeOptionDragOver}
+                        onDrop={(e) => handleCustomizeOptionDrop(e, index)}
+                      >
                         <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{option.name}</h5>
-                            <p className="text-sm text-gray-600">Key: {option.key}</p>
-                            {option.description && (
-                              <p className="text-sm text-gray-500 mt-1">{option.description}</p>
-                            )}
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 mt-1">
+                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M7 2a1 1 0 00-1 1v1H4a1 1 0 000 2h1v1a1 1 0 002 0V6h1a1 1 0 100-2H7V3a1 1 0 00-1-1zM7 8a1 1 0 00-1 1v1H4a1 1 0 100 2h1v1a1 1 0 002 0v-1h1a1 1 0 100-2H7V9a1 1 0 00-1-1zM7 14a1 1 0 00-1 1v1H4a1 1 0 100 2h1v1a1 1 0 002 0v-1h1a1 1 0 100-2H7v-1a1 1 0 00-1-1z"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">#{index + 1}</span>
+                                <h5 className="font-medium text-gray-900">{option.name}</h5>
+                              </div>
+                              <p className="text-sm text-gray-600">Key: {option.key}</p>
+                              {option.description && (
+                                <p className="text-sm text-gray-500 mt-1">{option.description}</p>
+                              )}
+                            </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeCustomizeOption(option.key)}
-                            className="text-red-500 hover:text-red-700 text-sm"
-                          >
-                            Remove
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startEditingCustomizeOption(option)}
+                              className="text-blue-500 hover:text-blue-700 text-sm"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeCustomizeOption(option.key)}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           <div className="bg-blue-100 p-2 rounded">
@@ -1509,19 +1601,26 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                 )}
               </div>
 
-              {/* Add New Customize Option */}
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Add New Customize Option</h4>
+              {/* Add New / Edit Customize Option */}
+              <div className={`border rounded-lg p-4 ${editingCustomizeOptionKey ? 'border-orange-300 bg-orange-50' : 'border-gray-200 bg-gray-50'}`}>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  {editingCustomizeOptionKey ? 'Edit Customize Option' : 'Add New Customize Option'}
+                </h4>
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Option Key*</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Option Key* {editingCustomizeOptionKey && <span className="text-orange-600">(cannot be changed)</span>}
+                      </label>
                       <input
                         type="text"
                         value={newCustomizeOption.key}
                         onChange={(e) => handleCustomizeOptionChange('key', e.target.value)}
                         placeholder="e.g. northern, central, grandTotal"
-                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                        disabled={!!editingCustomizeOptionKey}
+                        className={`w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm ${
+                          editingCustomizeOptionKey ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                       />
                     </div>
                     <div>
@@ -1607,18 +1706,29 @@ export const EditTourModal: React.FC<EditTourModalProps> = ({ tourId, onClose })
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    {editingCustomizeOptionKey && (
+                      <button
+                        type="button"
+                        onClick={cancelEditingCustomizeOption}
+                        className="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm"
+                      >
+                        Cancel
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={addCustomizeOption}
+                      onClick={editingCustomizeOptionKey ? updateCustomizeOption : addCustomizeOption}
                       disabled={!newCustomizeOption.key || !newCustomizeOption.name}
                       className={`px-4 py-2 rounded-md text-white text-sm ${
                         !newCustomizeOption.key || !newCustomizeOption.name
                           ? 'bg-gray-300 cursor-not-allowed'
+                          : editingCustomizeOptionKey
+                          ? 'bg-orange-500 hover:bg-orange-600'
                           : 'bg-blue-500 hover:bg-blue-600'
                       }`}
                     >
-                      Add Customize Option
+                      {editingCustomizeOptionKey ? 'Update Customize Option' : 'Add Customize Option'}
                     </button>
                   </div>
                 </div>
