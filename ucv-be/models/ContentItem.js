@@ -284,6 +284,16 @@ class ContentItem {
                 content: "Get to Know Us Better",
                 pageName: 'home',
                 sectionId: 'aboutUs'
+            },
+
+            // Testimonial Image
+            {
+                id: 'testimonial-image',
+                type: 'image',
+                content: '/university-event.png',
+                metadata: { alt: 'University event' },
+                pageName: 'home',
+                sectionId: 'testimonials'
             }
         ];
 

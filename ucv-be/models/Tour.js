@@ -26,6 +26,8 @@ class Tour {
         customizeOptions = [],
         timelineEvents = [],
         isComingSoon,
+        displayOrder,
+        signUpDisabled,
         created_at
     }) {
         // Basic information
@@ -35,6 +37,8 @@ class Tour {
         this.shortDescription = shortDescription;
         this.imageUrl = imageUrl;
         this.isComingSoon = isComingSoon;
+        this.displayOrder = displayOrder || 0;
+        this.signUpDisabled = signUpDisabled || false;
         
         // Structured pricing (these will be used for grandTotal/full tour pricing)
         this.pricing = {
@@ -215,7 +219,9 @@ class Tour {
             location: this.location,
             duration: this.duration,
             customizeOptions: this.getAllCustomizeOptions(),
-            isComingSoon: this.isComingSoon
+            isComingSoon: this.isComingSoon,
+            displayOrder: this.displayOrder,
+            signUpDisabled: this.signUpDisabled
         };
     }
 
@@ -280,8 +286,9 @@ class Tour {
                     FROM tour_timeline_events
                     GROUP BY tour_id
                 ) tl ON t.id = tl.tour_id
+                ORDER BY t.display_order ASC, t.id ASC
             `);
-            
+
             return rows.map(row => {
                 // Safe JSON parsing function
                 const safeJsonParse = (jsonStr) => {
@@ -324,6 +331,8 @@ class Tour {
                     earlyBirdDeadline: row.early_bird_deadline,
                     standardDeadline: row.standard_deadline,
                     isComingSoon: row.is_coming_soon || false,
+                    displayOrder: row.display_order || 0,
+                    signUpDisabled: row.sign_up_disabled || false,
                     created_at: row.created_at,
                     cities: cities.map(city => ({
                         id: Number(city.id),
@@ -457,6 +466,8 @@ class Tour {
                 earlyBirdDeadline: row.early_bird_deadline,
                 standardDeadline: row.standard_deadline,
                 isComingSoon: row.is_coming_soon || false,
+                displayOrder: row.display_order || 0,
+                signUpDisabled: row.sign_up_disabled || false,
                 created_at: row.created_at,
                 cities: cities.map(city => ({
                     id: Number(city.id),
@@ -489,15 +500,17 @@ class Tour {
                 `INSERT INTO tours (
                     title, description, image_url, early_bird_price, early_bird_university_price,
                     standard_regular_price, standard_university_price, date, short_description, location,
-                    duration, tour_dates, customize, early_bird_deadline, standard_deadline, is_coming_soon
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    duration, tour_dates, customize, early_bird_deadline, standard_deadline, is_coming_soon,
+                    display_order, sign_up_disabled
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    newTour.title, newTour.description, newTour.imageUrl, 
+                    newTour.title, newTour.description, newTour.imageUrl,
                     newTour.earlyBirdPrice || 0, newTour.earlyBirdUniversityPrice || 0,
                     newTour.standardRegularPrice || 0, newTour.standardUniversityPrice || 0,
                     newTour.date, newTour.shortDescription, newTour.location,
-                    newTour.duration, newTour.tourDates, newTour.customize, 
-                    newTour.earlyBirdDeadline, newTour.standardDeadline, newTour.isComingSoon || false
+                    newTour.duration, newTour.tourDates, newTour.customize,
+                    newTour.earlyBirdDeadline, newTour.standardDeadline, newTour.isComingSoon || false,
+                    newTour.displayOrder || 0, newTour.signUpDisabled || false
                 ]
             );
             
@@ -639,15 +652,17 @@ class Tour {
                 `UPDATE tours SET
                     title = ?, description = ?, image_url = ?, early_bird_price = ?, early_bird_university_price = ?,
                     standard_regular_price = ?, standard_university_price = ?, date = ?, short_description = ?, location = ?,
-                    duration = ?, tour_dates = ?, customize = ?, early_bird_deadline = ?, standard_deadline = ?, is_coming_soon = ?
+                    duration = ?, tour_dates = ?, customize = ?, early_bird_deadline = ?, standard_deadline = ?, is_coming_soon = ?,
+                    display_order = ?, sign_up_disabled = ?
                 WHERE id = ?`,
                 [
-                    tourData.title, tourData.description, tourData.imageUrl, 
+                    tourData.title, tourData.description, tourData.imageUrl,
                     tourData.earlyBirdPrice || 0, tourData.earlyBirdUniversityPrice || 0,
                     tourData.standardRegularPrice || 0, tourData.standardUniversityPrice || 0,
                     tourData.date, tourData.shortDescription, tourData.location,
-                    tourData.duration, tourData.tourDates, tourData.customize, 
-                    tourData.earlyBirdDeadline, tourData.standardDeadline, tourData.isComingSoon || false, id
+                    tourData.duration, tourData.tourDates, tourData.customize,
+                    tourData.earlyBirdDeadline, tourData.standardDeadline, tourData.isComingSoon || false,
+                    tourData.displayOrder || 0, tourData.signUpDisabled || false, id
                 ]
             );
             
@@ -734,6 +749,55 @@ class Tour {
         } catch (err) {
             if (conn) await conn.rollback();
             console.error('Error updating tour: ', err);
+            throw err;
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+
+    static async swapOrder(tourId1, tourId2) {
+        let conn;
+        try {
+            conn = await pool.getConnection();
+            await conn.beginTransaction();
+
+            const rows = await conn.query(
+                'SELECT id, display_order FROM tours WHERE id IN (?, ?)',
+                [tourId1, tourId2]
+            );
+
+            if (rows.length !== 2) {
+                throw new Error('One or both tours not found');
+            }
+
+            const tour1 = rows.find(r => Number(r.id) === Number(tourId1));
+            const tour2 = rows.find(r => Number(r.id) === Number(tourId2));
+
+            await conn.query('UPDATE tours SET display_order = ? WHERE id = ?', [tour2.display_order, tourId1]);
+            await conn.query('UPDATE tours SET display_order = ? WHERE id = ?', [tour1.display_order, tourId2]);
+
+            await conn.commit();
+            return true;
+        } catch (err) {
+            if (conn) await conn.rollback();
+            console.error('Error swapping tour order:', err);
+            throw err;
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+
+    static async toggleSignUpDisabled(id) {
+        let conn;
+        try {
+            conn = await pool.getConnection();
+            await conn.query(
+                'UPDATE tours SET sign_up_disabled = NOT sign_up_disabled WHERE id = ?',
+                [id]
+            );
+            return Tour.findById(id);
+        } catch (err) {
+            console.error('Error toggling sign up disabled:', err);
             throw err;
         } finally {
             if (conn) conn.release();

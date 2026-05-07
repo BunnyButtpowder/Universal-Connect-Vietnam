@@ -37,11 +37,14 @@ async function initializeDatabase() {
                 customize TEXT,
                 early_bird_deadline DATE,
                 standard_deadline DATE,
+                is_coming_soon BOOLEAN DEFAULT FALSE,
+                display_order INT DEFAULT 0,
+                sign_up_disabled BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id)
             )
         `);
-        
+
         console.log('Creating shared entities tables...');
         
         // Cities table - shared across tours

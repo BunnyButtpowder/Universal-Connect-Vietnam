@@ -119,6 +119,58 @@ exports.deleteTour = async (req, res) => {
     }
 };
 
+// Swap display order of two tours
+exports.swapTourOrder = async (req, res) => {
+    try {
+        const { tourId1, tourId2 } = req.body;
+
+        if (!tourId1 || !tourId2) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Both tourId1 and tourId2 are required'
+            });
+        }
+
+        await Tour.swapOrder(tourId1, tourId2);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Tour order swapped successfully'
+        });
+    } catch (err) {
+        res.status(400).json({
+            status: 'error',
+            message: err.message
+        });
+    }
+};
+
+// Toggle sign up disabled for a tour
+exports.toggleSignUpDisabled = async (req, res) => {
+    try {
+        const updatedTour = await Tour.toggleSignUpDisabled(req.params.id);
+
+        if (!updatedTour) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Tour not found'
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                tour: updatedTour.toDisplayFormat()
+            }
+        });
+    } catch (err) {
+        res.status(400).json({
+            status: 'error',
+            message: err.message
+        });
+    }
+};
+
 // Get all available cities
 exports.getAllCities = async (req, res) => {
     let conn;

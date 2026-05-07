@@ -84,26 +84,32 @@ exports.updateContentItem = async (req, res) => {
         
         const section = parsedContent.sections[sectionId];
         const itemIndex = section.items.findIndex(item => item.id === itemId);
-        
+
+        let updatedItem;
         if (itemIndex === -1) {
-            return res.status(404).json({ message: `Item ${itemId} not found in section ${sectionId}` });
-        }
-        
-        // Update the item content
-        const updatedItem = {
-            ...section.items[itemIndex],
-            content: content
-        };
-        
-        // Update metadata if provided
-        if (metadata) {
-            updatedItem.metadata = {
-                ...updatedItem.metadata,
-                ...metadata
+            // Item doesn't exist yet in stored content — create it
+            updatedItem = { id: itemId, type: 'image', content: content };
+            if (metadata) {
+                updatedItem.metadata = metadata;
+            }
+            section.items.push(updatedItem);
+        } else {
+            // Update the existing item content
+            updatedItem = {
+                ...section.items[itemIndex],
+                content: content
             };
+
+            // Update metadata if provided
+            if (metadata) {
+                updatedItem.metadata = {
+                    ...updatedItem.metadata,
+                    ...metadata
+                };
+            }
+
+            section.items[itemIndex] = updatedItem;
         }
-        
-        section.items[itemIndex] = updatedItem;
         
         // Save the updated content
         const result = await Content.saveContent(pageName, parsedContent);
