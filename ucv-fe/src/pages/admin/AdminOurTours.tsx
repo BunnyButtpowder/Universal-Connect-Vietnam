@@ -103,6 +103,29 @@ export default function AdminOurTours() {
       }
     }
   };
+
+  const handleSwapOrder = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= tours.length) return;
+
+    try {
+      await toursApi.swapOrder(tours[index].id, tours[targetIndex].id);
+      fetchTours();
+    } catch (error) {
+      console.error('Error swapping tour order:', error);
+      alert('Failed to swap tour positions. Please try again.');
+    }
+  };
+
+  const handleToggleSignUp = async (id: string) => {
+    try {
+      await toursApi.toggleSignUp(id);
+      fetchTours();
+    } catch (error) {
+      console.error('Error toggling sign up:', error);
+      alert('Failed to toggle sign up. Please try again.');
+    }
+  };
   
   if (!ourToursContent) {
     return (
@@ -190,13 +213,13 @@ export default function AdminOurTours() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tours.map(tour => (
+              {tours.map((tour, index) => (
                 <div key={tour.id} className="border rounded-lg overflow-hidden shadow-md tour-card">
                   <div className="h-48 bg-gray-200 relative">
                     {tour.imageUrl ? (
-                      <img 
-                        src={tour.imageUrl} 
-                        alt={tour.title} 
+                      <img
+                        src={tour.imageUrl}
+                        alt={tour.title}
                         className="w-full h-full object-cover tour-image"
                       />
                     ) : (
@@ -207,15 +230,41 @@ export default function AdminOurTours() {
                         COMING SOON
                       </div>
                     )}
+                    {/* Position swap buttons */}
+                    <div className="absolute top-2 left-2 flex flex-col space-y-1">
+                      <button
+                        onClick={() => handleSwapOrder(index, 'up')}
+                        disabled={index === 0}
+                        className={`p-1 rounded text-white text-xs font-bold cursor-pointer ${index === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-900'}`}
+                        title="Move up"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => handleSwapOrder(index, 'down')}
+                        disabled={index === tours.length - 1}
+                        className={`p-1 rounded text-white text-xs font-bold cursor-pointer ${index === tours.length - 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-900'}`}
+                        title="Move down"
+                      >
+                        ▼
+                      </button>
+                    </div>
                   </div>
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-bold text-lg tour-title">{tour.title}</h3>
-                      {tour.isComingSoon && (
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded template-badge">
-                          Template
-                        </span>
-                      )}
+                      <div className="flex items-center space-x-1">
+                        {tour.isComingSoon && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded template-badge">
+                            Template
+                          </span>
+                        )}
+                        {tour.signUpDisabled && (
+                          <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                            Sign Up Off
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center text-sm text-gray-600 mb-2 tour-info">
                       <span className="mr-3">{tour.date}</span>
@@ -228,14 +277,21 @@ export default function AdminOurTours() {
                       ) : (
                         <span className="font-bold text-lg tour-price">${tour.price}</span>
                       )}
-                      <div className="space-x-2">
-                        <button 
+                      <div className="flex items-center space-x-2">
+                        <button
+                          className={`px-3 py-1 rounded text-xs font-medium cursor-pointer ${tour.signUpDisabled ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
+                          onClick={() => handleToggleSignUp(tour.id)}
+                          title={tour.signUpDisabled ? 'Enable sign up' : 'Disable sign up'}
+                        >
+                          {tour.signUpDisabled ? 'Enable Sign Up' : 'Disable Sign Up'}
+                        </button>
+                        <button
                           className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 edit-tour-button cursor-pointer"
                           onClick={() => openEditModal(tour.id)}
                         >
                           Edit
                         </button>
-                        <button 
+                        <button
                           className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 delete-tour-button cursor-pointer"
                           onClick={() => handleDeleteTour(tour.id, tour.title)}
                         >

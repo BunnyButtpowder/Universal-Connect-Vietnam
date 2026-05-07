@@ -240,6 +240,15 @@ const initialHomeContent: PageContent = {
                     id: 'testimonial-3-subtitle',
                     type: 'heading',
                     content: "Title something",
+                },
+                // Testimonial Image
+                {
+                    id: 'testimonial-image',
+                    type: 'image',
+                    content: '/university-event.png',
+                    metadata: {
+                        alt: 'University event'
+                    }
                 }
             ]
         },
@@ -515,7 +524,7 @@ const initialTourDetailsContent: PageContent = {
                 {
                     id: 'tourBanner-date',
                     type: 'heading',
-                    content: "INCOMING • JULY 4",
+                    content: "JULY 4",
                 },
                 {
                     id: 'tourBanner-title',
@@ -777,7 +786,7 @@ const initialSpringTourDetailsContent: PageContent = {
                 {
                     id: 'tourBanner-date',
                     type: 'heading',
-                    content: "INCOMING • 31 MARCH - 10 APRIL 2026",
+                    content: "31 MARCH - 10 APRIL 2026",
                 },
                 {
                     id: 'tourBanner-title',
@@ -1039,7 +1048,7 @@ const initialSignUpFormContent: PageContent = {
                 {
                     id: 'step2-tour-date',
                     type: 'heading',
-                    content: "INCOMING • JULY 4",
+                    content: "JULY 4",
                 },
                 {
                     id: 'step2-tour-title',
@@ -1360,10 +1369,27 @@ export const useContentStore = create<ContentStore>((set, get) => ({
             
             // Check if any pages are missing and add default content
             const pageNames = pages.map(page => page.pageName);
-            
+
             for (const defaultPage of defaultContent) {
                 if (!pageNames.includes(defaultPage.pageName)) {
                     pages.push(defaultPage);
+                } else {
+                    // Merge missing default items into existing pages
+                    const existingPage = pages.find(p => p.pageName === defaultPage.pageName);
+                    if (existingPage) {
+                        for (const [sectionId, defaultSection] of Object.entries(defaultPage.sections)) {
+                            if (!existingPage.sections[sectionId]) {
+                                existingPage.sections[sectionId] = defaultSection;
+                            } else {
+                                const existingItemIds = new Set(existingPage.sections[sectionId].items.map(item => item.id));
+                                for (const defaultItem of defaultSection.items) {
+                                    if (!existingItemIds.has(defaultItem.id)) {
+                                        existingPage.sections[sectionId].items.push(defaultItem);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             

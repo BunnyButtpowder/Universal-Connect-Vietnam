@@ -137,8 +137,8 @@ export function Testimonials() {
                                     <div className="p-1">
                                         <div className="testimonial-image-container rounded-lg overflow-hidden h-64">
                                             <img
-                                                src="/university-event.png"
-                                                alt="University event"
+                                                src={getItemById('home', 'testimonials', 'testimonial-image')?.content || '/university-event.png'}
+                                                alt={getItemById('home', 'testimonials', 'testimonial-image')?.metadata?.alt || 'University event'}
                                                 width={500}
                                                 height={300}
                                                 className="w-full h-full object-cover"

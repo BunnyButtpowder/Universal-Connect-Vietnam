@@ -3,7 +3,7 @@ import { useContentStore } from "../lib/contentStore"
 import { useTranslatedContent } from "../hooks/useTranslatedContent"
 import { useState, useEffect } from "react"
 import { toursApi, TourBasic } from "../lib/api"
-import { generateTourDetailsUrl } from "../lib/utils"
+import { generateTourDetailsUrl, isTourIncoming } from "../lib/utils"
 import { ScrollReveal } from "./ScrollReveal"
 
 // Define Tour type for local use (extending TourBasic with additional properties)
@@ -152,7 +152,7 @@ export function DiscoverSchoolTourHome() {
                                 <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
                                     <div className="relative h-90 overflow-hidden rounded-xl">
                                         <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
-                                            <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
+                                            <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                                         </div>
                                         {tour.isComingSoon && (
                                             <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">

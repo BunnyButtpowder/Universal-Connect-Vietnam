@@ -5,6 +5,7 @@ import { ArrowRight, Settings2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
+import { isTourIncoming } from "../lib/utils";
 
 // Define Tour type
 interface Tour {
@@ -16,6 +17,7 @@ interface Tour {
     date: string;
     detailsUrl: string;
     buttonText: string;
+    isComingSoon?: boolean;
 }
 
 // TourCard component
@@ -24,7 +26,7 @@ function TourCard({ tour }: { tour: Tour }) {
         <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50">
             <div className="relative  overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
-                    <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
+                    <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                 </div>
                 <div className=" p-3">
                     <div className="relative h-full w-full overflow-hidden rounded-xl">
@@ -70,7 +72,7 @@ export default function SpringTourDetails() {
     const getItemById = useContentStore(state => state.getItemById);
 
     // Custom content for Spring Tour 2026
-    const tourDate = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-date')?.content || "INCOMING • 31 MARCH - 10 APRIL 2026";
+    const tourDate = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-date')?.content || "31 MARCH - 10 APRIL 2026";
     const tourTitle = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-title')?.content || "Spring Tour 2026";
     const tourDescription = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-description')?.content || "Explore the vibrant educational landscape of Northern, Central & Southern Vietnam's best institutions. This spring tour offers unique access to top-rated schools in Hanoi, Hai Phong, Hue, Da Nang & Ho Chi Minh City.\n\nThis tour has been carefully designed to showcase schools with strong English programs and students particularly interested in international education opportunities. Each school visit is optimized for meaningful connections and productive discussions.";
     const tourLocation = getItemById('spring-tour-details', 'bannerSection', 'tourBanner-location')?.content || "Northern Vietnam (Hanoi, Hai Duong)";

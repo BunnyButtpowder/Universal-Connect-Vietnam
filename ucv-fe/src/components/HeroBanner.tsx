@@ -12,7 +12,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
 import { useTranslatedContent } from "../hooks/useTranslatedContent";
 import { toursApi, TourBasic } from "../lib/api";
-import { generateTourDetailsUrl } from "../lib/utils";
+import { generateTourDetailsUrl, isTourIncoming } from "../lib/utils";
 
 // Define Tour type for local use (extending TourBasic with detailsUrl)
 interface Tour extends TourBasic {
@@ -198,7 +198,7 @@ export function HeroBanner() {
                                         {/* Tour Info Card Overlay */}
                                         <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3 max-w-xs lg:max-w-md bg-white rounded-2xl shadow-lg px-4 lg:px-6 pb-4 lg:pb-6">
                                             <div className="relative inline-block bg-content text-white rounded-lg px-5 py-1 -top-4">
-                                                <span className="font-medium text-xs">INCOMING • {tour.date}</span>
+                                                <span className="font-medium text-xs">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                                             </div>
 
                                             <h2 className="text-2xl lg:text-4xl font-medium text-content pb-3 border-b-2 border-accent-blue">

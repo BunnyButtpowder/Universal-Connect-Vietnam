@@ -188,9 +188,6 @@ export function AboutUsHome() {
                                     <p className="text-xs text-content space-y-1 font-medium">
                                         {locationTextContent}
                                     </p>
-                                    <p className="text-xs text-content space-y-1 font-medium mt-2">
-                                        We will be expanding to Southern Vietnam in 2026, including HCMC.
-                                    </p>
                                 </div>
                             </div>
 

@@ -400,7 +400,7 @@ export function SignUpFormStep2Editor({ pageContent }: SignUpFormStep2EditorProp
                   item={pageContent.sections.step2Section.items.find(item => item.id === 'step2-tour-date') || {
                     id: 'step2-tour-date',
                     type: 'heading',
-                    content: "INCOMING • JULY 4"
+                    content: "JULY 4"
                   }}
                   className="text-sm"
                 />

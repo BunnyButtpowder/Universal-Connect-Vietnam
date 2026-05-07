@@ -8,7 +8,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { toursApi, TourFull, TourBasic } from "@/lib/api";
 import { useContentStore } from "@/lib/contentStore";
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
-import { generateTourDetailsUrl, generateSignUpUrl } from "@/lib/utils";
+import { generateTourDetailsUrl, generateSignUpUrl, isTourIncoming } from "@/lib/utils";
 
 // TourCard component - updated to use TourBasic from API and handle coming soon tours
 function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price: string | number) => string }) {
@@ -16,7 +16,7 @@ function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price:
         <a href={generateTourDetailsUrl(tour.title)} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50 other-tour-card">
             <div className="relative overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
-                    <span className="font-bold text-xs text-content">INCOMING • {tour.date}</span>
+                    <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                 </div>
                 {tour.isComingSoon && (
                     <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
@@ -223,7 +223,7 @@ export default function TourDetails() {
                     <div className="absolute bottom-10 lg:ms-28 lg:me-48 tour-info-card-bg rounded-2xl px-4 lg:px-6 pb-4 lg:pb-6">
                         <div className="flex items-center gap-3 -top-4 relative">
                             <div className="inline-block bg-content text-white rounded-lg px-5 py-1">
-                                <span className="font-medium text-xs">INCOMING • {tour.date}</span>
+                                <span className="font-medium text-xs">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                             </div>
                             {tour.isComingSoon && (
                                 <div className="inline-block bg-yellow-500 text-white rounded-lg px-5 py-1 coming-soon-badge">
@@ -264,8 +264,8 @@ export default function TourDetails() {
                                     {tour.description}
                                 </p>
                                 
-                                {tour.isComingSoon ? (
-                                    // Coming Soon Tour - Show placeholder messaging
+                                {tour.isComingSoon || tour.signUpDisabled ? (
+                                    // Coming Soon or Sign Up Disabled Tour - Show placeholder messaging
                                     <div className="grid grid-cols-1 gap-4">
                                         <div className="flex items-center gap-3 bg-yellow-50 border-2 border-yellow-400 rounded-xl px-6 py-4">
                                             <div className="flex-shrink-0">
@@ -274,8 +274,8 @@ export default function TourDetails() {
                                                 </svg>
                                             </div>
                                             <div>
-                                                <h4 className="text-yellow-900 text-base font-bold mb-1">More Information Coming Soon</h4>
-                                                <p className="text-yellow-800 text-sm">Registration details, pricing, and complete itinerary will be available soon. Check back for updates!</p>
+                                                <h4 className="text-yellow-900 text-base font-bold mb-1">{tour.isComingSoon ? 'More Information Coming Soon' : 'Registration Currently Closed'}</h4>
+                                                <p className="text-yellow-800 text-sm">{tour.isComingSoon ? 'Registration details, pricing, and complete itinerary will be available soon. Check back for updates!' : 'Sign up for this tour is currently unavailable. Please check back later or contact us for more information.'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -723,8 +723,8 @@ export default function TourDetails() {
                     </div>
                 </div>
 
-                {/* Pricing Section - Only show for non-coming-soon tours */}
-                {!tour.isComingSoon && (
+                {/* Pricing Section - Only show for non-coming-soon tours with sign up enabled */}
+                {!tour.isComingSoon && !tour.signUpDisabled && (
                     <div className="mx-4 md:mx-6 lg:mx-48 mt-20 mb-2 bg-blue-950 py-4 lg:py-10 px-4 lg:px-8 rounded-3xl text-white pricing-section">
                         <div className="grid grid-cols-1 lg:grid-cols-5">
                             {/* Header and content - 2/5 of grid */}
@@ -814,8 +814,8 @@ export default function TourDetails() {
                     </div>
                 )}
                 
-                {/* Coming Soon Tours - Show alternate messaging */}
-                {tour.isComingSoon && (
+                {/* Coming Soon or Sign Up Disabled Tours - Show alternate messaging */}
+                {(tour.isComingSoon || tour.signUpDisabled) && (
                     <div className="mx-4 md:mx-6 lg:mx-48 mt-20 mb-2 bg-gradient-to-r from-yellow-400 to-yellow-500 py-10 px-8 rounded-3xl text-white coming-soon-pricing-section">
                         <div className="flex flex-col items-center text-center space-y-6">
                             <div className="bg-white/20 rounded-full p-4">
@@ -824,9 +824,11 @@ export default function TourDetails() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-2xl lg:text-3xl font-bold mb-3">Pricing Information Coming Soon</h3>
+                                <h3 className="text-2xl lg:text-3xl font-bold mb-3">{tour.isComingSoon ? 'Pricing Information Coming Soon' : 'Registration Currently Closed'}</h3>
                                 <p className="text-lg text-white/90 max-w-2xl mx-auto">
-                                    We're finalizing the pricing details for this exciting tour. Registration will open soon with special early bird discounts!
+                                    {tour.isComingSoon
+                                        ? "We're finalizing the pricing details for this exciting tour. Registration will open soon with special early bird discounts!"
+                                        : 'Sign up for this tour is currently unavailable. Please check back later or contact us for more information.'}
                                 </p>
                             </div>
                             <div className="flex items-center space-x-2 mt-4">

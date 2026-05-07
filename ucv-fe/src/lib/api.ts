@@ -19,6 +19,8 @@ export interface TourBasic {
   location: string;
   duration: string;
   isComingSoon?: boolean;
+  displayOrder?: number;
+  signUpDisabled?: boolean;
 }
 
 export interface CustomizeOption {
@@ -260,6 +262,47 @@ export const toursApi = {
       return true;
     } catch (error) {
       console.error(`Error deleting tour ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Swap display order of two tours
+  swapOrder: async (tourId1: string, tourId2: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/swap-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tourId1, tourId2 }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to swap tour order: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error swapping tour order:', error);
+      throw error;
+    }
+  },
+
+  // Toggle sign up disabled for a tour
+  toggleSignUp: async (id: string): Promise<TourBasic> => {
+    try {
+      const response = await fetch(`${API_BASE}/tours/${id}/toggle-signup`, {
+        method: 'PATCH',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to toggle sign up: ${response.status}`);
+      }
+
+      const data: ApiResponse<{ tour: TourBasic }> = await response.json();
+      return data.data?.tour as TourBasic;
+    } catch (error) {
+      console.error(`Error toggling sign up for tour ${id}:`, error);
       throw error;
     }
   },

@@ -1,6 +1,7 @@
 import { PageContent, ContentItem } from '../../../lib/types';
 import { InlineEditableField } from './InlineEditableField';
 import { TestimonialCardEditor } from './TestimonialCardEditor';
+import { ImageEditor } from '../ImageEditor';
 
 interface TestimonialsEditorProps {
   pageContent: PageContent;
@@ -33,6 +34,9 @@ export function TestimonialsEditor({ pageContent }: TestimonialsEditorProps) {
   const testimonial3Content = getItemById('testimonial-3-content');
   const testimonial3University = getItemById('testimonial-3-university');
   const testimonial3Subtitle = getItemById('testimonial-3-subtitle');
+
+  // Testimonial Image
+  const testimonialImage = getItemById('testimonial-image');
   
   return (
     <div className="preview-container space-y-8">
@@ -67,7 +71,7 @@ export function TestimonialsEditor({ pageContent }: TestimonialsEditorProps) {
               Testimonial Cards Preview
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Testimonial Card 1 */}
               <TestimonialCardEditor
                 contentItem={testimonial1Content}
@@ -77,7 +81,7 @@ export function TestimonialsEditor({ pageContent }: TestimonialsEditorProps) {
                 pageName={pageContent.pageName}
                 sectionId={sectionId}
               />
-              
+
               {/* Testimonial Card 2 */}
               <TestimonialCardEditor
                 contentItem={testimonial2Content}
@@ -87,7 +91,7 @@ export function TestimonialsEditor({ pageContent }: TestimonialsEditorProps) {
                 pageName={pageContent.pageName}
                 sectionId={sectionId}
               />
-              
+
               {/* Testimonial Card 3 */}
               <TestimonialCardEditor
                 contentItem={testimonial3Content}
@@ -97,6 +101,18 @@ export function TestimonialsEditor({ pageContent }: TestimonialsEditorProps) {
                 pageName={pageContent.pageName}
                 sectionId={sectionId}
               />
+
+              {/* Testimonial Image */}
+              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                <div className="text-xs font-semibold text-gray-500 mb-2">Carousel Image</div>
+                <ImageEditor
+                  item={testimonialImage}
+                  pageName={pageContent.pageName}
+                  sectionId={sectionId}
+                  label="Change Image"
+                  imageClassName="h-32 w-full object-cover rounded"
+                />
+              </div>
             </div>
           </div>
         </div>

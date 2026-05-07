@@ -8,7 +8,7 @@ import { useContentStore } from "@/lib/contentStore";
 import { ContentItem } from "@/lib/types";
 import { processAllTemplates } from "@/utils/documentProcessor";
 import { toursApi, TourFull } from "@/lib/api";
-import { generateTourDetailsUrl } from "@/lib/utils";
+import { generateTourDetailsUrl, isTourIncoming } from "@/lib/utils";
 
 // Define types for form data
 interface FormData {
@@ -814,7 +814,7 @@ export default function SignUpForm() {
                                                 />
                                                 <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded-sm flex items-center text-xs">
                                                     <span className="font-semibold mr-1 text-content">
-                                                        INCOMING • {currentTour?.date}
+                                                        {isTourIncoming(currentTour?.date) ? 'INCOMING • ' : ''}{currentTour?.date}
                                                     </span>
                                                 </div>
                                             </div>
@@ -952,7 +952,7 @@ export default function SignUpForm() {
                                                         </p>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <div className="space-y-2">
-                                                                {[1, 2, 3].map((count) => (
+                                                                {[1, 2].map((count) => (
                                                                     <div key={count} className="flex items-center">
                                                                         <input
                                                                             type="radio"
@@ -978,7 +978,7 @@ export default function SignUpForm() {
                                                                 <div className="text-xs text-gray-600">
                                                                     <p>• First representative pays full price</p>
                                                                     <p>• Each additional person: +25% of base price</p>
-                                                                    <p>• Maximum 3 people per university</p>
+                                                                    <p>• Maximum 2 people per university</p>
                                                                 </div>
                                                             </div>
                                                         </div>
