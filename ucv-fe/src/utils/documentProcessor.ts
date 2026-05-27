@@ -2,6 +2,46 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
 import { contactApi, TourFull } from '@/lib/api';
+import { UniversityRepresentative } from '@/types/signup';
+import { buildFlatSelectedCityNamesForInvoice } from '@/utils/tourSelectionLabels';
+import { fixInvoiceDocxZip } from '@/utils/invoiceDocxLayout';
+
+const TEMPLATE_PATHS = {
+    registration: '/VN_template.docx',
+    invoice: '/IUC_Invoice VAT_UNIVERSITY_template.docx'
+} as const;
+
+function isDocxArrayBuffer(buffer: ArrayBuffer): boolean {
+    const bytes = new Uint8Array(buffer);
+    return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+}
+
+/** Tải template .docx — báo lỗi rõ nếu thiếu file (tránh treo khi Vite trả về index.html) */
+async function fetchDocxTemplate(templateUrl: string): Promise<ArrayBuffer> {
+    const response = await fetch(templateUrl);
+
+    if (!response.ok) {
+        throw new Error(
+            `Không tìm thấy template ${templateUrl} (HTTP ${response.status}). ` +
+                `Đặt file .docx vào thư mục ucv-fe/public.`
+        );
+    }
+
+    const templateContent = await response.arrayBuffer();
+
+    if (templateContent.byteLength === 0) {
+        throw new Error(`Template ${templateUrl} rỗng.`);
+    }
+
+    if (!isDocxArrayBuffer(templateContent)) {
+        throw new Error(
+            `File ${templateUrl} không phải Word (.docx). ` +
+                `Thường do thiếu file trong public/ — server trả về trang HTML thay vì template.`
+        );
+    }
+
+    return templateContent;
+}
 
 // Types for our form data based on the form interface
 interface FormData {
@@ -18,6 +58,8 @@ interface FormData {
         earlyBird: boolean;
         returningClient: boolean;
     };
+    participantCount?: number;
+    representatives?: UniversityRepresentative[];
     headOffice: string;
     businessRegistration: string;
     legalRepresentative: string;
@@ -27,6 +69,57 @@ interface FormData {
     swift: string;
     tourId: string;
     tourName?: string;
+}
+
+function applyRepresentativeTemplateFields(
+    data: Record<string, string | boolean | number>,
+    formData: FormData
+): void {
+    const reps = formData.representatives?.length
+        ? formData.representatives
+        : [
+              {
+                  name: formData.legalRepresentative,
+                  position: formData.position,
+                  phone: formData.phone,
+                  email: formData.email
+              }
+          ];
+
+    reps.forEach((rep, index) => {
+        const n = index + 1;
+        const suffix = n === 1 ? '' : ` ${n}`;
+
+        data[`REPRESENTATIVE_${n}_NAME`] = rep.name;
+        data[`REPRESENTATIVE_${n}_POSITION`] = rep.position;
+        data[`REPRESENTATIVE_${n}_PHONE`] = rep.phone;
+        data[`REPRESENTATIVE_${n}_EMAIL`] = rep.email;
+        data[`Name of University Representative${suffix}`] = rep.name;
+        data[`Position${suffix}`] = rep.position;
+        data[`Phone${suffix}`] = rep.phone;
+        data[`Email${suffix}`] = rep.email;
+    });
+
+    const legal = reps[0];
+    if (legal) {
+        data.legalRepresentative = legal.name;
+        data['Legal Representative'] = legal.name;
+        data['LEGAL REPRESENTATIVE'] = legal.name;
+        data.position = legal.position;
+        data['Position'] = legal.position;
+        data['POSITION'] = legal.position;
+        data.phone = legal.phone || formData.phone;
+        data.email = legal.email || formData.email;
+        data['PHONE'] = legal.phone || formData.phone;
+        data['EMAIL'] = legal.email || formData.email;
+    }
+
+    data['ALL REPRESENTATIVES'] = reps
+        .map(
+            (r, i) =>
+                `Representative ${i + 1}: ${r.name}, ${r.position}, ${r.phone}, ${r.email}`
+        )
+        .join('\n');
 }
 
 /**
@@ -58,9 +151,13 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
     
     // Calculate prices with VAT
     const priceWithVAT = Math.round(calculatedPrice * 1.08).toLocaleString();
+
+    const selectedCitiesLabel = buildFlatSelectedCityNamesForInvoice(
+        formData.cities,
+        currentTour ?? null
+    );
     
-    // Create a comprehensive mapping that covers all possible template placeholders
-    return {
+    const templateData: Record<string, string | boolean | number> = {
         // Basic information - common placeholders with variations
         fullName: formData.fullName,
         organization: formData.organization,
@@ -110,7 +207,7 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
         legalRepresentative: formData.legalRepresentative,
         "Legal Representative": formData.legalRepresentative,
         "LEGAL REPRESENTATIVE": formData.legalRepresentative,
-        
+
         position: formData.position,
         "Position": formData.position,
         "POSITION": formData.position,
@@ -136,76 +233,12 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
         "Tour Date": tourDate,
         "TOUR DATE": tourDate,
         
-        // Selected cities (comma-separated list of selected cities) - Dynamic approach
-        selectedCities: (() => {
-            const selectedCityNames = Object.keys(formData.cities)
-                .filter(key => formData.cities[key])
-                .map(key => {
-                    // Convert camelCase keys to readable names
-                    const fallbackNames: { [key: string]: string } = {
-                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                        'hueDaNang': 'Hue & Da Nang',
-                        'hcmc': 'Ho Chi Minh City',
-                        'northern': 'Northern Vietnam',
-                        'central': 'Central Vietnam',
-                        'southern': 'Southern Vietnam'
-                    };
-                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                });
-            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
-        })(),
-        "Selected Cities": (() => {
-            const selectedCityNames = Object.keys(formData.cities)
-                .filter(key => formData.cities[key])
-                .map(key => {
-                    const fallbackNames: { [key: string]: string } = {
-                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                        'hueDaNang': 'Hue & Da Nang',
-                        'hcmc': 'Ho Chi Minh City',
-                        'northern': 'Northern Vietnam',
-                        'central': 'Central Vietnam',
-                        'southern': 'Southern Vietnam'
-                    };
-                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                });
-            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
-        })(),
-        
-        // Add support for the specific tags requested by the user
+        selectedCities: selectedCitiesLabel,
+        "Selected Cities": selectedCitiesLabel,
         "TOUR NAME": selectedTour,
         "[TOUR NAME]": selectedTour,
-        "CITY NAMES": (() => {
-            const selectedCityNames = Object.keys(formData.cities)
-                .filter(key => formData.cities[key])
-                .map(key => {
-                    const fallbackNames: { [key: string]: string } = {
-                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                        'hueDaNang': 'Hue & Da Nang',
-                        'hcmc': 'Ho Chi Minh City',
-                        'northern': 'Northern Vietnam',
-                        'central': 'Central Vietnam',
-                        'southern': 'Southern Vietnam'
-                    };
-                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                });
-            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
-        })(),
-        "[CITY NAMES]": (() => {
-            const selectedCityNames = Object.keys(formData.cities)
-                .filter(key => formData.cities[key])
-                .map(key => {
-                    const fallbackNames: { [key: string]: string } = {
-                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                        'hueDaNang': 'Hue & Da Nang',
-                        'hcmc': 'Ho Chi Minh City',
-                        'northern': 'Northern Vietnam',
-                        'central': 'Central Vietnam',
-                        'southern': 'Southern Vietnam'
-                    };
-                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                });
-            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
-        })(),
+        "CITY NAMES": selectedCitiesLabel,
+        "[CITY NAMES]": selectedCitiesLabel,
             
         // Selected promotions (comma-separated list of selected promotions)
         selectedPromotions: [
@@ -261,6 +294,9 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
         companyWebsite: 'universal-connect.com',
         "Company Website": 'universal-connect.com',
     };
+
+    applyRepresentativeTemplateFields(templateData, formData);
+    return templateData;
 }
 
 /**
@@ -441,23 +477,10 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
             : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)');
             
-        // Get the selected cities string - Dynamic approach
-        const selectedCitiesString = (() => {
-            const selectedCityNames = Object.keys(processedFormData.cities)
-                .filter(key => processedFormData.cities[key])
-                .map(key => {
-                    const fallbackNames: { [key: string]: string } = {
-                        'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                        'hueDaNang': 'Hue & Da Nang',
-                        'hcmc': 'Ho Chi Minh City',
-                        'northern': 'Northern Vietnam',
-                        'central': 'Central Vietnam',
-                        'southern': 'Southern Vietnam'
-                    };
-                    return fallbackNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                });
-            return selectedCityNames.length > 0 ? selectedCityNames.join(', ') : 'None selected';
-        })();
+        const selectedCitiesString = buildFlatSelectedCityNamesForInvoice(
+            processedFormData.cities,
+            currentTour ?? null
+        );
         
         // Create replacement mapping for direct text replacement if needed
         const replacements: Record<string, string> = {
@@ -479,6 +502,7 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             '[TOUR NAME]': tourNameForReplacements,
             'CITY NAMES': selectedCitiesString,
             '[CITY NAMES]': selectedCitiesString,
+            'Selected Cities': selectedCitiesString,
             
             // Dynamic pricing
             'PRICE': currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
@@ -547,6 +571,15 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
                 ? '1 - 8 OCTOBER 2025'
                 : '31 MARCH - 10 APRIL 2026'
         };
+
+        const repTemplateFields: Record<string, string | boolean | number> = {};
+        applyRepresentativeTemplateFields(repTemplateFields, formData);
+        Object.assign(
+            replacements,
+            Object.fromEntries(
+                Object.entries(repTemplateFields).map(([key, value]) => [key, String(value)])
+            )
+        );
         
         // Store generated documents in memory for sending to backend
         const generatedDocuments: File[] = [];
@@ -556,7 +589,7 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             // Process the Vietnam template
             console.log("Processing Vietnam template using template engine");
             const vnDoc = await processDocumentTemplateForEmail(
-                '/VN_template.docx',
+                TEMPLATE_PATHS.registration,
                 processedFormData,
                 `Registration_Form_${formData.organization.replace(/\s+/g, '_')}.docx`,
                 calculatedPrice,
@@ -600,7 +633,7 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             
             // Try direct text replacement as fallback
             const vnDoc = await replaceTextInWordDocumentForEmail(
-                '/VN_template.docx',
+                TEMPLATE_PATHS.registration,
                 vnReplacements,
                 `Registration_Form_${formData.organization.replace(/\s+/g, '_')}.docx`
             );
@@ -614,7 +647,7 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
         try {
             console.log("Processing Invoice template using template engine");
             const invoiceDoc = await processDocumentTemplateForEmail(
-                '/IUC_Invoice VAT_UNIVERSITY_template.docx',
+                TEMPLATE_PATHS.invoice,
                 processedFormData,
                 `Invoice_${formData.organization.replace(/\s+/g, '_')}.docx`,
                 calculatedPrice,
@@ -685,7 +718,7 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             
             // Try direct text replacement as fallback
             const invoiceDoc = await replaceTextInWordDocumentForEmail(
-                '/IUC_Invoice VAT_UNIVERSITY_template.docx',
+                TEMPLATE_PATHS.invoice,
                 invoiceReplacements,
                 `Invoice_${formData.organization.replace(/\s+/g, '_')}.docx`
             );
@@ -695,17 +728,19 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             }
         }
         
-        // Check if we have documents to send
-        if (generatedDocuments.length > 0) {
-            // Send documents to backend API
-            console.log(`Sending ${generatedDocuments.length} documents to backend API`);
-            await contactApi.submitDocuments(processedFormData, generatedDocuments);
-            console.log("Documents sent successfully");
+        console.log(`Sending registration (${generatedDocuments.length} document(s)) to backend API`);
+        await contactApi.submitDocuments(processedFormData, generatedDocuments);
+
+        if (generatedDocuments.length === 0) {
+            console.warn(
+                'Registration sent without Word attachments — add VN_template.docx and ' +
+                    'IUC_Invoice VAT_UNIVERSITY_template.docx to ucv-fe/public/'
+            );
         } else {
-            throw new Error("No documents were generated");
+            console.log('Documents sent successfully');
         }
-        
-        console.log("All templates processed and submitted successfully");
+
+        console.log('Registration submitted successfully');
         return Promise.resolve();
     } catch (error: any) {
         console.error('Error processing templates:', error);
@@ -728,22 +763,10 @@ async function processDocumentTemplateForEmail(
 ): Promise<File | null> {
     console.log(`Starting to process document template for email: ${templateUrl}`);
     try {
-        // Fetch the template document
         console.log(`Fetching template: ${templateUrl}`);
-        const response = await fetch(templateUrl);
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
-        }
-        
-        const templateContent = await response.arrayBuffer();
+        const templateContent = await fetchDocxTemplate(templateUrl);
         console.log('Template fetched successfully, size:', templateContent.byteLength, 'bytes');
-        
-        if (templateContent.byteLength === 0) {
-            throw new Error('Template file is empty');
-        }
-        
-        // Create a zip instance and load template
+
         const zip = new PizZip(templateContent);
         
         // Create a Docxtemplater instance with the template
@@ -760,10 +783,12 @@ async function processDocumentTemplateForEmail(
         const templateData = createTemplateData(formData, calculatedPrice, currentTour);
         doc.setData(templateData);
         
-        // Render document
         doc.render();
-        
-        // Get the document blob
+
+        if (templateUrl === TEMPLATE_PATHS.invoice) {
+            fixInvoiceDocxZip(doc.getZip());
+        }
+
         const content = doc.getZip().generate({
             type: 'blob',
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -794,17 +819,9 @@ async function replaceTextInWordDocumentForEmail(
 ): Promise<File | null> {
     console.log(`Starting direct text replacement for email: ${documentUrl}`);
     try {
-        // Fetch the document
-        const response = await fetch(documentUrl);
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
-        }
-        
-        const documentContent = await response.arrayBuffer();
+        const documentContent = await fetchDocxTemplate(documentUrl);
         console.log('Document fetched successfully, size:', documentContent.byteLength, 'bytes');
-        
-        // Create a zip instance and load document
+
         const zip = new PizZip(documentContent);
         
         // Get the document.xml file
@@ -833,21 +850,22 @@ async function replaceTextInWordDocumentForEmail(
             }
         }
         
-        // Update the document.xml file
         zip.file('word/document.xml', documentText);
-        
-        // Generate output file
+
+        if (documentUrl === TEMPLATE_PATHS.invoice) {
+            fixInvoiceDocxZip(zip);
+        }
+
         const content = zip.generate({
             type: 'blob',
             mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             compression: 'DEFLATE'
         });
-        
-        // Convert blob to File
+
         const file = new File([content], outputFilename, {
             type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         });
-        
+
         console.log(`Document replaced successfully: ${outputFilename}`);
         return file;
     } catch (error: any) {

@@ -19,9 +19,9 @@ interface AuthState {
   clearError: () => void;
 }
 
-// Get the API base URL from environment variable if available
-const API_BASE = 'https://api.ucv.com.vn';
-// const API_BASE = 'http://localhost:3000';
+import { API_BASE_URL } from './apiConfig';
+
+const API_BASE = API_BASE_URL;
 
 export const useAuthStore = create<AuthState>()(
   persist(

@@ -3,8 +3,7 @@ import { ContentItem, ContentUpdate } from '../../lib/types';
 import { useContentStore } from '../../lib/contentStore';
 
 // Base API URL for production
-const API_BASE_URL = 'https://api.ucv.com.vn';
-// const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from '../../lib/apiConfig';
 
 interface ImageEditorProps {
   item: ContentItem | undefined;

@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 
 // Base API URL for production
-const API_BASE_URL = 'https://api.ucv.com.vn';
-// const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from '../../lib/apiConfig';
 
 interface ImageUploaderProps {
   onImageUploaded: (imageUrl: string) => void;

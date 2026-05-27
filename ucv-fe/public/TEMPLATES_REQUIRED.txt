@@ -1,0 +1,7 @@
+Sign-up form needs these Word templates in this folder (ucv-fe/public):
+
+1. VN_template.docx
+2. IUC_Invoice VAT_UNIVERSITY_template.docx
+
+Copy them from the production server or your team's document archive.
+Without them, registration can still email UCV (summary only) but contract files will not attach.

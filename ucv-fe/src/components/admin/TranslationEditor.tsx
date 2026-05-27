@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useContentStore } from '@/lib/contentStore';
 import { ContentItem } from '@/lib/types';
 import { translationApi } from '@/lib/translationApi';
+import { API_BASE_URL } from '@/lib/apiConfig';
 import { toast } from 'sonner';
 import { Globe, Save, Wand2 } from 'lucide-react';
 
@@ -58,7 +59,7 @@ export function TranslationEditor({ item }: TranslationEditorProps) {
     setIsAutoTranslating(true);
     try {
       // Use the real auto-translation API with Google Translate
-      const response = await fetch('https://api.ucv.com.vn/translations/auto-translate', {
+      const response = await fetch(`${API_BASE_URL}/translations/auto-translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,8 +5,14 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "fix-utf8": "node config/fix-utf8-encoding.js"
+    "dev": "cross-env DB_PROFILE=local nodemon server.js",
+    "dev:local": "cross-env DB_PROFILE=local nodemon server.js",
+    "dev:server": "cross-env DB_PROFILE=production nodemon server.js",
+    "start": "node server.js",
+    "start:local": "cross-env DB_PROFILE=local node server.js",
+    "start:server": "cross-env DB_PROFILE=production node server.js",
+    "fix-utf8": "node config/fix-utf8-encoding.js",
+    "kill:3000": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/kill-port-3000.ps1"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +30,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.9"
   }
 }

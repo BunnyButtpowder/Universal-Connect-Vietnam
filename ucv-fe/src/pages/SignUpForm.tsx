@@ -9,6 +9,19 @@ import { ContentItem } from "@/lib/types";
 import { processAllTemplates } from "@/utils/documentProcessor";
 import { toursApi, TourFull } from "@/lib/api";
 import { generateTourDetailsUrl, isTourIncoming } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+    buildInitialCitySelections,
+    emptyRepresentative,
+    isFullTourOption,
+    MAX_PARTICIPANTS,
+    resizeRepresentatives,
+    findFullTourOption,
+    isExclusivePackageOption,
+    isFullTourSelected,
+    sortCustomizeOptionsForSignup,
+    UniversityRepresentative
+} from "@/types/signup";
 
 // Define types for form data
 interface FormData {
@@ -26,11 +39,10 @@ interface FormData {
         returningClient: boolean;
     };
     participantCount: number;
+    representatives: UniversityRepresentative[];
     // Step 3 fields
     headOffice: string;
     businessRegistration: string;
-    legalRepresentative: string;
-    position: string;
     accountNumber: string;
     bank: string;
     swift: string;
@@ -45,10 +57,9 @@ interface ValidationErrors {
     email?: string;
     headOffice?: string;
     businessRegistration?: string;
-    legalRepresentative?: string;
-    position?: string;
     accountNumber?: string;
     bank?: string;
+    [key: string]: string | undefined;
 }
 
 // Helper function to get content item by ID
@@ -86,25 +97,8 @@ export default function SignUpForm() {
                 const tourData = await toursApi.getBySlug(slug);
                 setCurrentTour(tourData);
 
-                // Initialize form data with dynamic cities based on customize options
-                // By default, only select grandTotal if it exists
-                const initialCities: { [key: string]: boolean } = {};
-                const hasGrandTotal = tourData.customizeOptions?.some(option => option.key === 'grandTotal');
-                
-                tourData.customizeOptions?.forEach(option => {
-                    if (option.key === 'grandTotal') {
-                        initialCities[option.key] = true;
-                    } else {
-                        initialCities[option.key] = false;
-                    }
-                });
-
-                // If no grandTotal exists, select all other options by default
-                if (!hasGrandTotal) {
-                    tourData.customizeOptions?.forEach(option => {
-                        initialCities[option.key] = true;
-                    });
-                }
+                // Mặc định chỉ chọn Full Tour (grandTotal); các segment khác không tick
+                const initialCities = buildInitialCitySelections(tourData.customizeOptions);
 
                 setFormData(prev => ({
                     ...prev,
@@ -114,7 +108,7 @@ export default function SignUpForm() {
 
                 // Calculate initial price
                 const initialPrice = calculatePrice(tourData, initialCities, {
-                    earlyBird: true,
+                    earlyBird: false,
                     returningClient: false
                 }, 1);
                 setCalculatedPrice(initialPrice);
@@ -144,15 +138,14 @@ export default function SignUpForm() {
         selectedPackage: "earlyBird",
         cities: {},
         promotions: {
-            earlyBird: true,
+            earlyBird: false,
             returningClient: false
         },
         participantCount: 1,
+        representatives: [emptyRepresentative()],
         // Step 3 fields initialized with empty values
         headOffice: "",
         businessRegistration: "",
-        legalRepresentative: "",
-        position: "",
         accountNumber: "",
         bank: "",
         swift: "",
@@ -208,32 +201,62 @@ export default function SignUpForm() {
 
     const handleCityChange = (city: string, checked: boolean | string) => {
         const isChecked = checked === "indeterminate" ? false : !!checked;
+        const options = currentTour?.customizeOptions ?? [];
         let newCities = { ...formData.cities };
 
-        // Mutual exclusivity logic between grandTotal and other segments
-        if (city === 'grandTotal' && isChecked) {
-            // If grandTotal is being checked, uncheck all other options
-            newCities = {};
-            currentTour?.customizeOptions?.forEach(option => {
-                newCities[option.key] = option.key === 'grandTotal';
-            });
-        } else if (city !== 'grandTotal' && isChecked) {
-            // If any other segment is being checked, uncheck grandTotal
-            newCities[city] = true;
-            newCities['grandTotal'] = false;
-        } else {
-            // Handle unchecking
+        const toggledOption = options.find((o) => o.key === city);
+        if (!toggledOption) {
             newCities[city] = isChecked;
+            setFormData((prev) => ({ ...prev, cities: newCities }));
+            if (currentTour) {
+                setCalculatedPrice(
+                    calculatePrice(currentTour, newCities, formData.promotions, formData.participantCount)
+                );
+            }
+            return;
         }
 
-        setFormData(prev => ({
+        const fullTourActive = isFullTourSelected(newCities, options);
+
+        if (isChecked) {
+            // Full Tour đang bật → không cho tick thêm bất kỳ option nào khác
+            if (fullTourActive && !isFullTourOption(toggledOption)) {
+                return;
+            }
+
+            if (isFullTourOption(toggledOption)) {
+                // Full Tour: chỉ mình nó được tick
+                newCities = {};
+                options.forEach((option) => {
+                    newCities[option.key] = option.key === city;
+                });
+            } else if (isExclusivePackageOption(toggledOption)) {
+                // 3 gói chính: chỉ một trong Full / Northern & Central / Central & Southern
+                options.forEach((option) => {
+                    if (isExclusivePackageOption(option)) {
+                        newCities[option.key] = option.key === city;
+                    }
+                });
+            } else {
+                // Counsellor Connect (có thể kết hợp với gói regional, không kết hợp Full Tour)
+                newCities[city] = true;
+            }
+        } else {
+            newCities[city] = false;
+        }
+
+        setFormData((prev) => ({
             ...prev,
             cities: newCities
         }));
 
-        // Update price calculation
         if (currentTour) {
-            const newPrice = calculatePrice(currentTour, newCities, formData.promotions, formData.participantCount);
+            const newPrice = calculatePrice(
+                currentTour,
+                newCities,
+                formData.promotions,
+                formData.participantCount
+            );
             setCalculatedPrice(newPrice);
         }
     };
@@ -259,7 +282,8 @@ export default function SignUpForm() {
     const handleParticipantCountChange = (count: number) => {
         setFormData(prev => ({
             ...prev,
-            participantCount: count
+            participantCount: count,
+            representatives: resizeRepresentatives(prev.representatives, count)
         }));
 
         // Update price calculation
@@ -268,6 +292,47 @@ export default function SignUpForm() {
             setCalculatedPrice(newPrice);
         }
     };
+
+    const handleRepresentativeChange = (
+        index: number,
+        field: keyof UniversityRepresentative,
+        value: string
+    ) => {
+        setFormData(prev => {
+            const representatives = [...prev.representatives];
+            representatives[index] = { ...representatives[index], [field]: value };
+            return { ...prev, representatives };
+        });
+
+        const touchKey = `rep-${index}-${field}`;
+        setTouched(prev => ({ ...prev, [touchKey]: true }));
+
+        if (errors[touchKey]) {
+            setErrors(prev => ({ ...prev, [touchKey]: undefined }));
+        }
+    };
+
+    // Gợi ý điền Representative 1 từ bước 1 khi vào bước 3
+    useEffect(() => {
+        if (currentStep !== 3) return;
+
+        setFormData(prev => {
+            const representatives = resizeRepresentatives(
+                prev.representatives,
+                prev.participantCount
+            );
+            const first = representatives[0];
+            if (first && !first.name && !first.phone && !first.email) {
+                representatives[0] = {
+                    ...first,
+                    name: prev.fullName,
+                    phone: prev.phone,
+                    email: prev.email
+                };
+            }
+            return { ...prev, representatives };
+        });
+    }, [currentStep]);
 
     const validateStep1 = (): boolean => {
         const newErrors: ValidationErrors = {};
@@ -303,32 +368,45 @@ export default function SignUpForm() {
         return isValid;
     };
 
+    const validateStep2 = (): boolean => {
+        const hasTourSegment = Object.values(formData.cities).some((selected) => selected === true);
+        return hasTourSegment;
+    };
+
     const validateStep3 = (): boolean => {
         const newErrors: ValidationErrors = {};
         let isValid = true;
 
-        console.log('Validating step 3 fields:', formData);
-
         if (!formData.headOffice.trim()) {
             newErrors.headOffice = "Head office address is required";
             isValid = false;
-            console.log('Head office validation failed');
         }
 
-        if (!formData.legalRepresentative.trim()) {
-            newErrors.legalRepresentative = "Legal representative is required";
-            isValid = false;
-            console.log('Legal representative validation failed');
-        }
+        const reps = resizeRepresentatives(
+            formData.representatives,
+            formData.participantCount
+        );
 
-        if (!formData.position.trim()) {
-            newErrors.position = "Position is required";
-            isValid = false;
-            console.log('Position validation failed');
-        }
+        reps.forEach((rep, index) => {
+            if (!rep.name.trim()) {
+                newErrors[`rep-${index}-name`] = "Representative name is required";
+                isValid = false;
+            }
+            if (!rep.position.trim()) {
+                newErrors[`rep-${index}-position`] = "Position is required";
+                isValid = false;
+            }
+            if (rep.phone.trim() && !/^\d{8,15}$/.test(rep.phone.trim())) {
+                newErrors[`rep-${index}-phone`] = "Phone must be between 8-15 digits";
+                isValid = false;
+            }
+            if (rep.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rep.email.trim())) {
+                newErrors[`rep-${index}-email`] = "Please enter a valid email";
+                isValid = false;
+            }
+        });
 
         setErrors(newErrors);
-        console.log('Step 3 validation result:', isValid ? 'Valid' : 'Invalid', newErrors);
         return isValid;
     };
 
@@ -345,7 +423,10 @@ export default function SignUpForm() {
             return;
         }
 
-        // Step 2 doesn't need validation
+        if (currentStep === 2 && !validateStep2()) {
+            toast.error("Please select at least one tour segment to continue.");
+            return;
+        }
 
         setCurrentStep(prev => prev + 1);
     };
@@ -357,31 +438,32 @@ export default function SignUpForm() {
     const handleSubmit = async () => {
         // Validate step 3 before submitting
         if (!validateStep3()) {
-            // Mark all step 3 fields as touched to show errors
-            setTouched({
-                ...touched,
-                headOffice: true,
-                legalRepresentative: true,
-                position: true
+            const repTouched: Record<string, boolean> = { headOffice: true };
+            formData.representatives.forEach((_, index) => {
+                repTouched[`rep-${index}-name`] = true;
+                repTouched[`rep-${index}-position`] = true;
+                repTouched[`rep-${index}-phone`] = true;
+                repTouched[`rep-${index}-email`] = true;
             });
+            setTouched({ ...touched, ...repTouched });
             return;
         }
 
-        // Transform the flexible cities structure to the format expected by processAllTemplates
-        const transformedCities = {
-            hanoiHaiDuong: formData.cities.northern || formData.cities.hanoiHaiDuong || false,
-            hueDaNang: formData.cities.central || formData.cities.hueDaNang || false,
-            hcmc: formData.cities.southern || formData.cities.hcmc || false
-        };
-
         // Pre-process data before submission to ensure valid formats
+        const representatives = resizeRepresentatives(
+            formData.representatives,
+            formData.participantCount
+        );
+        const legalRep = representatives[0];
+
         const processedFormData = {
             ...formData,
-            // Ensure phone and email are properly formatted 
+            representatives,
             phone: formData.phone.trim(),
             email: formData.email.trim(),
-            // Transform cities to expected format
-            cities: transformedCities
+            legalRepresentative: legalRep?.name.trim() || "",
+            position: legalRep?.position.trim() || "",
+            cities: { ...formData.cities }
         };
 
         // Set processing state
@@ -408,21 +490,18 @@ export default function SignUpForm() {
             // Set document processing complete
             setDocumentProcessingComplete(true);
 
-            // Set the form as submitted to show success screen
             setIsSubmitted(true);
-        } catch (error: any) {
+            toast.success("Registration submitted successfully!");
+        } catch (error: unknown) {
             console.error("Error processing document templates:", error);
-            const errorMessage = error?.message || "An unknown error occurred";
-            console.error("Error message:", errorMessage);
+            const errorMessage =
+                error instanceof Error ? error.message : "An unknown error occurred";
 
-            // Show the error to the user
-            setProcessingError(`An error occurred while processing your registration documents: ${errorMessage}. Please try again.`);
-
-            // Don't set isSubmitted to true on error
+            const displayMessage = `Registration failed: ${errorMessage}. Please try again.`;
+            setProcessingError(displayMessage);
+            toast.error(displayMessage);
+        } finally {
             setIsProcessingDocuments(false);
-
-            // Alert for debugging in case the console isn't visible
-            alert(`Document processing failed: ${errorMessage}. Check the console for more details.`);
         }
     };
 
@@ -892,11 +971,23 @@ export default function SignUpForm() {
                                                                 Tour Segments
                                                             </p>
                                                             <div className="space-y-2">
-                                                                {currentTour?.customizeOptions?.map((option) => (
+                                                                {sortCustomizeOptionsForSignup(
+                                                                    currentTour?.customizeOptions ?? []
+                                                                ).map((option) => {
+                                                                    const fullTourLocked = isFullTourSelected(
+                                                                        formData.cities,
+                                                                        currentTour?.customizeOptions
+                                                                    );
+                                                                    const segmentDisabled =
+                                                                        fullTourLocked &&
+                                                                        !isFullTourOption(option);
+
+                                                                    return (
                                                                     <div key={option.key} className="flex items-start">
                                                                         <Checkbox
                                                                             id={option.key}
-                                                                            className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500"
+                                                                            disabled={segmentDisabled}
+                                                                            className="mr-2 mt-1 cursor-pointer data-[state=checked]:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                                                             checked={formData.cities[option.key] || false}
                                                                             onCheckedChange={(checked) => handleCityChange(option.key, checked)}
                                                                         />
@@ -909,7 +1000,8 @@ export default function SignUpForm() {
                                                                             </div>
                                                                         </label>
                                                                     </div>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                             </div>
                                                         </div>
 
@@ -952,7 +1044,7 @@ export default function SignUpForm() {
                                                         </p>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <div className="space-y-2">
-                                                                {[1, 2].map((count) => (
+                                                                {Array.from({ length: MAX_PARTICIPANTS }, (_, i) => i + 1).map((count) => (
                                                                     <div key={count} className="flex items-center">
                                                                         <input
                                                                             type="radio"
@@ -978,7 +1070,7 @@ export default function SignUpForm() {
                                                                 <div className="text-xs text-gray-600">
                                                                     <p>• First representative pays full price</p>
                                                                     <p>• Each additional person: +25% of base price</p>
-                                                                    <p>• Maximum 2 people per university</p>
+                                                                    <p>• Maximum {MAX_PARTICIPANTS} people per university</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1116,77 +1208,195 @@ export default function SignUpForm() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
-                                        <div>
-                                            <label htmlFor="legalRepresentative" className="block text-blue-600 mb-2">
-                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-representative-label')} <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="legalRepresentative"
-                                                className={`text-xs w-full bg-transparent border-b ${errors.legalRepresentative && touched.legalRepresentative ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                                placeholder="Name of the authorized representative"
-                                                value={formData.legalRepresentative}
-                                                onChange={handleInputChange}
-                                            />
-                                            {errors.legalRepresentative && touched.legalRepresentative && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.legalRepresentative}</p>
-                                            )}
-                                        </div>
-                                    </div>
+                                    {resizeRepresentatives(
+                                        formData.representatives,
+                                        formData.participantCount
+                                    ).map((rep, index) => {
+                                        const repLabelBase = getContentById(
+                                            signUpFormContent?.sections.step3Section?.items,
+                                            'step3-representative-label'
+                                        );
+                                        const nameLabel =
+                                            formData.participantCount > 1
+                                                ? `${repLabelBase} ${index + 1}`
+                                                : repLabelBase;
+                                        const isLegalRep = index === 0;
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                        <div>
-                                            <label htmlFor="position" className="block text-blue-600 mb-2">
-                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-position-label')} <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="position"
-                                                className={`text-xs w-full bg-transparent border-b ${errors.position && touched.position ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
-                                                placeholder="Your role within the organization"
-                                                value={formData.position}
-                                                onChange={handleInputChange}
-                                            />
-                                            {errors.position && touched.position && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.position}</p>
-                                            )}
-                                        </div>
+                                        return (
+                                            <div
+                                                key={`representative-${index}`}
+                                                className={`mb-6 ${index > 0 ? 'pt-6 border-t border-blue-100' : ''}`}
+                                            >
+                                                {formData.participantCount > 1 && (
+                                                    <p className="text-sm font-semibold text-content mb-4">
+                                                        Representative {index + 1}
+                                                        {isLegalRep && (
+                                                            <span className="font-normal text-gray-500">
+                                                                {' '}
+                                                                — Legal Representative on contract
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                )}
+                                                {formData.participantCount === 1 && isLegalRep && (
+                                                    <p className="text-xs text-gray-500 mb-3">
+                                                        This person will be the Legal Representative on the contract.
+                                                    </p>
+                                                )}
 
-                                        <div>
-                                            <label htmlFor="phone" className="block text-blue-600 mb-2">
-                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-phone-label')}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="phone"
-                                                value={formData.phone}
-                                                readOnly
-                                                className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
-                                                placeholder="Minimum 8 digits, maximum 15 digits"
-                                            />
-                                        </div>
+                                                <div className="grid grid-cols-1 gap-6 mb-4">
+                                                    <div>
+                                                        <label
+                                                            className="block text-blue-600 mb-2"
+                                                            htmlFor={`rep-${index}-name`}
+                                                        >
+                                                            {nameLabel}{' '}
+                                                            <span className="text-red-500">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            id={`rep-${index}-name`}
+                                                            className={`text-xs w-full bg-transparent border-b ${errors[`rep-${index}-name`] && touched[`rep-${index}-name`] ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                            placeholder="Name of the authorized representative"
+                                                            value={rep.name}
+                                                            onChange={(e) =>
+                                                                handleRepresentativeChange(
+                                                                    index,
+                                                                    'name',
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                        {errors[`rep-${index}-name`] &&
+                                                            touched[`rep-${index}-name`] && (
+                                                                <p className="text-red-500 text-xs mt-1">
+                                                                    {errors[`rep-${index}-name`]}
+                                                                </p>
+                                                            )}
+                                                    </div>
+                                                </div>
 
-                                        <div>
-                                            <label htmlFor="email" className="block text-blue-600 mb-2">
-                                                {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-email-label')}
-                                            </label>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                value={formData.email}
-                                                readOnly
-                                                className="text-xs w-full bg-transparent border-b border-black py-2 text-gray-700"
-                                                placeholder="example@gmail.com"
-                                            />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div>
+                                                        <label
+                                                            className="block text-blue-600 mb-2"
+                                                            htmlFor={`rep-${index}-position`}
+                                                        >
+                                                            {getContentById(
+                                                                signUpFormContent?.sections.step3Section
+                                                                    ?.items,
+                                                                'step3-position-label'
+                                                            )}{' '}
+                                                            <span className="text-red-500">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            id={`rep-${index}-position`}
+                                                            className={`text-xs w-full bg-transparent border-b ${errors[`rep-${index}-position`] && touched[`rep-${index}-position`] ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                            placeholder="Your role within the organization"
+                                                            value={rep.position}
+                                                            onChange={(e) =>
+                                                                handleRepresentativeChange(
+                                                                    index,
+                                                                    'position',
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                        {errors[`rep-${index}-position`] &&
+                                                            touched[`rep-${index}-position`] && (
+                                                                <p className="text-red-500 text-xs mt-1">
+                                                                    {
+                                                                        errors[
+                                                                            `rep-${index}-position`
+                                                                        ]
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label
+                                                            className="block text-blue-600 mb-2"
+                                                            htmlFor={`rep-${index}-phone`}
+                                                        >
+                                                            {getContentById(
+                                                                signUpFormContent?.sections.step3Section
+                                                                    ?.items,
+                                                                'step3-phone-label'
+                                                            )}
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            id={`rep-${index}-phone`}
+                                                            className={`text-xs w-full bg-transparent border-b ${errors[`rep-${index}-phone`] && touched[`rep-${index}-phone`] ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                            placeholder="Minimum 8 digits, maximum 15 digits"
+                                                            value={rep.phone}
+                                                            onChange={(e) =>
+                                                                handleRepresentativeChange(
+                                                                    index,
+                                                                    'phone',
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                        {errors[`rep-${index}-phone`] &&
+                                                            touched[`rep-${index}-phone`] && (
+                                                                <p className="text-red-500 text-xs mt-1">
+                                                                    {errors[`rep-${index}-phone`]}
+                                                                </p>
+                                                            )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label
+                                                            className="block text-blue-600 mb-2"
+                                                            htmlFor={`rep-${index}-email`}
+                                                        >
+                                                            {getContentById(
+                                                                signUpFormContent?.sections.step3Section
+                                                                    ?.items,
+                                                                'step3-email-label'
+                                                            )}
+                                                        </label>
+                                                        <input
+                                                            type="email"
+                                                            id={`rep-${index}-email`}
+                                                            className={`text-xs w-full bg-transparent border-b ${errors[`rep-${index}-email`] && touched[`rep-${index}-email`] ? 'border-red-500' : 'border-black'} py-2 placeholder-gray-400 focus:outline-none focus:border-blue-400`}
+                                                            placeholder="example@gmail.com"
+                                                            value={rep.email}
+                                                            onChange={(e) =>
+                                                                handleRepresentativeChange(
+                                                                    index,
+                                                                    'email',
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                        {errors[`rep-${index}-email`] &&
+                                                            touched[`rep-${index}-email`] && (
+                                                                <p className="text-red-500 text-xs mt-1">
+                                                                    {errors[`rep-${index}-email`]}
+                                                                </p>
+                                                            )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {processingError && (
+                                        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                                            <p className="text-sm text-red-800">{processingError}</p>
                                         </div>
-                                    </div>
+                                    )}
 
                                     <div className="mt-6 lg:mt-8 flex items-center justify-center gap-2">
                                         <button
                                             type="button"
                                             className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-sm font-semibold min-w-[100px] px-5 py-3 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center"
                                             onClick={prevStep}
+                                            disabled={isProcessingDocuments}
                                         >
                                             {getContentById(signUpFormContent?.sections.step3Section?.items, 'step3-back-button')}
                                         </button>

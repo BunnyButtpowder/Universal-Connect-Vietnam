@@ -1,30 +1,32 @@
 const mariadb = require('mariadb');
-const dotenv = require('dotenv');
+const { loadEnv, getDbConfig, getSafeDbLabel } = require('./env');
 
-dotenv.config();
+loadEnv();
 
-// Create a connection pool with UTF-8 support
+const dbConfig = getDbConfig();
+
 const pool = mariadb.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'ucv_db',
+    host: dbConfig.host,
+    port: dbConfig.port,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.database,
     connectionLimit: 5,
+    connectTimeout: 15000,
     charset: 'utf8mb4',
     collation: 'utf8mb4_unicode_ci',
-    // Ensure proper UTF-8 handling
-    initSql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+    allowPublicKeyRetrieval: true,
+    initSql: 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci'
 });
 
-// Connect and check for errors
 async function testConnection() {
     let conn;
     try {
         conn = await pool.getConnection();
-        console.log('Connected to MariaDB!');
+        console.log(`Connected to MariaDB ${getSafeDbLabel()}`);
         return true;
     } catch (err) {
-        console.error('Database connection error: ', err);
+        console.error(`Database connection error ${getSafeDbLabel()}:`, err.message);
         return false;
     } finally {
         if (conn) conn.release();
@@ -33,5 +35,6 @@ async function testConnection() {
 
 module.exports = {
     pool,
-    testConnection
-}; 
+    testConnection,
+    getSafeDbLabel
+};

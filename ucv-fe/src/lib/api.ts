@@ -1,5 +1,6 @@
 // API utility functions for the UCV app
 import { PageContent, ContentUpdate } from './types';
+import { API_BASE_URL } from './apiConfig';
 
 interface ApiResponse<T> {
   status: string;
@@ -127,9 +128,7 @@ export interface TourCreateInput {
   isComingSoon?: boolean;
 }
 
-// Get the API base URL from environment variable if available
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.ucv.com.vn';
-// const API_BASE = 'http://localhost:3000';
+const API_BASE = API_BASE_URL;
 
 // API utility for tours
 export const toursApi = {
@@ -538,13 +537,25 @@ export const contactApi = {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to submit documents: ${response.status}`);
+        let message = `Failed to submit registration (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          const detail = errorData.error ? `: ${errorData.error}` : '';
+          message = `${errorData.message || message}${detail}`;
+        } catch {
+          // response body may not be JSON
+        }
+        throw new Error(message);
       }
       
       return true;
     } catch (error) {
       console.error('Error submitting documents:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(
+          'Cannot reach the API server. Start ucv-be (npm run dev) and check VITE_API_URL in ucv-fe/.env'
+        );
+      }
       throw error;
     }
   }

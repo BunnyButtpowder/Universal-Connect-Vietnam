@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toursApi, TourCreateInput, City, EventType, PackageItem, TourFull, CustomizeOption, TimelineEvent } from '../../lib/api';
 import { TourImageEditor } from './TourImageEditor';
-
-// Base API URL for production
-const API_BASE_URL = 'https://api.ucv.com.vn';
-// const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from '../../lib/apiConfig';
 
 interface EditTourModalProps {
   tourId: string;

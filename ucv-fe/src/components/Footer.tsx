@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useState, FormEvent } from "react"
 import { useContentStore } from "../lib/contentStore"
 import { useTranslatedContent } from "../hooks/useTranslatedContent"
+import { API_BASE_URL } from "../lib/apiConfig"
 
 export function Footer() {
     // Content store and translation hooks
@@ -85,7 +86,7 @@ export function Footer() {
             };
 
             // Send API request
-            const response = await fetch("https://api.ucv.com.vn/contact/submit", {
+            const response = await fetch(`${API_BASE_URL}/contact/submit`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,6 +1,5 @@
 import { Language, ContentTranslation } from './types';
-
-const API_BASE_URL = 'https://api.ucv.com.vn';
+import { API_BASE_URL } from './apiConfig';
 
 export const translationApi = {
   // Fetch all translations for a specific page

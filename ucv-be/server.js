@@ -1,5 +1,6 @@
+require('./config/env').loadEnv();
+
 const express = require('express');
-const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -13,8 +14,8 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const contentRoutes = require('./routes/contentRoutes');
 const translationRoutes = require('./routes/translationRoutes');
 const corsOptions = require('./config/cors');
-
-dotenv.config();
+const { getSafeDbLabel } = require('./config/database');
+const { getEmailToLabel, isEmailConfigured } = require('./config/env');
 
 const app = express();
 
@@ -60,6 +61,12 @@ const startServer = async () => {
             // Start the server
             app.listen(process.env.PORT, () => {
                 console.log(`Server is running on port ${process.env.PORT}`);
+                console.log(`Database profile: ${getSafeDbLabel()}`);
+                if (isEmailConfigured()) {
+                    console.log(`Email registration/contact → ${getEmailToLabel()}`);
+                } else {
+                    console.log('Email: chưa cấu hình (EMAIL_USER / EMAIL_PASSWORD)');
+                }
                 console.log(`CORS enabled for: http://localhost:5173, https://ucv.com.vn`);
                 console.log(`Static files are served from: ${uploadsDir}`);
                 console.log(`Translation API available at: http://localhost:${process.env.PORT}/translations`);

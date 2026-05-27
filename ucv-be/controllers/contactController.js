@@ -1,13 +1,16 @@
 const nodemailer = require('nodemailer');
+const { getEmailToList, isEmailConfigured } = require('../config/env');
+const { buildSelectedCityNamesLabel } = require('../utils/tourSelectionLabels');
 
-// Create a transporter for sending emails
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
-});
+function createTransporter() {
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+        }
+    });
+}
 
 // Submit contact form
 exports.submitContactForm = async (req, res) => {
@@ -25,8 +28,7 @@ exports.submitContactForm = async (req, res) => {
         // Create email content
         const mailOptions = {
             from: `"${req.body.email}" <${process.env.EMAIL_USER}>`,
-            to: 'info@ucv.com.vn',
-            // to: 'ngominhvu2003@gmail.com',
+            to: getEmailToList(),
             replyTo: req.body.email,
             subject: 'New Contact Form Submission - Universal Connect Vietnam',
             html: `
@@ -40,8 +42,14 @@ exports.submitContactForm = async (req, res) => {
             `
         };
 
-        // Send email
-        await transporter.sendMail(mailOptions);
+        if (!isEmailConfigured()) {
+            return res.status(503).json({
+                message: 'Email server is not configured',
+                error: 'Set EMAIL_USER and EMAIL_PASSWORD in ucv-be/.env (Gmail App Password).'
+            });
+        }
+
+        await createTransporter().sendMail(mailOptions);
 
         res.status(200).json({ message: 'Contact form submitted successfully' });
     } catch (err) {
@@ -54,9 +62,8 @@ exports.submitContactForm = async (req, res) => {
 const Tour = require('../models/Tour');
 
 exports.submitDocuments = async (req, res) => {
-    // Check for required data
-    if (!req.body.formData || !req.files || req.files.length === 0) {
-        return res.status(400).json({ message: 'Form data and documents are required' });
+    if (!req.body.formData) {
+        return res.status(400).json({ message: 'Form data is required' });
     }
 
     try {
@@ -87,62 +94,36 @@ exports.submitDocuments = async (req, res) => {
             }
         }
 
-        // Get file attachments
-        const attachments = req.files.map(file => ({
+        const files = req.files || [];
+        const attachments = files.map(file => ({
             filename: file.originalname,
             content: file.buffer
         }));
 
-        // Build selected cities list using actual tour data
-        let selectedCities = 'None selected';
-        if (tourData && tourData.customizeOptions && formData.cities) {
-            const selectedCityNames = [];
-            
-            // Process each selected customize option
-            Object.keys(formData.cities).forEach(cityKey => {
-                if (formData.cities[cityKey]) {
-                    // Find the corresponding customize option
-                    const customizeOption = tourData.customizeOptions.find(opt => opt.key === cityKey);
-                    
-                    if (customizeOption) {
-                        // Use the customize option name directly
-                        selectedCityNames.push(customizeOption.name);
-                    } else {
-                        // Fallback for legacy keys if customize option not found
-                        const fallbackNames = {
-                            'hanoiHaiDuong': 'Hanoi & Hai Duong',
-                            'hueDaNang': 'Hue & Da Nang', 
-                            'hcmc': 'Ho Chi Minh City',
-                            'northern': 'Northern Vietnam',
-                            'central': 'Central Vietnam',
-                            'southern': 'Southern Vietnam'
-                        };
-                        if (fallbackNames[cityKey]) {
-                            selectedCityNames.push(fallbackNames[cityKey]);
-                        } else {
-                            // If no fallback, use the key itself (formatted)
-                            const formattedKey = cityKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                            selectedCityNames.push(formattedKey);
-                        }
-                    }
-                }
-            });
-            
-            selectedCities = selectedCityNames.length > 0 ? 
-                [...new Set(selectedCityNames)].join(', ') : 'None selected';
-        }
+        const representativesHtml = Array.isArray(formData.representatives) && formData.representatives.length > 0
+            ? formData.representatives.map((rep, index) => `
+                <p><strong>Representative ${index + 1}${index === 0 ? ' (Legal Representative)' : ''}:</strong></p>
+                <ul>
+                    <li>Name: ${rep.name || 'N/A'}</li>
+                    <li>Position: ${rep.position || 'N/A'}</li>
+                    <li>Phone: ${rep.phone || 'N/A'}</li>
+                    <li>Email: ${rep.email || 'N/A'}</li>
+                </ul>
+            `).join('')
+            : '';
+
+        const selectedCities = buildSelectedCityNamesLabel(formData, tourData);
         
-        // Selected promotions as text
+        const promotions = formData.promotions || {};
         const selectedPromotions = [
-            formData.promotions.earlyBird ? 'Early Bird 10%' : '',
-            formData.promotions.returningClient ? 'Returning Client 15%' : ''
+            promotions.earlyBird ? 'Early Bird 10%' : '',
+            promotions.returningClient ? 'Returning Client 15%' : ''
         ].filter(Boolean).join(', ') || 'None selected';
 
         // Create email content
         const mailOptions = {
             from: `"${formData.email}" <${process.env.EMAIL_USER}>`,
-            to: 'info@ucv.com.vn',
-            // to: 'ngominhvu2003@gmail.com',
+            to: getEmailToList(),
             replyTo: formData.email,
             subject: `New Tour Registration - ${formData.organization} - Universal Connect Vietnam`,
             html: `
@@ -154,6 +135,8 @@ exports.submitDocuments = async (req, res) => {
                 <p><strong>Position:</strong> ${formData.position}</p>
                 <p><strong>Head Office Address:</strong> ${formData.headOffice}</p>
                 <p><strong>Legal Representative:</strong> ${formData.legalRepresentative}</p>
+                ${representativesHtml}
+                ${attachments.length === 0 ? '<p><em>Word attachments were not generated (missing templates on server build).</em></p>' : ''}
                 
                 <h3>Tour Details</h3>
                 <p><strong>Selected Tour:</strong> ${selectedTour}</p>
@@ -168,12 +151,35 @@ exports.submitDocuments = async (req, res) => {
             attachments: attachments
         };
 
-        // Send email
-        await transporter.sendMail(mailOptions);
+        if (!isEmailConfigured()) {
+            if (process.env.EMAIL_SKIP_SEND === 'true') {
+                console.log('[EMAIL_SKIP_SEND] Tour registration (no mail sent):', {
+                    wouldSendTo: getEmailToList(),
+                    organization: formData.organization,
+                    email: formData.email,
+                    tour: selectedTour,
+                    attachments: attachments.length
+                });
+                return res.status(200).json({
+                    message: 'Registration saved (email skipped — dev mode)',
+                    devMode: true
+                });
+            }
+
+            return res.status(503).json({
+                message: 'Email server is not configured',
+                error: 'Set EMAIL_USER and EMAIL_PASSWORD in ucv-be/.env. For local test without mail, set EMAIL_SKIP_SEND=true.'
+            });
+        }
+
+        await createTransporter().sendMail(mailOptions);
 
         res.status(200).json({ message: 'Documents submitted successfully' });
     } catch (err) {
         console.error('Error sending documents:', err);
-        res.status(500).json({ message: 'Error submitting documents', error: err.message });
+        res.status(500).json({
+            message: 'Error submitting documents',
+            error: err.message
+        });
     }
 }; 

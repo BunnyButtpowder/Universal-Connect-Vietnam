@@ -21,6 +21,7 @@ import { AdminGuard } from "./components/AdminGuard";
 import { Toaster } from "sonner";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import { AjaxRouter } from "./components/AjaxRouter";
+import { DevApiIndicator } from "./components/DevApiIndicator";
 
 function AppContent() {
   const fetchContent = useContentStore(state => state.fetchContent);
@@ -70,6 +71,7 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Toaster position="top-center" richColors />
+      <DevApiIndicator />
       <AjaxRouter>
         <Routes>
           {/* Public Routes */}
