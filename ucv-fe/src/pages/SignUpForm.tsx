@@ -16,7 +16,6 @@ import {
     isFullTourOption,
     MAX_PARTICIPANTS,
     resizeRepresentatives,
-    findFullTourOption,
     isExclusivePackageOption,
     isFullTourSelected,
     sortCustomizeOptionsForSignup,

@@ -160,6 +160,10 @@ function orderSelectedCitySegmentKeys(
     return [...ordered, ...remaining];
 }
 
+function isCitySelectionChecked(value: boolean | string | undefined): boolean {
+    return value === true || value === 'true';
+}
+
 /**
  * "Hai Phong, Hanoi, … (Northern & Central Cities)" — chỉ 3 gói thành phố.
  */
@@ -167,8 +171,8 @@ export function buildSelectedCityNamesLabel(
     citySelections: Record<string, boolean>,
     tour?: TourFull | null
 ): string {
-    const selectedKeys = Object.keys(citySelections).filter(
-        (key) => citySelections[key] === true || citySelections[key] === 'true'
+    const selectedKeys = Object.keys(citySelections).filter((key) =>
+        isCitySelectionChecked(citySelections[key] as boolean | string | undefined)
     );
     if (selectedKeys.length === 0) return 'None selected';
 
@@ -215,8 +219,8 @@ export function buildFlatSelectedCityNamesForInvoice(
     citySelections: Record<string, boolean>,
     tour?: TourFull | null
 ): string {
-    const selectedKeys = Object.keys(citySelections).filter(
-        (key) => citySelections[key] === true || citySelections[key] === 'true'
+    const selectedKeys = Object.keys(citySelections).filter((key) =>
+        isCitySelectionChecked(citySelections[key] as boolean | string | undefined)
     );
     if (selectedKeys.length === 0) return 'None selected';
 

@@ -65,8 +65,8 @@ export function fixInvoiceHeaderAnchorsInXml(documentXml: string): string {
 }
 
 export function fixInvoiceDocxZip(zip: {
-    file: (name: string) => { asText: () => string } | null;
-    file: (name: string, content: string) => void;
+    file(name: string): { asText(): string } | null;
+    file(name: string, content: string): void;
 }): void {
     const documentFile = zip.file('word/document.xml');
     if (!documentFile) return;

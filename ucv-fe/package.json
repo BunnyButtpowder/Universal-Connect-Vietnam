@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "node app.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -23,6 +24,7 @@
     "docxtemplater": "^3.61.2",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.5.2",
+    "express": "^4.21.2",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.484.0",
