@@ -132,3 +132,24 @@ export function buildInitialCitySelections(
 
     return selections;
 }
+
+/** Chuẩn hóa cities trước khi gửi email / tạo Word — khớp key với customizeOptions của tour */
+export function normalizeCitySelectionsForSubmit(
+    cities: Record<string, boolean | string>,
+    options: CustomizeOption[] | undefined
+): Record<string, boolean> {
+    if (!options?.length) {
+        const normalized: Record<string, boolean> = {};
+        for (const [key, value] of Object.entries(cities)) {
+            normalized[key] = value === true || value === 'true';
+        }
+        return normalized;
+    }
+
+    const normalized: Record<string, boolean> = {};
+    for (const option of options) {
+        const value = cities[option.key];
+        normalized[option.key] = value === true || value === 'true';
+    }
+    return normalized;
+}

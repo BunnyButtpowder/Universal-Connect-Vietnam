@@ -5,7 +5,8 @@ const LEGACY_SEGMENT_LABELS = {
     northern: 'Northern Vietnam',
     central: 'Central Vietnam',
     southern: 'Southern Vietnam',
-    grandTotal: 'Full Tour'
+    grandTotal: 'Full Tour',
+    Full: 'Full Tour'
 };
 
 const LEGACY_KEY_CITIES = {
@@ -19,6 +20,7 @@ const LEGACY_KEY_CITIES = {
 
 const LEGACY_CITY_SEGMENT_KEYS = new Set([
     'grandTotal',
+    'Full',
     'northern',
     'central',
     'southern',
@@ -260,15 +262,23 @@ function buildSelectedCityNamesLabel(formData, tourData) {
         } else if (LEGACY_KEY_CITIES[key]) {
             segmentCities = filterToKnownTourCities([...LEGACY_KEY_CITIES[key]], tourData);
             segmentName = LEGACY_SEGMENT_LABELS[key] || formatOptionKey(key);
-        } else if (key === 'grandTotal' && tourData?.cities?.length) {
+        } else if (
+            (key === 'grandTotal' || key === 'Full') &&
+            tourData?.cities?.length
+        ) {
             segmentCities = tourData.cities.map((c) => c.name).filter(Boolean);
-            segmentName = LEGACY_SEGMENT_LABELS.grandTotal;
+            segmentName = LEGACY_SEGMENT_LABELS[key] || option?.name || 'Full Tour';
+        } else if (option && isFullTourOption(option)) {
+            segmentName = option.name;
         } else {
             continue;
         }
 
         const cityList = dedupeCityNames(segmentCities);
         if (cityList.length === 0) {
+            if (segmentName) {
+                groups.push(segmentName);
+            }
             continue;
         }
 
@@ -299,7 +309,6 @@ function buildSelectedTourSegmentsLabel(formData, tourData) {
     for (const key of selectedKeys) {
         const option = customizeOptions.find((opt) => opt.key === key);
         if (option) {
-            if (!isCitySegmentOption(option)) continue;
             names.push(option.name);
             continue;
         }
@@ -307,9 +316,7 @@ function buildSelectedTourSegmentsLabel(formData, tourData) {
             names.push(LEGACY_SEGMENT_LABELS[key]);
             continue;
         }
-        if (isLegacyCitySegmentKey(key)) {
-            names.push(formatOptionKey(key));
-        }
+        names.push(formatOptionKey(key));
     }
 
     const unique = [...new Set(names.filter(Boolean))];

@@ -1,0 +1,4 @@
+# Build artifacts / deploy bundles — do not commit
+ucv-fe.zip
+index-frontend.js
+index-BiT22Ejp.js

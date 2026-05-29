@@ -2,8 +2,14 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
 import { contactApi, TourFull } from '@/lib/api';
-import { UniversityRepresentative } from '@/types/signup';
-import { buildFlatSelectedCityNamesForInvoice } from '@/utils/tourSelectionLabels';
+import {
+    normalizeCitySelectionsForSubmit,
+    UniversityRepresentative
+} from '@/types/signup';
+import {
+    buildSelectedTourSegmentsLabel,
+    buildSelectedTourSegmentsLabelVi
+} from '@/utils/tourSelectionLabels';
 import { fixInvoiceDocxZip } from '@/utils/invoiceDocxLayout';
 
 const TEMPLATE_PATHS = {
@@ -122,6 +128,47 @@ function applyRepresentativeTemplateFields(
         .join('\n');
 }
 
+function replaceNthOccurrence(text: string, search: string, replacement: string, nth: number): string {
+    if (!search || nth <= 0) return text;
+    let count = 0;
+    let fromIndex = 0;
+    while (true) {
+        const index = text.indexOf(search, fromIndex);
+        if (index === -1) return text;
+        count += 1;
+        if (count === nth) {
+            return text.slice(0, index) + replacement + text.slice(index + search.length);
+        }
+        fromIndex = index + search.length;
+    }
+}
+
+function escapeXmlText(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+/** Registration template có 2 chỗ CITY NAMES: EN và VI, thay lần 2 thành tiếng Việt. */
+function applyVietnameseSegmentLabelToRegistrationXml(
+    zip: PizZip,
+    englishSegments: string,
+    vietnameseSegments: string
+): void {
+    if (!englishSegments || !vietnameseSegments || englishSegments === vietnameseSegments) return;
+    const documentFile = zip.file('word/document.xml');
+    if (!documentFile) return;
+
+    const xml = documentFile.asText();
+    const escapedEnglish = escapeXmlText(englishSegments);
+    const escapedVietnamese = escapeXmlText(vietnameseSegments);
+    const updated = replaceNthOccurrence(xml, escapedEnglish, escapedVietnamese, 2);
+    zip.file('word/document.xml', updated);
+}
+
 /**
  * Creates a mapping of form data to document template fields
  * This function centralizes the mapping logic so we can easily adjust field mappings
@@ -152,7 +199,11 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
     // Calculate prices with VAT
     const priceWithVAT = Math.round(calculatedPrice * 1.08).toLocaleString();
 
-    const selectedCitiesLabel = buildFlatSelectedCityNamesForInvoice(
+    const selectedCitiesLabel = buildSelectedTourSegmentsLabel(
+        formData.cities,
+        currentTour ?? null
+    );
+    const selectedCitiesLabelVi = buildSelectedTourSegmentsLabelVi(
         formData.cities,
         currentTour ?? null
     );
@@ -239,6 +290,10 @@ function createTemplateData(formData: FormData, calculatedPrice: number = 0, cur
         "[TOUR NAME]": selectedTour,
         "CITY NAMES": selectedCitiesLabel,
         "[CITY NAMES]": selectedCitiesLabel,
+        "CITY NAMES VI": selectedCitiesLabelVi,
+        "[CITY NAMES VI]": selectedCitiesLabelVi,
+        "CITY NAMES VN": selectedCitiesLabelVi,
+        "[CITY NAMES VN]": selectedCitiesLabelVi,
             
         // Selected promotions (comma-separated list of selected promotions)
         selectedPromotions: [
@@ -454,7 +509,11 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
     try {
         // Make a copy of formData to ensure we don't modify the original
         const processedFormData = { ...formData };
-        
+        processedFormData.cities = normalizeCitySelectionsForSubmit(
+            formData.cities,
+            currentTour?.customizeOptions
+        );
+
         // Add tour name if provided
         if (tourName) {
             processedFormData.tourName = tourName;
@@ -477,7 +536,11 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
             : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)');
             
-        const selectedCitiesString = buildFlatSelectedCityNamesForInvoice(
+        const selectedCitiesString = buildSelectedTourSegmentsLabel(
+            processedFormData.cities,
+            currentTour ?? null
+        );
+        const selectedCitiesStringVi = buildSelectedTourSegmentsLabelVi(
             processedFormData.cities,
             currentTour ?? null
         );
@@ -503,6 +566,10 @@ export async function processAllTemplates(formData: FormData, calculatedPrice: n
             'CITY NAMES': selectedCitiesString,
             '[CITY NAMES]': selectedCitiesString,
             'Selected Cities': selectedCitiesString,
+            'CITY NAMES VI': selectedCitiesStringVi,
+            '[CITY NAMES VI]': selectedCitiesStringVi,
+            'CITY NAMES VN': selectedCitiesStringVi,
+            '[CITY NAMES VN]': selectedCitiesStringVi,
             
             // Dynamic pricing
             'PRICE': currentTour?.pricing?.standard?.regular ? `$${Math.round(Number(currentTour.pricing.standard.regular))}` : '',
@@ -785,6 +852,12 @@ async function processDocumentTemplateForEmail(
         
         doc.render();
 
+        if (templateUrl === TEMPLATE_PATHS.registration) {
+            const selectedSegmentsEn = buildSelectedTourSegmentsLabel(formData.cities, currentTour ?? null);
+            const selectedSegmentsVi = buildSelectedTourSegmentsLabelVi(formData.cities, currentTour ?? null);
+            applyVietnameseSegmentLabelToRegistrationXml(doc.getZip(), selectedSegmentsEn, selectedSegmentsVi);
+        }
+
         if (templateUrl === TEMPLATE_PATHS.invoice) {
             fixInvoiceDocxZip(doc.getZip());
         }
@@ -851,6 +924,12 @@ async function replaceTextInWordDocumentForEmail(
         }
         
         zip.file('word/document.xml', documentText);
+
+        if (documentUrl === TEMPLATE_PATHS.registration) {
+            const selectedSegmentsEn = replacements['CITY NAMES'] || '';
+            const selectedSegmentsVi = replacements['CITY NAMES VI'] || selectedSegmentsEn;
+            applyVietnameseSegmentLabelToRegistrationXml(zip, selectedSegmentsEn, selectedSegmentsVi);
+        }
 
         if (documentUrl === TEMPLATE_PATHS.invoice) {
             fixInvoiceDocxZip(zip);

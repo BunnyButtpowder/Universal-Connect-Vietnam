@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import {
     buildInitialCitySelections,
     emptyRepresentative,
+    findFullTourOption,
     isFullTourOption,
     MAX_PARTICIPANTS,
+    normalizeCitySelectionsForSubmit,
     resizeRepresentatives,
     isExclusivePackageOption,
     isFullTourSelected,
@@ -435,6 +437,12 @@ export default function SignUpForm() {
     };
 
     const handleSubmit = async () => {
+        if (!validateStep2()) {
+            toast.error("Please select at least one tour segment to continue.");
+            setCurrentStep(2);
+            return;
+        }
+
         // Validate step 3 before submitting
         if (!validateStep3()) {
             const repTouched: Record<string, boolean> = { headOffice: true };
@@ -462,7 +470,10 @@ export default function SignUpForm() {
             email: formData.email.trim(),
             legalRepresentative: legalRep?.name.trim() || "",
             position: legalRep?.position.trim() || "",
-            cities: { ...formData.cities }
+            cities: normalizeCitySelectionsForSubmit(
+                formData.cities,
+                currentTour?.customizeOptions
+            )
         };
 
         // Set processing state
@@ -520,11 +531,18 @@ export default function SignUpForm() {
         // Calculate base price (for the first participant)
         let basePrice = 0;
 
-        // If no regions selected or all regions selected, use grandTotal
-        const grandTotalOption = tour.customizeOptions.find(opt => opt.key === 'grandTotal');
-        const totalRegions = tour.customizeOptions.filter(opt => opt.key !== 'grandTotal').length;
+        const fullTourOption = findFullTourOption(tour.customizeOptions);
+        const totalRegions = tour.customizeOptions.filter(
+            (opt) => !isFullTourOption(opt)
+        ).length;
 
-        if (selectedRegions.length === 0 || selectedRegions.length === totalRegions) {
+        if (
+            fullTourOption &&
+            (selectedRegions.length === 0 ||
+                selectedRegions.length === totalRegions ||
+                (selectedRegions.length === 1 && selectedRegions[0] === fullTourOption.key))
+        ) {
+            const grandTotalOption = fullTourOption;
             if (grandTotalOption) {
                 if (isEarlyBird && isReturningClient) {
                     basePrice = Number(grandTotalOption.pricing.earlyBird.returningUniversity);
@@ -573,20 +591,25 @@ export default function SignUpForm() {
 
         let basePrice = 0;
 
-        const grandTotalOption = tour.customizeOptions.find(opt => opt.key === 'grandTotal');
-        const totalRegions = tour.customizeOptions.filter(opt => opt.key !== 'grandTotal').length;
+        const fullTourOption = findFullTourOption(tour.customizeOptions);
+        const totalRegions = tour.customizeOptions.filter(
+            (opt) => !isFullTourOption(opt)
+        ).length;
 
-        if (selectedRegions.length === 0 || selectedRegions.length === totalRegions) {
-            if (grandTotalOption) {
-                if (isEarlyBird && isReturningClient) {
-                    basePrice = Number(grandTotalOption.pricing.earlyBird.returningUniversity);
-                } else if (isEarlyBird) {
-                    basePrice = Number(grandTotalOption.pricing.earlyBird.regular);
-                } else if (isReturningClient) {
-                    basePrice = Number(grandTotalOption.pricing.standard.returningUniversity);
-                } else {
-                    basePrice = Number(grandTotalOption.pricing.standard.regular);
-                }
+        if (
+            fullTourOption &&
+            (selectedRegions.length === 0 ||
+                selectedRegions.length === totalRegions ||
+                (selectedRegions.length === 1 && selectedRegions[0] === fullTourOption.key))
+        ) {
+            if (isEarlyBird && isReturningClient) {
+                basePrice = Number(fullTourOption.pricing.earlyBird.returningUniversity);
+            } else if (isEarlyBird) {
+                basePrice = Number(fullTourOption.pricing.earlyBird.regular);
+            } else if (isReturningClient) {
+                basePrice = Number(fullTourOption.pricing.standard.returningUniversity);
+            } else {
+                basePrice = Number(fullTourOption.pricing.standard.regular);
             }
         } else {
             selectedRegions.forEach(regionKey => {

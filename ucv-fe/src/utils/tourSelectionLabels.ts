@@ -20,11 +20,13 @@ const LEGACY_SEGMENT_LABELS: Record<string, string> = {
     northern: 'Northern Vietnam',
     central: 'Central Vietnam',
     southern: 'Southern Vietnam',
-    grandTotal: 'Full Tour'
+    grandTotal: 'Full Tour',
+    Full: 'Full Tour'
 };
 
 const LEGACY_CITY_SEGMENT_KEYS = new Set([
     'grandTotal',
+    'Full',
     'northern',
     'central',
     'southern',
@@ -198,20 +200,32 @@ export function buildSelectedCityNamesLabel(
         } else if (LEGACY_KEY_CITIES[key]) {
             segmentCities = filterToKnownTourCities([...LEGACY_KEY_CITIES[key]], tour);
             segmentName = LEGACY_SEGMENT_LABELS[key];
-        } else if (key === 'grandTotal' && tour?.cities?.length) {
+        } else if (
+            (key === 'grandTotal' || key === 'Full') &&
+            tour?.cities?.length
+        ) {
             segmentCities = tour.cities.map((c) => c.name);
-            segmentName = LEGACY_SEGMENT_LABELS.grandTotal;
+            segmentName = LEGACY_SEGMENT_LABELS[key] || 'Full Tour';
         } else {
             continue;
         }
 
         const cityList = dedupeCityNames(segmentCities);
-        if (cityList.length === 0) continue;
+        if (cityList.length === 0) {
+            if (segmentName) {
+                groups.push(segmentName);
+            }
+            continue;
+        }
 
         groups.push(`${cityList.join(', ')} (${segmentName})`);
     }
 
-    return groups.length > 0 ? groups.join(', ') : 'None selected';
+    if (groups.length > 0) {
+        return groups.join(', ');
+    }
+
+    return buildSelectedTourSegmentsLabel(citySelections, tour);
 }
 
 /** Chỉ tên thành phố (không kèm segment) — dùng trong dòng sản phẩm Invoice .docx */
@@ -235,13 +249,23 @@ export function buildFlatSelectedCityNamesForInvoice(
 
         if (option) {
             const resolved = resolveCitiesForOption(option, tour);
-            for (const city of resolved) {
-                const normalized = normalizeCityName(city);
+            if (resolved.length === 0 && isFullTourOption(option)) {
+                const normalized = normalizeCityName(option.name);
                 if (
                     normalized &&
                     !cityNames.some((c) => c.toLowerCase() === normalized.toLowerCase())
                 ) {
                     cityNames.push(normalized);
+                }
+            } else {
+                for (const city of resolved) {
+                    const normalized = normalizeCityName(city);
+                    if (
+                        normalized &&
+                        !cityNames.some((c) => c.toLowerCase() === normalized.toLowerCase())
+                    ) {
+                        cityNames.push(normalized);
+                    }
                 }
             }
         } else if (LEGACY_KEY_CITIES[key]) {
@@ -250,7 +274,10 @@ export function buildFlatSelectedCityNamesForInvoice(
                     cityNames.push(city);
                 }
             }
-        } else if (key === 'grandTotal' && tour?.cities?.length) {
+        } else if (
+            (key === 'grandTotal' || key === 'Full') &&
+            tour?.cities?.length
+        ) {
             for (const c of tour.cities) {
                 if (!cityNames.some((x) => x.toLowerCase() === c.name.toLowerCase())) {
                     cityNames.push(c.name);
@@ -259,5 +286,81 @@ export function buildFlatSelectedCityNamesForInvoice(
         }
     }
 
-    return cityNames.length > 0 ? cityNames.join(', ') : 'None selected';
+    if (cityNames.length > 0) {
+        return cityNames.join(', ');
+    }
+
+    return buildSelectedTourSegmentsLabel(citySelections, tour);
+}
+
+function toVietnameseSegmentName(option: CustomizeOption): string {
+    const key = option.key.toLowerCase();
+    const name = option.name.toLowerCase();
+
+    if (/full/.test(key) || /full\s*tour/.test(name)) {
+        return 'Trọn gói';
+    }
+    if (/nothern\/central|northern/.test(key) || /northern.*central|northern\s*&\s*central/.test(name)) {
+        return 'Miền Bắc & Miền Trung';
+    }
+    if (/central\/south/.test(key) || /central.*southern|central\s*&\s*southern/.test(name)) {
+        return 'Miền Trung & Miền Nam';
+    }
+    if (/counsellor\s*connect.*hanoi/.test(key) || /counsellor\s*connect.*hanoi/.test(name)) {
+        return 'Kết nối tư vấn viên Hà Nội';
+    }
+    if (
+        /counsellor\s*connect.*hcmc/.test(key) ||
+        /counsellor\s*connect.*hcmc/.test(name)
+    ) {
+        return 'Kết nối tư vấn viên TP.HCM';
+    }
+    return option.name;
+}
+
+function buildSelectedSegmentNames(
+    citySelections: Record<string, boolean>,
+    tour?: TourFull | null,
+    translate?: (option: CustomizeOption) => string
+): string {
+    const selectedKeys = Object.keys(citySelections).filter((key) =>
+        isCitySelectionChecked(citySelections[key] as boolean | string | undefined)
+    );
+    if (selectedKeys.length === 0) return 'None selected';
+
+    const options = tour?.customizeOptions ?? [];
+    const orderedKeys = options
+        .map((opt) => opt.key)
+        .filter((key) => selectedKeys.includes(key));
+    const remaining = selectedKeys.filter((key) => !orderedKeys.includes(key));
+    const finalKeys = [...orderedKeys, ...remaining];
+
+    const names: string[] = [];
+    for (const key of finalKeys) {
+        const option = options.find((opt) => opt.key === key);
+        if (option) {
+            names.push(translate ? translate(option) : option.name);
+            continue;
+        }
+        names.push(LEGACY_SEGMENT_LABELS[key] || key);
+    }
+
+    const unique = [...new Set(names.filter(Boolean))];
+    return unique.length > 0 ? unique.join(', ') : 'None selected';
+}
+
+/** Danh sách tên segment đã chọn (bao gồm Counsellor Connect), bản tiếng Anh */
+export function buildSelectedTourSegmentsLabel(
+    citySelections: Record<string, boolean>,
+    tour?: TourFull | null
+): string {
+    return buildSelectedSegmentNames(citySelections, tour);
+}
+
+/** Danh sách tên segment đã chọn (bao gồm Counsellor Connect), bản tiếng Việt */
+export function buildSelectedTourSegmentsLabelVi(
+    citySelections: Record<string, boolean>,
+    tour?: TourFull | null
+): string {
+    return buildSelectedSegmentNames(citySelections, tour, toVietnameseSegmentName);
 }

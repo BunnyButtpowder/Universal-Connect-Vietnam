@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const { getEmailToList, isEmailConfigured } = require('../config/env');
-const { buildSelectedCityNamesLabel } = require('../utils/tourSelectionLabels');
+const { buildSelectedTourSegmentsLabel } = require('../utils/tourSelectionLabels');
 
 function createTransporter() {
     return nodemailer.createTransport({
@@ -112,7 +112,7 @@ exports.submitDocuments = async (req, res) => {
             `).join('')
             : '';
 
-        const selectedCities = buildSelectedCityNamesLabel(formData, tourData);
+        const selectedCities = buildSelectedTourSegmentsLabel(formData, tourData);
         
         const promotions = formData.promotions || {};
         const selectedPromotions = [
