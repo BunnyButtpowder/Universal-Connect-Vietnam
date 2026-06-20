@@ -517,7 +517,44 @@ export const toursApi = {
 
 // API utility for contact forms
 export const contactApi = {
-  // Submit documents to email
+  /** Fast path: JSON only — server generates docs + sends email in background */
+  submitRegistration: async (
+    formData: Record<string, unknown>,
+    calculatedPrice: number,
+    tourName?: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE}/contact/submit-registration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData, calculatedPrice, tourName }),
+      });
+
+      if (!response.ok && response.status !== 202) {
+        let message = `Failed to submit registration (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          const detail = errorData.error ? `: ${errorData.error}` : '';
+          message = `${errorData.message || message}${detail}`;
+        } catch {
+          // response body may not be JSON
+        }
+        throw new Error(message);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error submitting registration:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(
+          'Cannot reach the API server. Start ucv-be (npm run dev) and check VITE_API_URL in ucv-fe/.env'
+        );
+      }
+      throw error;
+    }
+  },
+
+  // Legacy: multipart upload with FE-generated documents
   submitDocuments: async (formData: any, documentFiles: File[]): Promise<boolean> => {
     try {
       // Create form data for multipart/form-data submission

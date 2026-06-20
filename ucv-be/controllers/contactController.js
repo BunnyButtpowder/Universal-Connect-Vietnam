@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const { getEmailToList, isEmailConfigured } = require('../config/env');
 const { buildSelectedTourSegmentsLabel } = require('../utils/tourSelectionLabels');
+const { processTourRegistrationAsync } = require('../utils/registrationProcessor');
 
 function createTransporter() {
     return nodemailer.createTransport({
@@ -10,6 +11,16 @@ function createTransporter() {
             pass: process.env.EMAIL_PASSWORD
         }
     });
+}
+
+function validateTourRegistrationFormData(formData) {
+    if (!formData || typeof formData !== 'object') {
+        return 'Form data is required';
+    }
+    if (!formData.fullName || !formData.email || !formData.organization) {
+        return 'Name, email, and organization are required';
+    }
+    return null;
 }
 
 // Submit contact form
@@ -60,6 +71,46 @@ exports.submitContactForm = async (req, res) => {
 
 // Submit document attachments
 const Tour = require('../models/Tour');
+
+/**
+ * Fast registration: trả 202 ngay, generate doc + gửi email ở background.
+ * Body JSON: { formData, calculatedPrice?, tourName? }
+ */
+exports.submitRegistration = async (req, res) => {
+    const formData = req.body?.formData ?? req.body;
+    const calculatedPrice = Number(req.body?.calculatedPrice ?? 0);
+    const tourName = req.body?.tourName;
+
+    const validationError = validateTourRegistrationFormData(formData);
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
+
+    if (!isEmailConfigured() && process.env.EMAIL_SKIP_SEND !== 'true') {
+        return res.status(503).json({
+            message: 'Email server is not configured',
+            error: 'Set EMAIL_USER and EMAIL_PASSWORD in ucv-be/.env. For local test without mail, set EMAIL_SKIP_SEND=true.'
+        });
+    }
+
+    const payload = {
+        formData: { ...formData },
+        calculatedPrice,
+        tourName,
+        sendMail: (mailOptions) => createTransporter().sendMail(mailOptions)
+    };
+
+    setImmediate(() => {
+        processTourRegistrationAsync(payload).catch((err) => {
+            console.error('[registration] Background processing failed:', err);
+        });
+    });
+
+    return res.status(202).json({
+        message: 'Registration received. Confirmation email with documents will arrive shortly.',
+        accepted: true
+    });
+};
 
 exports.submitDocuments = async (req, res) => {
     if (!req.body.formData) {

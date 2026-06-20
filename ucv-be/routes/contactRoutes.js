@@ -12,7 +12,10 @@ const upload = multer({
 // Submit contact form
 router.post('/submit', contactController.submitContactForm);
 
-// Submit documents to email
+// Fast tour registration (JSON only — docs + email on server, async)
+router.post('/submit-registration', contactController.submitRegistration);
+
+// Legacy: FE-generated documents upload
 router.post('/submit-documents', upload.array('documents'), contactController.submitDocuments);
 
 module.exports = router; 

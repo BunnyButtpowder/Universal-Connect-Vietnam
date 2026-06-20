@@ -323,9 +323,87 @@ function buildSelectedTourSegmentsLabel(formData, tourData) {
     return unique.length > 0 ? unique.join(', ') : 'None selected';
 }
 
+function toVietnameseSegmentName(option) {
+    const key = (option.key || '').toLowerCase();
+    const name = (option.name || '').toLowerCase();
+
+    if (/full/.test(key) || /full\s*tour/.test(name)) {
+        return 'Trọn gói';
+    }
+    if (/nothern\/central|northern/.test(key) || /northern.*central|northern\s*&\s*central/.test(name)) {
+        return 'Miền Bắc & Miền Trung';
+    }
+    if (/central\/south/.test(key) || /central.*southern|central\s*&\s*southern/.test(name)) {
+        return 'Miền Trung & Miền Nam';
+    }
+    if (/counsellor\s*connect.*hanoi/.test(key) || /counsellor\s*connect.*hanoi/.test(name)) {
+        return 'Kết nối tư vấn viên Hà Nội';
+    }
+    if (/counsellor\s*connect.*hcmc/.test(key) || /counsellor\s*connect.*hcmc/.test(name)) {
+        return 'Kết nối tư vấn viên TP.HCM';
+    }
+    return option.name;
+}
+
+function buildSelectedSegmentNamesVi(formData, tourData) {
+    const cities = formData?.cities;
+    if (!cities || typeof cities !== 'object') {
+        return 'None selected';
+    }
+
+    const selectedKeys = Object.keys(cities).filter((key) => cities[key] === true || cities[key] === 'true');
+    if (selectedKeys.length === 0) {
+        return 'None selected';
+    }
+
+    const customizeOptions = tourData?.customizeOptions || [];
+    const orderedKeys = customizeOptions
+        .map((opt) => opt.key)
+        .filter((key) => selectedKeys.includes(key));
+    const remaining = selectedKeys.filter((key) => !orderedKeys.includes(key));
+    const finalKeys = [...orderedKeys, ...remaining];
+
+    const names = [];
+    for (const key of finalKeys) {
+        const option = customizeOptions.find((opt) => opt.key === key);
+        if (option) {
+            names.push(toVietnameseSegmentName(option));
+            continue;
+        }
+        names.push(LEGACY_SEGMENT_LABELS[key] || key);
+    }
+
+    const unique = [...new Set(names.filter(Boolean))];
+    return unique.length > 0 ? unique.join(', ') : 'None selected';
+}
+
+function buildSelectedTourSegmentsLabelVi(formData, tourData) {
+    return buildSelectedSegmentNamesVi(formData, tourData);
+}
+
+/** Chuẩn hóa cities trước khi generate doc / email — khớp key customizeOptions của tour */
+function normalizeCitySelectionsForSubmit(cities, customizeOptions) {
+    if (!customizeOptions?.length) {
+        const normalized = {};
+        for (const [key, value] of Object.entries(cities || {})) {
+            normalized[key] = value === true || value === 'true';
+        }
+        return normalized;
+    }
+
+    const normalized = {};
+    for (const option of customizeOptions) {
+        const value = cities?.[option.key];
+        normalized[option.key] = value === true || value === 'true';
+    }
+    return normalized;
+}
+
 module.exports = {
     buildSelectedCityNamesLabel,
     buildSelectedTourSegmentsLabel,
+    buildSelectedTourSegmentsLabelVi,
+    normalizeCitySelectionsForSubmit,
     parseCitiesFromOptionDescription,
     resolveCitiesForOption,
     isCitySegmentOption,

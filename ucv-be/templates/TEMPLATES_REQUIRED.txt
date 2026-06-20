@@ -1,0 +1,7 @@
+Word templates for tour registration emails (server-side generation).
+
+Required files in this folder:
+- VN_template.docx
+- IUC_Invoice VAT_UNIVERSITY_template.docx
+
+Copy from ucv-fe/public/ when updating templates.

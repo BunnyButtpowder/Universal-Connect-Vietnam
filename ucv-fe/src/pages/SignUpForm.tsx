@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 import React from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { ContentItem } from "@/lib/types";
-import { processAllTemplates } from "@/utils/documentProcessor";
-import { toursApi, TourFull } from "@/lib/api";
+import { toursApi, TourFull, contactApi } from "@/lib/api";
 import { generateTourDetailsUrl, isTourIncoming } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -489,10 +488,13 @@ export default function SignUpForm() {
             // Get the tour name from the current tour object
             const tourName = currentTour?.title || undefined;
             console.log('Using tour name:', tourName);
-            
-            // Process document templates with processed form data and tour name
-            await processAllTemplates(processedFormData, calculatedPrice, tourName, currentTour);
-            console.log("Document templates processed successfully");
+
+            await contactApi.submitRegistration(
+                processedFormData,
+                calculatedPrice,
+                tourName
+            );
+            console.log("Registration submitted to server");
 
             // Log form submission for debugging
             console.log("Form submitted with data:", processedFormData);
