@@ -3,13 +3,97 @@ import { useContentStore } from "../lib/contentStore"
 import { useTranslatedContent } from "../hooks/useTranslatedContent"
 import { useState, useEffect } from "react"
 import { toursApi, TourBasic } from "../lib/api"
-import { generateTourDetailsUrl, isTourIncoming } from "../lib/utils"
+import { generateTourDetailsUrl, generatePreRegisterUrl, isTourIncoming, getPreRegisterDescription, getTourCardButtonText, isTourPreRegister } from "../lib/utils"
 import { ScrollReveal } from "./ScrollReveal"
 
 // Define Tour type for local use (extending TourBasic with additional properties)
 interface Tour extends TourBasic {
-    detailsUrl: string;
     buttonText: string;
+}
+
+function HomeTourCard({ tour, formatPrice }: { tour: Tour; formatPrice: (price: number) => string }) {
+    const preRegister = isTourPreRegister(tour);
+
+    const cardInner = (
+        <>
+            <div className="relative h-90 overflow-hidden rounded-xl">
+                <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
+                    <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
+                </div>
+                {tour.isComingSoon && (
+                    <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
+                        <span className="font-bold text-xs">COMING SOON</span>
+                    </div>
+                )}
+                <div className="h-full w-full p-2 lg:p-3">
+                    <div className="relative h-full w-full overflow-hidden rounded-xl">
+                        <img
+                            src={tour.imageUrl}
+                            alt={`${tour.title} image`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
+                            loading="lazy"
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
+                <h3 className="font-bold text-base text-content">{tour.title}</h3>
+                <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
+                    {tour.shortDescription}
+                </p>
+                <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center pt-2 gap-4">
+                    {preRegister ? (
+                        <a href={generatePreRegisterUrl(tour.title)}>
+                            <button
+                                type="button"
+                                className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer hover:translate-x-1 hover:min-w-[140px] hover:bg-blue-950 tour-details-button"
+                            >
+                                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                    <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                </div>
+                                <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium">{tour.buttonText}</span>
+                            </button>
+                        </a>
+                    ) : (
+                        <button
+                            type="button"
+                            className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button"
+                        >
+                            <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                            </div>
+                            <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
+                        </button>
+                    )}
+                    {tour.isComingSoon ? (
+                        <div className="flex items-center space-x-1 text-yellow-600">
+                            <span className="text-xs font-semibold">Registration TBA</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-1 text-navy-800 tour-price-display">
+                            <span className="text-xs">Start from</span>
+                            <span className="font-bold text-content">${formatPrice(tour.price)}</span>
+                            <span className="text-xs text-gray-500 font-medium">USD</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+
+    if (preRegister) {
+        return (
+            <div className="bg-white rounded-xl overflow-hidden group/card transition-colors duration-300">
+                {cardInner}
+            </div>
+        );
+    }
+
+    return (
+        <a href={generateTourDetailsUrl(tour.title)} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
+            {cardInner}
+        </a>
+    );
 }
 
 export function DiscoverSchoolTourHome() {
@@ -39,11 +123,16 @@ export function DiscoverSchoolTourHome() {
                 const fetchedTours = await toursApi.getAll();
 
                 // Transform API tours to include additional properties
-                const transformedTours: Tour[] = fetchedTours.map(tour => ({
-                    ...tour,
-                    detailsUrl: generateTourDetailsUrl(tour.title), // Generate URL based on tour title slug
-                    buttonText: "Find out more" // Default button text
-                }));
+                const transformedTours: Tour[] = fetchedTours.map(tour => {
+                    const preRegister = isTourPreRegister(tour);
+                    return {
+                        ...tour,
+                        shortDescription: preRegister
+                            ? getPreRegisterDescription(tour)
+                            : tour.shortDescription,
+                        buttonText: getTourCardButtonText(tour)
+                    };
+                });
 
                 setTours(transformedTours);
                 setError(null);
@@ -148,55 +237,7 @@ export function DiscoverSchoolTourHome() {
                     ) : (
                         // Map through the fetched tours data
                         tours.map((tour) => (
-                            <a key={tour.id} href={tour.detailsUrl}>
-                                <div className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300">
-                                    <div className="relative h-90 overflow-hidden rounded-xl">
-                                        <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
-                                            <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
-                                        </div>
-                                        {tour.isComingSoon && (
-                                            <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
-                                                <span className="font-bold text-xs">COMING SOON</span>
-                                            </div>
-                                        )}
-                                        <div className="h-full w-full p-2 lg:p-3">
-                                            <div className="relative h-full w-full overflow-hidden rounded-xl">
-                                                <img
-                                                    src={tour.imageUrl}
-                                                    alt={`${tour.title} image`}
-                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-110"
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="px-4 lg:px-6 mb-4 lg:mb-10 mt-2 space-y-3">
-                                        <h3 className="font-bold text-base text-content">{tour.title}</h3>
-                                        <p className="text-xs text-slate-500 line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300">
-                                            {tour.shortDescription}
-                                        </p>
-                                        <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center pt-2 gap-4">
-                                            <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button">
-                                                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                                                    <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
-                                                </div>
-                                                <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
-                                            </button>
-                                            {tour.isComingSoon ? (
-                                                <div className="flex items-center space-x-1 text-yellow-600">
-                                                    <span className="text-xs font-semibold">Registration TBA</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center space-x-1 text-navy-800 tour-price-display">
-                                                    <span className="text-xs">Start from</span>
-                                                    <span className="font-bold text-content">${formatPrice(tour.price)}</span>
-                                                    <span className="text-xs text-gray-500 font-medium">USD</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
+                            <HomeTourCard key={tour.id} tour={tour} formatPrice={formatPrice} />
                         ))
                     )}
                 </div>

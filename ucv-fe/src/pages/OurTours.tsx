@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { toursApi, TourBasic } from "@/lib/api";
-import { generateTourDetailsUrl, isTourIncoming } from "@/lib/utils";
+import { generateTourDetailsUrl, generatePreRegisterUrl, isTourIncoming, getPreRegisterDescription, getTourCardButtonText, isTourPreRegister } from "@/lib/utils";
 
 import {
     Pagination,
@@ -24,7 +24,6 @@ interface Tour {
     imageUrl: string;
     price: string;
     date: string;
-    detailsUrl: string;
     buttonText: string;
     isComingSoon?: boolean;
 }
@@ -36,8 +35,8 @@ interface TourCardProps {
 }
 
 function TourCard({ tour, isComingSoon }: TourCardProps) {
-    return (
-        <a href={tour.detailsUrl} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50 tour-card">
+    const cardInner = (
+        <>
             <div className="relative h-90 overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
@@ -64,12 +63,29 @@ function TourCard({ tour, isComingSoon }: TourCardProps) {
                     {tour.description}
                 </p>
                 <div className="flex justify-between items-center pt-2">
-                    <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button">
-                        <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                            <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
-                        </div>
-                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
-                    </button>
+                    {isComingSoon ? (
+                        <a href={generatePreRegisterUrl(tour.title)}>
+                            <button
+                                type="button"
+                                className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer hover:translate-x-1 hover:min-w-[140px] hover:bg-blue-950 tour-details-button"
+                            >
+                                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                    <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                </div>
+                                <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium">{tour.buttonText}</span>
+                            </button>
+                        </a>
+                    ) : (
+                        <button
+                            type="button"
+                            className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 tour-details-button"
+                        >
+                            <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                            </div>
+                            <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{tour.buttonText}</span>
+                        </button>
+                    )}
                     {isComingSoon ? (
                         <div className="flex items-center space-x-1 text-yellow-600">
                             <span className="text-xs font-semibold">Registration TBA</span>
@@ -83,6 +99,18 @@ function TourCard({ tour, isComingSoon }: TourCardProps) {
                     )}
                 </div>
             </div>
+        </>
+    );
+
+    const cardClass = "bg-white rounded-xl overflow-hidden group/card transition-colors duration-300 border-2 border-blue-200/50 tour-card";
+
+    if (isComingSoon) {
+        return <div className={cardClass}>{cardInner}</div>;
+    }
+
+    return (
+        <a href={generateTourDetailsUrl(tour.title)} className={`${cardClass} hover:bg-sky-50 cursor-pointer`}>
+            {cardInner}
         </a>
     );
 }
@@ -126,17 +154,21 @@ export default function OurTours() {
                 const toursData = await toursApi.getAll();
                 
                 // Map TourBasic to Tour interface
-                const mappedTours: Tour[] = toursData.map((tour: TourBasic) => ({
-                    id: tour.id,
-                    title: tour.title,
-                    description: tour.shortDescription,
-                    imageUrl: tour.imageUrl,
-                    price: `$${formatPrice(tour.price)}`,
-                    date: tour.date,
-                    detailsUrl: generateTourDetailsUrl(tour.title),
-                    buttonText: "Find out more",
-                    isComingSoon: tour.isComingSoon
-                }));
+                const mappedTours: Tour[] = toursData.map((tour: TourBasic) => {
+                    const preRegister = isTourPreRegister(tour);
+                    return {
+                        id: tour.id,
+                        title: tour.title,
+                        description: preRegister
+                            ? getPreRegisterDescription(tour)
+                            : tour.shortDescription,
+                        imageUrl: tour.imageUrl,
+                        price: `$${formatPrice(tour.price)}`,
+                        date: tour.date,
+                        buttonText: getTourCardButtonText(tour),
+                        isComingSoon: tour.isComingSoon
+                    };
+                });
                 
                 setTours(mappedTours);
                 setError(null);

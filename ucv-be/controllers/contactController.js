@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const { getEmailToList, isEmailConfigured } = require('../config/env');
 const { buildSelectedTourSegmentsLabel } = require('../utils/tourSelectionLabels');
 const { processTourRegistrationAsync } = require('../utils/registrationProcessor');
+const { validatePreRegisterFormData, processPreRegistrationAsync } = require('../utils/preRegisterProcessor');
 
 function createTransporter() {
     return nodemailer.createTransport({
@@ -108,6 +109,44 @@ exports.submitRegistration = async (req, res) => {
 
     return res.status(202).json({
         message: 'Registration received. Confirmation email with documents will arrive shortly.',
+        accepted: true
+    });
+};
+
+/**
+ * Pre-register coming soon tour: trả 202 ngay, gửi email (không docx) ở background.
+ * Body JSON: { formData, tourName? }
+ */
+exports.submitPreRegistration = async (req, res) => {
+    const formData = req.body?.formData ?? req.body;
+    const tourName = req.body?.tourName;
+
+    const validationError = validatePreRegisterFormData(formData);
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
+
+    if (!isEmailConfigured() && process.env.EMAIL_SKIP_SEND !== 'true') {
+        return res.status(503).json({
+            message: 'Email server is not configured',
+            error: 'Set EMAIL_USER and EMAIL_PASSWORD in ucv-be/.env. For local test without mail, set EMAIL_SKIP_SEND=true.'
+        });
+    }
+
+    const payload = {
+        formData: { ...formData },
+        tourName,
+        sendMail: (mailOptions) => createTransporter().sendMail(mailOptions)
+    };
+
+    setImmediate(() => {
+        processPreRegistrationAsync(payload).catch((err) => {
+            console.error('[pre-register] Background processing failed:', err);
+        });
+    });
+
+    return res.status(202).json({
+        message: 'Pre-registration received. Confirmation email will arrive shortly.',
         accepted: true
     });
 };

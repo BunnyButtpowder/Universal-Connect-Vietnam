@@ -12,11 +12,12 @@ import Autoplay from "embla-carousel-autoplay";
 import { useContentStore } from "../lib/contentStore";
 import { useTranslatedContent } from "../hooks/useTranslatedContent";
 import { toursApi, TourBasic } from "../lib/api";
-import { generateTourDetailsUrl, isTourIncoming } from "../lib/utils";
+import { getTourButtonUrl, isTourIncoming, getPreRegisterDescription, getTourCardButtonText, isTourPreRegister } from "../lib/utils";
 
-// Define Tour type for local use (extending TourBasic with detailsUrl)
 interface Tour extends TourBasic {
-    detailsUrl: string;
+    buttonUrl: string;
+    displayShortDescription: string;
+    cardButtonText: string;
 }
 
 export function HeroBanner() {
@@ -34,10 +35,17 @@ export function HeroBanner() {
                 const fetchedTours = await toursApi.getAll();
                 
                 // Transform API tours to include detailsUrl
-                const transformedTours: Tour[] = fetchedTours.map(tour => ({
-                    ...tour,
-                    detailsUrl: generateTourDetailsUrl(tour.title) // Generate URL based on tour title slug
-                }));
+                const transformedTours: Tour[] = fetchedTours.map(tour => {
+                    const preRegister = isTourPreRegister(tour);
+                    return {
+                        ...tour,
+                        buttonUrl: getTourButtonUrl(tour),
+                        displayShortDescription: preRegister
+                            ? getPreRegisterDescription(tour)
+                            : tour.shortDescription,
+                        cardButtonText: getTourCardButtonText(tour)
+                    };
+                });
                 
                 setTours(transformedTours);
                 setError(null);
@@ -67,9 +75,6 @@ export function HeroBanner() {
     const paragraph3Content = getContentItem('heroBanner-paragraph3') ||
         getItemById('home', 'heroBanner', 'heroBanner-paragraph3')?.content ||
         "Join us to build partnerships, explore opportunities, and experience Vietnam's vibrant education landscape.";
-    const buttonContent = getContentItem('heroBanner-button') ||
-        getItemById('home', 'heroBanner', 'heroBanner-button')?.content ||
-        "Find out more";
 
     const [api, setApi] = useState<any>()
     const [current, setCurrent] = useState(0)
@@ -207,15 +212,15 @@ export function HeroBanner() {
 
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-3">
                                                 <p className="text-content text-xs line-clamp-2">
-                                                    {tour.shortDescription}
+                                                    {tour.displayShortDescription}
                                                 </p>
-                                                <a href={tour.detailsUrl}>
+                                                <a href={tour.buttonUrl}>
                                                     <button className="bg-blue-500 hover:bg-blue-950 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 hover:-translate-x-2 hover:min-w-[140px] cursor-pointer">
                                                         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                                                             <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
                                                         </div>
                                                         <span className="flex-1 text-center group-hover:-translate-x-1 transition-transform duration-300 font-medium">
-                                                            {buttonContent}
+                                                            {tour.cardButtonText}
                                                         </span>
                                                     </button>
                                                 </a>

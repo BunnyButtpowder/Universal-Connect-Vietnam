@@ -15,6 +15,9 @@ router.post('/submit', contactController.submitContactForm);
 // Fast tour registration (JSON only — docs + email on server, async)
 router.post('/submit-registration', contactController.submitRegistration);
 
+// Pre-register coming soon tour (JSON only — email only, no docx)
+router.post('/submit-pre-registration', contactController.submitPreRegistration);
+
 // Legacy: FE-generated documents upload
 router.post('/submit-documents', upload.array('documents'), contactController.submitDocuments);
 

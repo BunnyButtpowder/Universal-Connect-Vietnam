@@ -8,12 +8,15 @@ import Autoplay from "embla-carousel-autoplay";
 import { toursApi, TourFull, TourBasic } from "@/lib/api";
 import { useContentStore } from "@/lib/contentStore";
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
-import { generateTourDetailsUrl, generateSignUpUrl, isTourIncoming } from "@/lib/utils";
+import { generateTourDetailsUrl, generateSignUpUrl, generatePreRegisterUrl, isTourIncoming, isTourPreRegister, getPreRegisterDescription, getTourCardButtonText } from "@/lib/utils";
 
-// TourCard component - updated to use TourBasic from API and handle coming soon tours
 function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price: string | number) => string }) {
-    return (
-        <a href={generateTourDetailsUrl(tour.title)} className="bg-white hover:bg-sky-50 rounded-xl overflow-hidden cursor-pointer group/card transition-colors duration-300 border-2 border-blue-200/50 other-tour-card">
+    const preRegister = isTourPreRegister(tour);
+    const cardDescription = preRegister ? getPreRegisterDescription(tour) : tour.shortDescription;
+    const cardButtonText = getTourCardButtonText(tour);
+
+    const cardInner = (
+        <>
             <div className="relative overflow-hidden rounded-xl">
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
@@ -39,15 +42,32 @@ function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price:
             <div className="px-6 mb-5 mt-2 space-y-3">
                 <h3 className="font-bold text-base text-content other-tour-title">{tour.title}</h3>
                 <p className="text-xs text-slate-500 line-clamp-3 lg:line-clamp-2 group-hover/card:text-blue-950 transition-colors duration-300 other-tour-description">
-                    {tour.shortDescription}
+                    {cardDescription}
                 </p>
                 <div className="flex justify-between items-center pt-2">
-                    <button className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 other-tour-button">
-                        <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                            <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
-                        </div>
-                        <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">Find out more</span>
-                    </button>
+                    {preRegister ? (
+                        <a href={generatePreRegisterUrl(tour.title)}>
+                            <button
+                                type="button"
+                                className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer hover:translate-x-1 hover:min-w-[140px] hover:bg-blue-950 other-tour-button"
+                            >
+                                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                    <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                                </div>
+                                <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium">{cardButtonText}</span>
+                            </button>
+                        </a>
+                    ) : (
+                        <button
+                            type="button"
+                            className="bg-blue-500 text-white text-xs min-w-[130px] px-2 py-2 rounded-full group flex items-center justify-between transition-all duration-300 cursor-pointer group-hover/card:translate-x-1 group-hover/card:min-w-[140px] group-hover/card:bg-blue-950 other-tour-button"
+                        >
+                            <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                                <ArrowRight className="h-3 w-3 text-blue-500 transition-transform duration-300" />
+                            </div>
+                            <span className="flex-1 text-center group-hover:translate-x-1 transition-transform duration-300 font-medium group-hover/card:translate-x-1">{cardButtonText}</span>
+                        </button>
+                    )}
                     {tour.isComingSoon ? (
                         <div className="flex items-center space-x-1 text-yellow-600">
                             <span className="text-xs font-semibold">Registration TBA</span>
@@ -61,6 +81,18 @@ function TourCard({ tour, formatPrice }: { tour: TourBasic; formatPrice: (price:
                     )}
                 </div>
             </div>
+        </>
+    );
+
+    const cardClass = "bg-white rounded-xl overflow-hidden group/card transition-colors duration-300 border-2 border-blue-200/50 other-tour-card";
+
+    if (preRegister) {
+        return <div className={cardClass}>{cardInner}</div>;
+    }
+
+    return (
+        <a href={generateTourDetailsUrl(tour.title)} className={`${cardClass} hover:bg-sky-50 cursor-pointer`}>
+            {cardInner}
         </a>
     );
 }
@@ -182,6 +214,11 @@ export default function TourDetails() {
         );
     }
 
+    const isPreRegisterTour = isTourPreRegister(tour);
+    const displayDescription = isPreRegisterTour
+        ? getPreRegisterDescription(tour)
+        : tour.description;
+
     // Split package items for two columns
     const packageColumns = splitPackageItems(tour.packageIncludes || []);
 
@@ -261,11 +298,25 @@ export default function TourDetails() {
                         <div className="grid grid-cols-1 lg:grid-cols-5 justify-between items-start gap-5 lg:gap-10 mt-6 lg:mx-3">
                             <div className="lg:col-span-3">
                                 <p className="text-content font-medium text-sm mb-4 whitespace-pre-line line-clamp-11 lg:line-clamp-6 overflow-hidden tour-description">
-                                    {tour.description}
+                                    {displayDescription}
                                 </p>
                                 
-                                {tour.isComingSoon || tour.signUpDisabled ? (
-                                    // Coming Soon or Sign Up Disabled Tour - Show placeholder messaging
+                                {isPreRegisterTour ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-7 gap-2 md:gap-0">
+                                        <div className="md:col-span-2 flex items-center">
+                                            <a href={generatePreRegisterUrl(tour.title)} className="w-full md:mr-5">
+                                                <button
+                                                    type="button"
+                                                    className="w-full bg-blue-950 text-white text-sm font-medium min-w-[130px] px-5 py-3 rounded-full group flex items-center justify-center transition-all duration-300 hover:min-w-[150px] cursor-pointer space-x-2 sign-up-button"
+                                                >
+                                                    Pre-register
+                                                    <img src="/send-icon.svg" alt="Send Icon" className="h-3 w-3 ms-2 group-hover:translate-x-2 transition-transform duration-300" />
+                                                </button>
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : tour.signUpDisabled ? (
+                                    // Sign up disabled — registration closed
                                     <div className="grid grid-cols-1 gap-4">
                                         <div className="flex items-center gap-3 bg-yellow-50 border-2 border-yellow-400 rounded-xl px-6 py-4">
                                             <div className="flex-shrink-0">
@@ -274,8 +325,8 @@ export default function TourDetails() {
                                                 </svg>
                                             </div>
                                             <div>
-                                                <h4 className="text-yellow-900 text-base font-bold mb-1">{tour.isComingSoon ? 'More Information Coming Soon' : 'Registration Currently Closed'}</h4>
-                                                <p className="text-yellow-800 text-sm">{tour.isComingSoon ? 'Registration details, pricing, and complete itinerary will be available soon. Check back for updates!' : 'Sign up for this tour is currently unavailable. Please check back later or contact us for more information.'}</p>
+                                                <h4 className="text-yellow-900 text-base font-bold mb-1">Registration Currently Closed</h4>
+                                                <p className="text-yellow-800 text-sm">Sign up for this tour is currently unavailable. Please check back later or contact us for more information.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -723,8 +774,8 @@ export default function TourDetails() {
                     </div>
                 </div>
 
-                {/* Pricing Section - Only show for non-coming-soon tours with sign up enabled */}
-                {!tour.isComingSoon && !tour.signUpDisabled && (
+                {/* Pricing Section — full table only when registration is open */}
+                {!tour.signUpDisabled && !isPreRegisterTour && (
                     <div className="mx-4 md:mx-6 lg:mx-48 mt-20 mb-2 bg-blue-950 py-4 lg:py-10 px-4 lg:px-8 rounded-3xl text-white pricing-section">
                         <div className="grid grid-cols-1 lg:grid-cols-5">
                             {/* Header and content - 2/5 of grid */}
@@ -813,9 +864,9 @@ export default function TourDetails() {
                         </div>
                     </div>
                 )}
-                
-                {/* Coming Soon or Sign Up Disabled Tours - Show alternate messaging */}
-                {(tour.isComingSoon || tour.signUpDisabled) && (
+
+                {/* Pre-register / coming soon tours — pricing placeholder */}
+                {isPreRegisterTour && (
                     <div className="mx-4 md:mx-6 lg:mx-48 mt-20 mb-2 bg-gradient-to-r from-yellow-400 to-yellow-500 py-10 px-8 rounded-3xl text-white coming-soon-pricing-section">
                         <div className="flex flex-col items-center text-center space-y-6">
                             <div className="bg-white/20 rounded-full p-4">
@@ -824,11 +875,33 @@ export default function TourDetails() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-2xl lg:text-3xl font-bold mb-3">{tour.isComingSoon ? 'Pricing Information Coming Soon' : 'Registration Currently Closed'}</h3>
+                                <h3 className="text-2xl lg:text-3xl font-bold mb-3">Pricing Information Coming Soon</h3>
                                 <p className="text-lg text-white/90 max-w-2xl mx-auto">
-                                    {tour.isComingSoon
-                                        ? "We're finalizing the pricing details for this exciting tour. Registration will open soon with special early bird discounts!"
-                                        : 'Sign up for this tour is currently unavailable. Please check back later or contact us for more information.'}
+                                    We're finalizing the pricing details for this exciting tour. Registration will open soon with special early bird discounts!
+                                </p>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-4">
+                                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                                <div className="w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Sign up disabled tours — alternate messaging (not pre-register / coming soon) */}
+                {tour.signUpDisabled && !isPreRegisterTour && (
+                    <div className="mx-4 md:mx-6 lg:mx-48 mt-20 mb-2 bg-gradient-to-r from-yellow-400 to-yellow-500 py-10 px-8 rounded-3xl text-white coming-soon-pricing-section">
+                        <div className="flex flex-col items-center text-center space-y-6">
+                            <div className="bg-white/20 rounded-full p-4">
+                                <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-2xl lg:text-3xl font-bold mb-3">Registration Currently Closed</h3>
+                                <p className="text-lg text-white/90 max-w-2xl mx-auto">
+                                    Sign up for this tour is currently unavailable. Please check back later or contact us for more information.
                                 </p>
                             </div>
                             <div className="flex items-center space-x-2 mt-4">

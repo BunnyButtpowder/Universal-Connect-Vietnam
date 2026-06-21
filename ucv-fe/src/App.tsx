@@ -6,6 +6,7 @@ import AboutUs from './pages/AboutUs'
 import OurTours from './pages/OurTours'
 import TourDetails from './pages/TourDetails'
 import SignUpForm from './pages/SignUpForm'
+import PreRegisterForm from './pages/PreRegisterForm'
 import Login from "./components/Login";
 import Admin from "./pages/Admin";
 import AdminHome from "./pages/admin/AdminHome";
@@ -81,6 +82,7 @@ function AppContent() {
           <Route path="/tour-details/:slug" element={<TourDetails />} />
           <Route path="/spring-tour-details" element={<SpringTourDetails />} />
           <Route path="/sign-up/:slug" element={<SignUpForm />} />
+          <Route path="/pre-register/:slug" element={<PreRegisterForm />} />
           <Route path="/login" element={<Login />} />
           
           {/* Protected Admin Routes */}

@@ -17,6 +17,7 @@ export interface TourBasic {
   imageUrl: string;
   price: number; // Display price (early bird return university price)
   date: string;
+  tourDates?: string;
   location: string;
   duration: string;
   isComingSoon?: boolean;
@@ -545,6 +546,42 @@ export const contactApi = {
       return true;
     } catch (error) {
       console.error('Error submitting registration:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(
+          'Cannot reach the API server. Start ucv-be (npm run dev) and check VITE_API_URL in ucv-fe/.env'
+        );
+      }
+      throw error;
+    }
+  },
+
+  /** Pre-register coming soon tour — email only, no docx */
+  submitPreRegistration: async (
+    formData: Record<string, unknown>,
+    tourName?: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE}/contact/submit-pre-registration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData, tourName }),
+      });
+
+      if (!response.ok && response.status !== 202) {
+        let message = `Failed to submit pre-registration (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          const detail = errorData.error ? `: ${errorData.error}` : '';
+          message = `${errorData.message || message}${detail}`;
+        } catch {
+          // response body may not be JSON
+        }
+        throw new Error(message);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error submitting pre-registration:', error);
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(
           'Cannot reach the API server. Start ucv-be (npm run dev) and check VITE_API_URL in ucv-fe/.env'

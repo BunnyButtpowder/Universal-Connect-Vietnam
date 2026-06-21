@@ -216,6 +216,7 @@ class Tour {
             price: this.pricing.earlyBird.returningUniversity, // Display early bird returning university price as base
             pricing: this.getAllPricing(),
             date: this.date,
+            tourDates: this.tourDates,
             location: this.location,
             duration: this.duration,
             customizeOptions: this.getAllCustomizeOptions(),

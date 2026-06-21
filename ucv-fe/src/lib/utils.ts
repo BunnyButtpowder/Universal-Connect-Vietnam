@@ -44,6 +44,58 @@ export function generateSignUpUrl(tourTitle: string): string {
   return `/sign-up/${slug}`;
 }
 
+/**
+ * Pre-register form URL (single-step form for tours not yet open for registration).
+ */
+export function generatePreRegisterUrl(tourTitle: string): string {
+  const slug = generateSlug(tourTitle);
+  return `/pre-register/${slug}`;
+}
+
+export interface TourPreRegisterFields {
+  title?: string;
+  isComingSoon?: boolean;
+}
+
+/**
+ * Tour có is_coming_soon = 1 → hiển thị pre-register thay vì sign-up đầy đủ.
+ */
+export function isTourPreRegister(tour: TourPreRegisterFields): boolean {
+  return Boolean(tour.isComingSoon);
+}
+
+/** Nhãn tour cho câu pre-register (vd. "Spring 2027" từ "Spring Tour 2027"). */
+export function getPreRegisterTourLabel(tour: TourPreRegisterFields): string {
+  if (tour.title) {
+    const seasonMatch = tour.title.match(
+      /\b(Spring|Summer|Fall|Autumn|Winter)\s+Tour\s+(20\d{2})\b/i
+    );
+    if (seasonMatch) {
+      return `${seasonMatch[1]} ${seasonMatch[2]}`;
+    }
+    return tour.title;
+  }
+  return 'this tour';
+}
+
+export function getPreRegisterDescription(tour: TourPreRegisterFields): string {
+  const label = getPreRegisterTourLabel(tour);
+  return `If you are interested in joining us on tour in ${label} and want to pre-register to secure a spot, please submit your details here and we'll notify you as soon as registration opens.`;
+}
+
+/**
+ * URL nút trên card tour: coming soon → pre-register form, còn lại → tour details.
+ */
+export function getTourButtonUrl(tour: TourPreRegisterFields & { title: string }): string {
+  return isTourPreRegister(tour)
+    ? generatePreRegisterUrl(tour.title)
+    : generateTourDetailsUrl(tour.title);
+}
+
+export function getTourCardButtonText(tour: TourPreRegisterFields): string {
+  return isTourPreRegister(tour) ? 'Pre-register' : 'Find out more';
+}
+
 const MONTH_MAP: Record<string, number> = {
   JANUARY: 0, FEBRUARY: 1, MARCH: 2, APRIL: 3, MAY: 4, JUNE: 5,
   JULY: 6, AUGUST: 7, SEPTEMBER: 8, OCTOBER: 9, NOVEMBER: 10, DECEMBER: 11,
