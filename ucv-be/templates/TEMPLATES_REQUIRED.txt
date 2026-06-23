@@ -4,4 +4,10 @@ Required files in this folder:
 - VN_template.docx
 - IUC_Invoice VAT_UNIVERSITY_template.docx
 
-Copy from ucv-fe/public/ when updating templates.
+Copy from `New Version Templates/` when updating templates.
+
+New template placeholders (handled by documentProcessor.js):
+- Registration: {{PARTY_A_*}} (from AUTO-FILLED), {{TOUR_CITIES}}, {{STANDARD_PRICE}},
+  {{STANDARD_DEADLINE}}, {{EARLY_DEADLINE}}, [FINAL PRICE], signature fields
+- Invoice: [UNIVERSITY NAME], [Head office address], [FINAL PRICE], [NO], [TODAY],
+  (CITY NAME) in product line, [FINAL PRICE * 108%]

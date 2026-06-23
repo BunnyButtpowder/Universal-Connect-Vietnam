@@ -15,6 +15,18 @@ const TEMPLATE_FILES = {
     invoice: 'IUC_Invoice VAT_UNIVERSITY_template.docx'
 };
 
+/** Thứ tự các dòng Party A trong template mới (8 lần {{AUTO-FILLED FROM BOOKING FORM}}). */
+const PARTY_A_AUTO_KEYS = [
+    'PARTY_A_ORGANIZATION',
+    'PARTY_A_COUNTRY',
+    'PARTY_A_HEAD_OFFICE',
+    'PARTY_A_BUSINESS_ID',
+    'PARTY_A_LEGAL_REP',
+    'PARTY_A_TITLE',
+    'PARTY_A_EMAIL',
+    'PARTY_A_PHONE'
+];
+
 const templateCache = new Map();
 
 function loadTemplateBuffer(templateKey) {
@@ -32,15 +44,32 @@ function loadTemplateBuffer(templateKey) {
     return templateCache.get(filename);
 }
 
+function getRepresentatives(formData) {
+    if (Array.isArray(formData.representatives) && formData.representatives.length > 0) {
+        return formData.representatives;
+    }
+    return [{
+        name: formData.legalRepresentative || formData.fullName || '',
+        position: formData.position || '',
+        phone: formData.phone || '',
+        email: formData.email || ''
+    }];
+}
+
+function formatDeadline(dateStr) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-GB');
+}
+
+function formatUsd(amount) {
+    if (amount == null || amount === '') return '';
+    const num = Number(amount);
+    if (!Number.isFinite(num)) return '';
+    return `$${Math.round(num).toLocaleString('en-US')}`;
+}
+
 function applyRepresentativeTemplateFields(data, formData) {
-    const reps = formData.representatives?.length
-        ? formData.representatives
-        : [{
-            name: formData.legalRepresentative,
-            position: formData.position,
-            phone: formData.phone,
-            email: formData.email
-        }];
+    const reps = getRepresentatives(formData);
 
     reps.forEach((rep, index) => {
         const n = index + 1;
@@ -73,6 +102,32 @@ function applyRepresentativeTemplateFields(data, formData) {
     data['ALL REPRESENTATIVES'] = reps
         .map((r, i) => `Representative ${i + 1}: ${r.name}, ${r.position}, ${r.phone}, ${r.email}`)
         .join('\n');
+}
+
+function applyNewTemplateMustacheFields(data, formData, tourData) {
+    const legal = getRepresentatives(formData)[0] || {};
+    const standardRegular = tourData?.pricing?.standard?.regular;
+
+    data.PARTY_A_ORGANIZATION = formData.organization || '';
+    data.PARTY_A_COUNTRY = formData.countryOfRegistration || '';
+    data.PARTY_A_HEAD_OFFICE = formData.headOffice || '';
+    data.PARTY_A_BUSINESS_ID = formData.businessRegistration || 'N/A';
+    data.PARTY_A_LEGAL_REP = legal.name || formData.legalRepresentative || '';
+    data.PARTY_A_TITLE = legal.position || formData.position || '';
+    data.PARTY_A_EMAIL = legal.email || formData.email || '';
+    data.PARTY_A_PHONE = legal.phone || formData.phone || '';
+
+    data.TOUR_CITIES = data['CITY NAMES'] || data.selectedCities || '';
+    data.STANDARD_PRICE = formatUsd(standardRegular);
+    data.STANDARD_DEADLINE = formatDeadline(tourData?.standardDeadline);
+    data.EARLY_DEADLINE = formatDeadline(tourData?.earlyBirdDeadline);
+
+    data['Name of Authorised Signatory'] = legal.name || formData.legalRepresentative || '';
+    data.Title = legal.position || formData.position || '';
+    data.Country = formData.countryOfRegistration || '';
+
+    data['as stated in the Party A section above'] = 'as stated in the Party A section above';
+    data['như ghi trong phần Bên A ở trên'] = 'như ghi trong phần Bên A ở trên';
 }
 
 function replaceNthOccurrence(text, search, replacement, nth) {
@@ -111,22 +166,60 @@ function applyVietnameseSegmentLabelToRegistrationXml(zip, englishSegments, viet
     zip.file('word/document.xml', updated);
 }
 
+function prepareRegistrationTemplateXml(zip) {
+    const documentFile = zip.file('word/document.xml');
+    if (!documentFile) return;
+
+    let xml = documentFile.asText();
+    let index = 0;
+    xml = xml.replace(/\{\{AUTO-FILLED FROM BOOKING FORM\}\}/g, () => {
+        const key = PARTY_A_AUTO_KEYS[index] || 'PARTY_A_EXTRA';
+        index += 1;
+        return `{{${key}}}`;
+    });
+    zip.file('word/document.xml', xml);
+}
+
+function applyInvoiceCityNamePlaceholder(zip, cityLabel) {
+    const documentFile = zip.file('word/document.xml');
+    if (!documentFile || !cityLabel) return;
+
+    const xml = documentFile.asText().replace(/\(CITY NAME\)/g, escapeXmlText(cityLabel));
+    zip.file('word/document.xml', xml);
+}
+
+function renderWithDelimiters(zip, data, start, end) {
+    const doc = new Docxtemplater()
+        .loadZip(zip)
+        .setOptions({
+            delimiters: { start, end },
+            nullGetter: () => ''
+        });
+
+    doc.setData(data);
+    doc.render();
+    const outBuffer = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+    return new PizZip(outBuffer);
+}
+
 function createTemplateData(formData, calculatedPrice = 0, tourData) {
-    const selectedTour = formData.tourName || (formData.tourId === 'fallTour2025'
+    const selectedTour = tourData?.title || formData.tourName || (formData.tourId === 'fallTour2025'
         ? 'Fall Tour 2025 (Central Vietnam - Hue, Da Nang)'
         : 'Spring Tour 2026 (Northern Vietnam - Hanoi, Hai Duong)');
 
-    const tourDate = formData.tourId === 'fallTour2025'
+    const tourDate = tourData?.tourDates || tourData?.date || (formData.tourId === 'fallTour2025'
         ? '1 - 8 OCTOBER 2025'
-        : '31 MARCH - 10 APRIL 2026';
+        : '31 MARCH - 10 APRIL 2026');
 
     const today = new Date();
     const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
     const invoiceNumber = `${(Date.now() % 1000).toString().padStart(3, '0')}`;
     const priceWithVAT = Math.round(calculatedPrice * 1.08).toLocaleString('en-US');
+    const formattedFinalPrice = calculatedPrice.toLocaleString('en-US');
 
     const selectedCitiesLabel = buildSelectedTourSegmentsLabel(formData, tourData);
     const selectedCitiesLabelVi = buildSelectedTourSegmentsLabelVi(formData, tourData);
+    const standardRegular = tourData?.pricing?.standard?.regular;
 
     const templateData = {
         fullName: formData.fullName,
@@ -140,20 +233,20 @@ function createTemplateData(formData, calculatedPrice = 0, tourData) {
         '[EMAIL]': formData.email,
         '[Phone]': formData.phone,
         '[Email]': formData.email,
-        PRICE: tourData?.pricing?.standard?.regular ? `$${Math.round(Number(tourData.pricing.standard.regular))}` : '',
-        DATE: tourData?.earlyBirdDeadline ? new Date(tourData.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
-        STANDARDDATE: tourData?.standardDeadline ? new Date(tourData.standardDeadline).toLocaleDateString('en-GB') : '',
+        PRICE: formatUsd(standardRegular),
+        DATE: formatDeadline(tourData?.earlyBirdDeadline),
+        STANDARDDATE: formatDeadline(tourData?.standardDeadline),
         ADDRESS: formData.headOffice,
         NO: invoiceNumber,
         TODAY: formattedToday,
-        '[PRICE]': tourData?.pricing?.standard?.regular ? `$${Math.round(Number(tourData.pricing.standard.regular))}` : '',
-        '[DATE]': tourData?.earlyBirdDeadline ? new Date(tourData.earlyBirdDeadline).toLocaleDateString('en-GB') : '',
-        '[STANDARDDATE]': tourData?.standardDeadline ? new Date(tourData.standardDeadline).toLocaleDateString('en-GB') : '',
+        '[PRICE]': formatUsd(standardRegular),
+        '[DATE]': formatDeadline(tourData?.earlyBirdDeadline),
+        '[STANDARDDATE]': formatDeadline(tourData?.standardDeadline),
         '[ADDRESS]': formData.headOffice,
         '[NO]': invoiceNumber,
         '[TODAY]': formattedToday,
-        'FINAL PRICE': calculatedPrice.toLocaleString('en-US'),
-        '[FINAL PRICE]': calculatedPrice.toLocaleString('en-US'),
+        'FINAL PRICE': formattedFinalPrice,
+        '[FINAL PRICE]': formattedFinalPrice,
         'FINAL PRICE * 108%': priceWithVAT,
         '[FINAL PRICE * 108%]': priceWithVAT,
         headOffice: formData.headOffice,
@@ -210,8 +303,8 @@ function createTemplateData(formData, calculatedPrice = 0, tourData) {
         'Current Date': new Date().toLocaleDateString('en-GB'),
         selectedPackage: formData.selectedPackage || 'Early Bird',
         'Selected Package': formData.selectedPackage || 'Early Bird',
-        packagePrice: `$${calculatedPrice.toLocaleString('en-US')}`,
-        'Package Price': `$${calculatedPrice.toLocaleString('en-US')}`,
+        packagePrice: `$${formattedFinalPrice}`,
+        'Package Price': `$${formattedFinalPrice}`,
         tourCode: formData.tourId === 'fallTour2025' ? 'UCV-F25' : 'UCV-S26',
         'Tour Code': formData.tourId === 'fallTour2025' ? 'UCV-F25' : 'UCV-S26',
         companyName: 'Universal Connect',
@@ -233,32 +326,34 @@ function createTemplateData(formData, calculatedPrice = 0, tourData) {
     });
 
     applyRepresentativeTemplateFields(templateData, formData);
+    applyNewTemplateMustacheFields(templateData, formData, tourData);
     return templateData;
 }
 
 function renderDocument(templateKey, formData, calculatedPrice, tourData) {
     const buffer = loadTemplateBuffer(templateKey);
-    const zip = new PizZip(buffer);
-    const doc = new Docxtemplater()
-        .loadZip(zip)
-        .setOptions({
-            delimiters: { start: '[', end: ']' }
-        });
+    let zip = new PizZip(buffer);
+    const templateData = createTemplateData(formData, calculatedPrice, tourData);
 
-    doc.setData(createTemplateData(formData, calculatedPrice, tourData));
-    doc.render();
+    if (templateKey === 'registration') {
+        prepareRegistrationTemplateXml(zip);
+    }
+
+    zip = renderWithDelimiters(zip, templateData, '{{', '}}');
+    zip = renderWithDelimiters(zip, templateData, '[', ']');
 
     if (templateKey === 'registration') {
         const selectedSegmentsEn = buildSelectedTourSegmentsLabel(formData, tourData);
         const selectedSegmentsVi = buildSelectedTourSegmentsLabelVi(formData, tourData);
-        applyVietnameseSegmentLabelToRegistrationXml(doc.getZip(), selectedSegmentsEn, selectedSegmentsVi);
+        applyVietnameseSegmentLabelToRegistrationXml(zip, selectedSegmentsEn, selectedSegmentsVi);
     }
 
     if (templateKey === 'invoice') {
-        fixInvoiceDocxZip(doc.getZip());
+        applyInvoiceCityNamePlaceholder(zip, templateData.TOUR_CITIES || templateData['CITY NAMES']);
+        fixInvoiceDocxZip(zip);
     }
 
-    return doc.getZip().generate({
+    return zip.generate({
         type: 'nodebuffer',
         compression: 'DEFLATE'
     });
@@ -294,5 +389,7 @@ async function generateRegistrationDocuments(formData, calculatedPrice = 0, tour
 module.exports = {
     generateRegistrationDocuments,
     normalizeCitySelectionsForSubmit,
-    TEMPLATE_DIR
+    TEMPLATE_DIR,
+    createTemplateData,
+    renderDocument
 };

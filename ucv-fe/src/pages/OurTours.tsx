@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContentStore } from "@/lib/contentStore";
 import { toursApi, TourBasic } from "@/lib/api";
-import { generateTourDetailsUrl, generatePreRegisterUrl, isTourIncoming, getPreRegisterDescription, getTourCardButtonText, isTourPreRegister } from "@/lib/utils";
+import { generateTourDetailsUrl, generatePreRegisterUrl, isTourIncoming, getPreRegisterDescription, getTourCardButtonText, isTourPreRegister, shouldShowComingSoonBadgeOnTourCard } from "@/lib/utils";
 
 import {
     Pagination,
@@ -41,7 +41,7 @@ function TourCard({ tour, isComingSoon }: TourCardProps) {
                 <div className="absolute top-6 left-6 flex space-x-2 z-10 bg-white rounded-md px-3 py-2">
                     <span className="font-bold text-xs text-content">{isTourIncoming(tour.date) ? 'INCOMING • ' : ''}{tour.date}</span>
                 </div>
-                {isComingSoon && (
+                {shouldShowComingSoonBadgeOnTourCard(tour) && (
                     <div className="absolute top-6 right-6 z-10 bg-yellow-500 text-white rounded-md px-3 py-2 coming-soon-badge">
                         <span className="font-bold text-xs">COMING SOON</span>
                     </div>

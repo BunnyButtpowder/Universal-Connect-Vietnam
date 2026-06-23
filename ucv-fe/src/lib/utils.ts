@@ -64,6 +64,13 @@ export function isTourPreRegister(tour: TourPreRegisterFields): boolean {
   return Boolean(tour.isComingSoon);
 }
 
+/** Bật `true` để hiện lại badge vàng "COMING SOON" trên card tour public. */
+export const SHOW_COMING_SOON_BADGE_ON_TOUR_CARDS = false;
+
+export function shouldShowComingSoonBadgeOnTourCard(tour: TourPreRegisterFields): boolean {
+  return SHOW_COMING_SOON_BADGE_ON_TOUR_CARDS && Boolean(tour.isComingSoon);
+}
+
 /** Nhãn tour cho câu pre-register (vd. "Spring 2027" từ "Spring Tour 2027"). */
 export function getPreRegisterTourLabel(tour: TourPreRegisterFields): string {
   if (tour.title) {
